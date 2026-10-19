@@ -1,0 +1,7 @@
+{
+  "name": "@kivora/validation",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Esquemas de validação reutilizáveis entre as aplicações KIVORA."
+}
