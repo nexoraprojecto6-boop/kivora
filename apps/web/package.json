@@ -1,0 +1,7 @@
+{
+  "name": "@kivora/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "KIVORA Web — aplicação destinada aos clientes."
+}
