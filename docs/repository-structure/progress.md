@@ -18,22 +18,24 @@ Um item só passa a "Testada" com evidência de execução. "Verificada em ambie
 | 9 | Tokens de design: apps/web/src/styles/tokens.css e docs/frontend/design-tokens.md | Implementada (contrastes calculados; aspecto visual não verificado) |
 | 10 | Inventário de dados e retenção; .env.example | Implementada |
 | 11 | Decisões de infraestrutura | Implementada (nenhum fornecedor escolhido) |
+| 13 | Autenticação: registo, login, sessão, logout e /me; esquemas partilhados em packages/validation (zod); palavras-passe com scrypt; sessões com cookie HttpOnly; limitação de tentativas; auditoria; esquema Prisma de autenticação | Testada com armazenamento em memória: 36 testes na API + 5 em validation + 6 em shared (47). Prisma/PostgreSQL por verificar |
 | 12 | Fundação executável: dependências com versões reais e pnpm-lock.yaml; packages/shared compilável; API NestJS com /v1/health, contrato de erros, identificador de pedido, cabeçalhos de segurança, CORS, verificação de Origin e configuração validada | Testada: 19 testes passam (6 shared, 13 API) |
 
 ## Versões fixadas (verificadas no registo npm em 2026-10-19)
 
-TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest), helmet 8.3.0, cookie-parser 1.4.7, reflect-metadata 0.2.2, rxjs 7.8.2. Prisma estável: 7.10.1 (a série 8 ainda está em candidata a lançamento).
+TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest), helmet 8.3.0, cookie-parser 1.4.7, reflect-metadata 0.2.2, rxjs 7.8.2, zod 4.6.7. Prisma estável: 7.10.1 (a série 8 ainda está em candidata a lançamento).
 
 ## Verificado em ambiente de execução
 
 - Instalação limpa a partir do pnpm-lock.yaml (frozen lockfile).
 - Compilação de packages/shared e apps/api.
-- 19 testes (pnpm test na raiz).
+- 47 testes (pnpm test na raiz). Os testes de segurança foram também validados por mutação: ao partir de propósito o armazenamento do token e a verificação de suspensão, os testes falharam como esperado.
 - A API arranca e responde em /v1/health.
 
 ## Não verificado
 
-- Prisma: o ambiente de verificação não consegue descarregar os binários do Prisma, por isso nada que dependa do Prisma foi executado.
+- Prisma/PostgreSQL: o ambiente de verificação não consegue descarregar os binários do Prisma. O esquema (prisma/schema.prisma) não foi validado nem migrado e não existe ainda um repositório Prisma. Em produção a API recusa arrancar sem persistência.
+- Revisão de segurança da autenticação por um especialista: não feita.
 - Aplicações web e admin: ainda sem código.
 - Ficheiros JSON de internacionalização: validade não confirmada por ferramenta.
 - Traduções em en, fr e es: rascunho, sem revisão por falante nativo.
@@ -50,4 +52,4 @@ TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest)
 
 ## Próxima etapa recomendada
 
-Autenticação (registo, login, sessão, terminar sessão) com palavras-passe em hash, sessões no servidor e cookies HttpOnly. O registo público fica desactivado por defeito até estarem definidas as decisões 4 e 6.
+Aplicação web (Vite e React): páginas de login e registo ligadas à API, com selector de idioma, textos traduzidos e tokens de design. Em paralelo, num ambiente com acesso aos binários do Prisma: validar o esquema, gerar a primeira migração e escrever o repositório PostgreSQL.

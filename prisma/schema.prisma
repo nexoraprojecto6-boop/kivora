@@ -1,0 +1,116 @@
+// KIVORA — esquema de autenticação (primeira parte do modelo de dados).
+//
+// ESTADO: escrito mas NÃO verificado. O ambiente onde foi escrito não consegue
+// descarregar os binários do Prisma, por isso `prisma validate` e `prisma migrate`
+// ainda não foram executados. Verificar num ambiente com acesso (por exemplo GitHub Codespaces).
+//
+// Não inclui entidades financeiras: dependem das decisões 7 e 8 (docs/compliance/open-decisions.md).
+// Nota: a tabela de auditoria deve ser só de acréscimo; essa garantia será aplicada
+// ao nível da base de dados (permissões ou gatilhos) quando a base existir.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  LIMITED
+  SUSPENDED
+
+  @@map("user_status")
+}
+
+enum ConsentDocumentType {
+  TERMS
+  PRIVACY
+
+  @@map("consent_document_type")
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+
+  @@map("audit_outcome")
+}
+
+model User {
+  id                 String     @id @default(uuid()) @db.Uuid
+  // Guardado sempre em minúsculas pela aplicação.
+  email              String     @unique
+  fullName           String     @map("full_name")
+  countryOfResidence String     @map("country_of_residence") @db.Char(2)
+  status             UserStatus @default(ACTIVE)
+  emailVerified      Boolean    @default(false) @map("email_verified")
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  credential  Credential?
+  sessions    Session[]
+  consents    ConsentRecord[]
+  auditEvents AuditEvent[]
+
+  @@map("users")
+}
+
+model Credential {
+  userId       String   @id @map("user_id") @db.Uuid
+  // Formato scrypt$N$r$p$sal$hash. Nunca a palavra-passe em claro.
+  passwordHash String   @map("password_hash")
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credentials")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  // SHA-256 (hexadecimal) do token. O token em claro só existe no cookie do cliente.
+  tokenHash String   @unique @map("token_hash")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model ConsentRecord {
+  id              String              @id @default(uuid()) @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  documentType    ConsentDocumentType @map("document_type")
+  // "pending-definition" enquanto os textos legais não existirem versionados.
+  documentVersion String              @map("document_version")
+  acceptedAt      DateTime            @map("accepted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("consent_records")
+}
+
+model AuditEvent {
+  id          String       @id @default(uuid()) @db.Uuid
+  action      String
+  actorUserId String?      @map("actor_user_id") @db.Uuid
+  requestId   String       @map("request_id")
+  outcome     AuditOutcome
+  // Contexto mínimo. Nunca palavras-passe, tokens ou documentos.
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_events")
+}

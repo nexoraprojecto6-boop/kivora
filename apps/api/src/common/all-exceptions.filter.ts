@@ -21,6 +21,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const res = host.switchToHttp().getResponse<Response>();
 
     if (exception instanceof ApiException) {
+      if (exception.retryAfterSeconds !== undefined) {
+        res.setHeader("Retry-After", String(exception.retryAfterSeconds));
+      }
       sendApiError(res, exception.code, exception.fieldErrors);
       return;
     }

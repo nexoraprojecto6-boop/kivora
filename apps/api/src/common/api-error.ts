@@ -28,11 +28,17 @@ const GENERIC_MESSAGE: Readonly<Record<ApiErrorCode, string>> = {
 export class ApiException extends HttpException {
   readonly code: ApiErrorCode;
   readonly fieldErrors: readonly ApiFieldError[] | undefined;
+  /** Segundos de espera sugeridos (cabeçalho Retry-After), usado em RATE_LIMITED. */
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(code: ApiErrorCode, fieldErrors?: readonly ApiFieldError[]) {
+  constructor(
+    code: ApiErrorCode,
+    options: { fieldErrors?: readonly ApiFieldError[]; retryAfterSeconds?: number } = {},
+  ) {
     super(GENERIC_MESSAGE[code], API_ERROR_HTTP_STATUS[code]);
     this.code = code;
-    this.fieldErrors = fieldErrors;
+    this.fieldErrors = options.fieldErrors;
+    this.retryAfterSeconds = options.retryAfterSeconds;
   }
 }
 

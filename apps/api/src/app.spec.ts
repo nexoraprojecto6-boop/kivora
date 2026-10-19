@@ -1,10 +1,9 @@
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import type { AddressInfo } from "node:net";
-import { Controller, Get, Module } from "@nestjs/common";
+import { Controller, Get } from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { createApp } from "./app.factory.js";
-import { AppModule } from "./app.module.js";
 import { loadConfig, type AppConfig } from "./config/env.js";
 
 const ALLOWED = "http://localhost:5173";
@@ -14,6 +13,10 @@ const config: AppConfig = {
   port: 0,
   corsAllowedOrigins: [ALLOWED],
   financialOperationsEnabled: false,
+  registrationEnabled: false,
+  sessionTtlHours: 168,
+  cookieDomain: undefined,
+  trustProxy: false,
 };
 
 @Controller("boom")
@@ -24,15 +27,12 @@ class BoomController {
   }
 }
 
-@Module({ imports: [AppModule], controllers: [BoomController] })
-class TestModule {}
-
 describe("API — fundação", () => {
   let app: NestExpressApplication;
   let base: string;
 
   before(async () => {
-    app = await createApp(config, TestModule);
+    app = await createApp(config, { extraControllers: [BoomController] });
     await app.listen(0);
     const { port } = app.getHttpServer().address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
