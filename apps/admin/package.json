@@ -1,0 +1,7 @@
+{
+  "name": "@kivora/admin",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "KIVORA Admin — painel administrativo separado, com autenticação e autorização próprias."
+}
