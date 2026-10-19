@@ -13,13 +13,17 @@ Um item só passa a "Testada" com evidência de execução. Sem terminal, o máx
 | 4 | Documentação mestre (7 ficheiros em docs/) | Implementada |
 | 5 | Modelo de dados conceptual; estados e transições em packages/shared/src/states.ts | Implementada (código não compilado) |
 | 6 | Internacionalização: languages.json e textos common e auth em pt, en, fr, es | Implementada (traduções por rever) |
+| 7 | Convenções da API: docs/api/api-conventions.md e packages/shared/src/api.ts | Implementada (código não compilado) |
+| 8 | Estratégia de testes e critérios de aceitação por módulo | Implementada |
+| 9 | Tokens de design: apps/web/src/styles/tokens.css e docs/frontend/design-tokens.md | Implementada (contrastes calculados; aspecto visual não verificado) |
 
 ## Não verificado
 
 - pnpm install: não executado.
-- Compilação TypeScript, incluindo packages/shared/src/states.ts: não executada.
+- Compilação TypeScript de packages/shared (states.ts e api.ts): não executada.
 - Os ficheiros JSON de internacionalização: validade não confirmada por ferramenta.
 - Traduções em en, fr e es: rascunho, sem revisão por falante nativo. O português deve ser revisto para o uso em Angola.
+- Aspecto visual dos tokens em navegadores.
 - Qualquer teste: não existe nem foi executado.
 
 ## Bloqueios
@@ -28,7 +32,9 @@ Um item só passa a "Testada" com evidência de execução. Sem terminal, o máx
 - Decisões jurídicas e financeiras (ver docs/compliance/open-decisions.md).
 - As transições de estado são uma proposta, a validar com o modelo financeiro.
 - Campos do registo provisórios (decisões 4 e 6).
+- Tipo de montante monetário por definir (decisão 7).
+- Partilha dos tokens de design com o painel administrativo por decidir.
 
 ## Próxima etapa recomendada
 
-Convenções da API: formato de respostas e códigos de erro (tipos puros em packages/shared e documento em docs/api), sem dependências.
+Privacidade e retenção de dados (lista de decisões a levar a um advogado, não texto jurídico) e .env.example com nomes de variáveis, sem dependências.
