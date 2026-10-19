@@ -2,11 +2,20 @@
   "name": "kivora",
   "version": "0.0.0",
   "private": true,
-  "description": "KIVORA — plataforma financeira web (monorepo). Fase de fundação técnica.",
+  "description": "KIVORA — plataforma financeira web (monorepo).",
   "license": "UNLICENSED",
+  "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": ">=22",
-    "pnpm": ">=10"
+    "pnpm": ">=12"
   },
-  "scripts": {}
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "@types/node": "22"
+  }
 }
