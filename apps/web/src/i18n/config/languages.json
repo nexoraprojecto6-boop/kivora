@@ -1,0 +1,10 @@
+{
+  "defaultLanguage": "pt",
+  "supportedLanguages": [
+    { "code": "pt", "name": "Português" },
+    { "code": "en", "name": "English" },
+    { "code": "fr", "name": "Français" },
+    { "code": "es", "name": "Español" }
+  ],
+  "namespaces": ["common", "auth"]
+}
