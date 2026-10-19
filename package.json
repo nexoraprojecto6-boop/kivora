@@ -1,0 +1,12 @@
+{
+  "name": "kivora",
+  "version": "0.0.0",
+  "private": true,
+  "description": "KIVORA — plataforma financeira web (monorepo). Fase de fundação técnica.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {}
+}
