@@ -1,0 +1,22 @@
+{
+  "app": {
+    "name": "KIVORA"
+  },
+  "language": {
+    "label": "Idioma",
+    "select": "Seleccionar idioma"
+  },
+  "actions": {
+    "continue": "Continuar",
+    "back": "Volver",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "submit": "Enviar"
+  },
+  "states": {
+    "loading": "Cargando…",
+    "error": "Se ha producido un error. Inténtelo de nuevo.",
+    "empty": "Todavía no hay datos que mostrar.",
+    "unavailable": "Servicio temporalmente no disponible."
+  }
+}
