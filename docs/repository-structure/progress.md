@@ -16,6 +16,7 @@ Um item só passa a "Testada" com evidência de execução. Sem terminal, o máx
 | 7 | Convenções da API: docs/api/api-conventions.md e packages/shared/src/api.ts | Implementada (código não compilado) |
 | 8 | Estratégia de testes e critérios de aceitação por módulo | Implementada |
 | 9 | Tokens de design: apps/web/src/styles/tokens.css e docs/frontend/design-tokens.md | Implementada (contrastes calculados; aspecto visual não verificado) |
+| 10 | Inventário de dados e retenção (docs/privacy); .env.example com nomes de variáveis | Implementada (nomes de variáveis provisórios) |
 
 ## Não verificado
 
@@ -29,7 +30,7 @@ Um item só passa a "Testada" com evidência de execução. Sem terminal, o máx
 ## Bloqueios
 
 - Instalação de dependências (decisão do responsável: fica para depois).
-- Decisões jurídicas e financeiras (ver docs/compliance/open-decisions.md).
+- Decisões jurídicas e financeiras (ver docs/compliance/open-decisions.md e docs/privacy).
 - As transições de estado são uma proposta, a validar com o modelo financeiro.
 - Campos do registo provisórios (decisões 4 e 6).
 - Tipo de montante monetário por definir (decisão 7).
@@ -37,4 +38,4 @@ Um item só passa a "Testada" com evidência de execução. Sem terminal, o máx
 
 ## Próxima etapa recomendada
 
-Privacidade e retenção de dados (lista de decisões a levar a um advogado, não texto jurídico) e .env.example com nomes de variáveis, sem dependências.
+Infraestrutura: documento de decisões de hospedagem, backups e ambientes (sem custos assumidos). Depois disso, o trabalho útil sem terminal esgota-se e convém activar um ambiente de execução para instalar e verificar o que já existe.
