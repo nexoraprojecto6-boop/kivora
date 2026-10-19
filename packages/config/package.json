@@ -1,0 +1,6 @@
+{
+  "name": "@kivora/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Configurações partilhadas de TypeScript, linting e ferramentas de desenvolvimento da KIVORA."
+}
