@@ -16,7 +16,13 @@ const config: AppConfig = {
   registrationEnabled: false,
   sessionTtlHours: 168,
   cookieDomain: undefined,
-  trustProxy: false,
+  trustProxyHops: 0,
+  databaseUrl: undefined,
+  databaseSsl: "off",
+  runMigrationsOnStart: false,
+  loginIpLimit: 10,
+  registerIpLimit: 5,
+  enableDiagnostics: false,
 };
 
 @Controller("boom")
@@ -120,7 +126,49 @@ describe("API — fundação", () => {
   });
 });
 
+describe("diagnóstico do IP do cliente", () => {
+  test("desligado por defeito responde 404; ligado mostra o IP visto pela API", async () => {
+    const off = await createApp(config);
+    await off.listen(0);
+    const offPort = (off.getHttpServer().address() as AddressInfo).port;
+    const res = await fetch(`http://127.0.0.1:${offPort}/v1/diagnostics/client-ip`);
+    assert.equal(res.status, 404);
+    await off.close();
+
+    const on = await createApp({ ...config, enableDiagnostics: true, trustProxyHops: 1 });
+    await on.listen(0);
+    const onPort = (on.getHttpServer().address() as AddressInfo).port;
+    const ok = await fetch(`http://127.0.0.1:${onPort}/v1/diagnostics/client-ip`, { headers: { "X-Forwarded-For": "203.0.113.7" } });
+    const body = (await ok.json()) as { data: { ip: string; forwardedFor: string; trustProxyHops: number } };
+    assert.equal(body.data.ip, "203.0.113.7");
+    assert.equal(body.data.forwardedFor, "203.0.113.7");
+    assert.equal(body.data.trustProxyHops, 1);
+    await on.close();
+  });
+});
+
 describe("configuração", () => {
+  test("produção exige DATABASE_URL e a mensagem não revela valores", () => {
+    assert.throws(() => loadConfig({ NODE_ENV: "production", CORS_ALLOWED_ORIGINS: "https://a.example" }), /DATABASE_URL/);
+    assert.throws(
+      () => loadConfig({ DATABASE_SSL: "senha-secreta" }),
+      (e: Error) => /DATABASE_SSL/.test(e.message) && !e.message.includes("senha-secreta"),
+    );
+  });
+
+  test("PORT do Render é usado; API_PORT tem prioridade; novas opções têm valores seguros por defeito", () => {
+    assert.equal(loadConfig({ PORT: "10000" }).port, 10000);
+    assert.equal(loadConfig({ PORT: "10000", API_PORT: "3500" }).port, 3500);
+    const c = loadConfig({});
+    assert.equal(c.trustProxyHops, 0);
+    assert.equal(c.runMigrationsOnStart, false);
+    assert.equal(c.enableDiagnostics, false);
+    assert.equal(c.databaseUrl, undefined);
+    assert.equal(c.databaseSsl, "off");
+    assert.equal(loadConfig({ TRUST_PROXY_HOPS: "2" }).trustProxyHops, 2);
+    assert.throws(() => loadConfig({ TRUST_PROXY_HOPS: "9" }));
+  });
+
   test("valores por defeito: operações financeiras desactivadas", () => {
     const c = loadConfig({});
     assert.equal(c.nodeEnv, "development");
@@ -142,8 +190,12 @@ describe("configuração", () => {
   });
 
   test("produção exige CORS_ALLOWED_ORIGINS", () => {
-    assert.throws(() => loadConfig({ NODE_ENV: "production" }));
-    const c = loadConfig({ NODE_ENV: "production", CORS_ALLOWED_ORIGINS: "https://a.example, https://b.example" });
+    assert.throws(() => loadConfig({ NODE_ENV: "production", DATABASE_URL: "postgresql://x:y@h/db" }), /CORS_ALLOWED_ORIGINS/);
+    const c = loadConfig({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://x:y@h/db",
+      CORS_ALLOWED_ORIGINS: "https://a.example, https://b.example",
+    });
     assert.deepEqual(c.corsAllowedOrigins, ["https://a.example", "https://b.example"]);
   });
 });

@@ -1,6 +1,6 @@
 # KIVORA — Desenho da autenticação
 
-Estado: implementado na API e testado com armazenamento em memória. A persistência em PostgreSQL ainda não foi verificada (ver `prisma/schema.prisma`).
+Estado: implementado na API e testado com armazenamento em memória e com PostgreSQL real (migração `apps/api/migrations/0001_auth.sql`). Nunca executado no Render nem na Vercel.
 
 ## Endpoints (prefixo /v1)
 
@@ -42,5 +42,7 @@ Erros seguem `docs/api/api-conventions.md`. O registo responde `FEATURE_DISABLED
 3. Sem verificação de email nem recuperação de acesso: `emailVerified` fica sempre falso.
 4. Sem autenticação de dois factores.
 5. Consentimentos registam o marcador de versão `pending-definition`, porque os textos legais ainda não existem.
-6. Atrás de um proxy, o IP só é fiável com `TRUST_PROXY=true` e um proxy conhecido.
+6. Atrás de proxies (Vercel e Render), o IP do cliente só é fiável depois de acertar `TRUST_PROXY_HOPS` com o diagnóstico (`docs/deploy/render-vercel.md`). Enquanto não estiver confirmado, os limites por IP estão folgados e a protecção principal é o limite de falhas por email.
+8. Não há expurgo de sessões expiradas além da limpeza horária ao criar sessões, nem política de retenção da auditoria (decisão pendente).
+9. A tabela de auditoria ainda não é protegida contra alterações ao nível da base de dados.
 7. A autenticação ainda não foi revista por um especialista em segurança.

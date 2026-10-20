@@ -19,7 +19,13 @@ const baseConfig: AppConfig = {
   registrationEnabled: true,
   sessionTtlHours: 168,
   cookieDomain: undefined,
-  trustProxy: false,
+  trustProxyHops: 0,
+  databaseUrl: undefined,
+  databaseSsl: "off",
+  runMigrationsOnStart: false,
+  loginIpLimit: 10,
+  registerIpLimit: 5,
+  enableDiagnostics: false,
 };
 
 const PASSWORD = "uma-palavra-passe-longa";

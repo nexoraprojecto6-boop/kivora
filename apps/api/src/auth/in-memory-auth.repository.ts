@@ -30,7 +30,8 @@ export class InMemoryAuthRepository implements AuthRepository {
     passwordHash: string,
     consents: readonly NewConsent[],
   ): Promise<UserRecord | null> {
-    if (await this.findUserByEmail(user.email)) return null;
+    // Verificação e inserção sem pausas assíncronas entre si: atómico em Node.
+    for (const u of this.users.values()) if (u.email === user.email) return null;
     const record: UserRecord = {
       id: randomUUID(),
       email: user.email,

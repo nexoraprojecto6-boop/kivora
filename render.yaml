@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+#
+# KIVORA — Blueprint do Render: API (Node) e base de dados PostgreSQL.
+# Guia passo a passo: docs/deploy/render-vercel.md
+#
+# Nada aqui contém segredos. A ligação à base de dados é injectada pelo próprio Render.
+
+databases:
+  - name: kivora-db
+    databaseName: kivora
+    user: kivora
+    region: frankfurt
+    plan: free
+    postgresMajorVersion: "16"
+    # Lista vazia: sem acesso externo; só serviços do mesmo Render, na rede privada.
+    ipAllowList: []
+
+services:
+  - type: web
+    name: kivora-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm install -g pnpm@12.14.0 && pnpm install --frozen-lockfile && pnpm --filter "@kivora/api..." build
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kivora-db
+          property: connectionString
+      # Aplica as migrações SQL ao arrancar (com bloqueio: seguro com várias instâncias).
+      - key: RUN_MIGRATIONS_ON_START
+        value: "true"
+      # URL da aplicação web na Vercel, sem barra final. O Render pede este valor ao criar.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      # Registo público desactivado até estarem definidas as decisões 4 e 6.
+      - key: REGISTRATION_ENABLED
+        value: "false"
+      - key: FEATURE_FINANCIAL_OPERATIONS_ENABLED
+        value: "false"
+      # Saltos de proxy até ao cliente. Acertar com o diagnóstico (docs/deploy/render-vercel.md).
+      - key: TRUST_PROXY_HOPS
+        value: "1"
+      # Limites por IP folgados enquanto o IP real do cliente não estiver confirmado.
+      - key: LOGIN_IP_LIMIT
+        value: "100"
+      - key: REGISTER_IP_LIMIT
+        value: "30"
+      - key: ENABLE_DIAGNOSTICS
+        value: "false"

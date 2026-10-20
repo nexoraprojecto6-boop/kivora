@@ -44,7 +44,7 @@ export async function createApp(
     { logger: config.nodeEnv === "test" ? false : ["log", "warn", "error"] },
   );
 
-  if (config.trustProxy) app.set("trust proxy", 1);
+  if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
 
   app.use(requestIdMiddleware);
   app.use(helmet());

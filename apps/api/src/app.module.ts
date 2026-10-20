@@ -3,6 +3,7 @@ import type { AuthRepository } from "./auth/auth.repository.js";
 import { AuthModule } from "./auth/auth.module.js";
 import type { AppConfig } from "./config/env.js";
 import { CoreModule } from "./core.module.js";
+import { DiagnosticsController } from "./diagnostics/diagnostics.controller.js";
 import { HealthController } from "./health/health.controller.js";
 
 @Module({})
@@ -16,7 +17,7 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [CoreModule.register(options), AuthModule],
-      controllers: [HealthController, ...(options.extraControllers ?? [])],
+      controllers: [HealthController, DiagnosticsController, ...(options.extraControllers ?? [])],
     };
   }
 }

@@ -1,8 +1,9 @@
 // KIVORA — esquema de autenticação (primeira parte do modelo de dados).
 //
-// ESTADO: escrito mas NÃO verificado. O ambiente onde foi escrito não consegue
-// descarregar os binários do Prisma, por isso `prisma validate` e `prisma migrate`
-// ainda não foram executados. Verificar num ambiente com acesso (por exemplo GitHub Codespaces).
+// ESTADO: desenho de referência, NÃO usado em execução. A base de dados real é criada por
+// apps/api/migrations/0001_auth.sql e acedida com node-postgres (ver docs/architecture/data-access-decision.md).
+// Os nomes de tabelas, colunas e tipos coincidem com esse SQL, para permitir adoptar o Prisma mais tarde.
+// Este ficheiro nunca foi validado pelo Prisma (o ambiente onde foi escrito não descarrega os binários).
 //
 // Não inclui entidades financeiras: dependem das decisões 7 e 8 (docs/compliance/open-decisions.md).
 // Nota: a tabela de auditoria deve ser só de acréscimo; essa garantia será aplicada

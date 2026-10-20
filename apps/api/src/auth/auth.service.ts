@@ -22,23 +22,18 @@ export interface RequestContext {
  */
 export const LEGAL_DOCUMENT_VERSION_PENDING = "pending-definition";
 
-export const LOGIN_LIMITS = { perIp: 10, perEmailFailures: 5, windowMs: 15 * 60_000 } as const;
-export const REGISTER_LIMITS = { perIp: 5, windowMs: 60 * 60_000 } as const;
+/** Falhas por email e janelas. Os limites por IP vêm da configuração (LOGIN_IP_LIMIT, REGISTER_IP_LIMIT). */
+export const LOGIN_LIMITS = { perEmailFailures: 5, windowMs: 15 * 60_000 } as const;
+export const REGISTER_LIMITS = { windowMs: 60 * 60_000 } as const;
 
 @Injectable()
 export class AuthService {
-  private readonly loginIpLimiter = new FixedWindowRateLimiter(
-    LOGIN_LIMITS.perIp,
-    LOGIN_LIMITS.windowMs,
-  );
+  private readonly loginIpLimiter: FixedWindowRateLimiter;
   private readonly loginEmailFailures = new FixedWindowRateLimiter(
     LOGIN_LIMITS.perEmailFailures,
     LOGIN_LIMITS.windowMs,
   );
-  private readonly registerIpLimiter = new FixedWindowRateLimiter(
-    REGISTER_LIMITS.perIp,
-    REGISTER_LIMITS.windowMs,
-  );
+  private readonly registerIpLimiter: FixedWindowRateLimiter;
   private dummyHash: Promise<string> | undefined;
 
   constructor(
@@ -46,7 +41,10 @@ export class AuthService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly hasher: PasswordHasher,
     private readonly sessions: SessionService,
-  ) {}
+  ) {
+    this.loginIpLimiter = new FixedWindowRateLimiter(config.loginIpLimit, LOGIN_LIMITS.windowMs);
+    this.registerIpLimiter = new FixedWindowRateLimiter(config.registerIpLimit, REGISTER_LIMITS.windowMs);
+  }
 
   async register(input: RegisterInput, ctx: RequestContext): Promise<PublicUser> {
     if (!this.config.registrationEnabled) {

@@ -15,3 +15,9 @@ Em desenvolvimento a API usa armazenamento de autenticação em memória: os dad
 Para experimentar o registo localmente, definir `REGISTRATION_ENABLED=true` no ambiente (nunca em produção antes das decisões 4 e 6).
 
 O pnpm 12 bloqueia scripts de instalação de dependências por defeito. Se uma dependência futura precisar deles (por exemplo o Prisma), é preciso aprová-la explicitamente em `pnpm-workspace.yaml`.
+
+## Base de dados e testes
+
+- Em desenvolvimento, sem `DATABASE_URL`, a API usa armazenamento em memória. Com `DATABASE_URL` e `RUN_MIGRATIONS_ON_START=true`, usa PostgreSQL e aplica as migrações ao arrancar.
+- Os testes de PostgreSQL só correm se `TEST_DATABASE_URL` apontar para uma base de testes **vazia** (cada suite cria e apaga o seu próprio esquema). Sem essa variável são ignorados.
+- Implementação nas plataformas: `docs/deploy/render-vercel.md`.
