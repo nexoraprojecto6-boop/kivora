@@ -1,0 +1,16 @@
+{
+  "title": "Accueil",
+  "greeting": "Bonjour, {name}",
+  "accountStatus": "Statut du compte",
+  "status": {
+    "active": "Actif",
+    "limited": "Limité",
+    "suspended": "Suspendu"
+  },
+  "emailStatus": "E-mail",
+  "emailVerified": "Vérifié",
+  "emailNotVerified": "Non vérifié",
+  "emptyTitle": "Il n’y a encore rien à afficher.",
+  "emptyBody": "Cette zone est en construction.",
+  "securityLink": "Sécurité du compte"
+}

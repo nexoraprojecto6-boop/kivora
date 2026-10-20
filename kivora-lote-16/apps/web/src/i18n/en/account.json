@@ -1,0 +1,27 @@
+{
+  "title": "Account security",
+  "back": "Back to home",
+  "sessionsTitle": "Active sessions",
+  "sessionsHelp": "Devices and browsers where your account is signed in.",
+  "currentSession": "This session",
+  "startedAt": "Started on {date}",
+  "expiresAt": "Expires on {date}",
+  "revoke": "End session",
+  "revokeLabel": "End the session started on {date}",
+  "revokeOthers": "End all other sessions",
+  "noOtherSessions": "There are no other active sessions.",
+  "sessionRevoked": "Session ended.",
+  "othersRevoked": "The other sessions were ended.",
+  "loadFailed": "Could not load the sessions.",
+  "passwordTitle": "Change password",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "newPasswordHint": "At least 12 characters and different from the current one.",
+  "changePassword": "Change password",
+  "changing": "Changing…",
+  "passwordChanged": "Password changed. The other sessions were ended.",
+  "errors": {
+    "wrongCurrent": "The current password is not correct.",
+    "sameAsCurrent": "The new password must be different from the current one."
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "title": "Sécurité du compte",
+  "back": "Retour à l’accueil",
+  "sessionsTitle": "Sessions actives",
+  "sessionsHelp": "Appareils et navigateurs sur lesquels votre compte est connecté.",
+  "currentSession": "Cette session",
+  "startedAt": "Commencée le {date}",
+  "expiresAt": "Expire le {date}",
+  "revoke": "Terminer",
+  "revokeLabel": "Terminer la session commencée le {date}",
+  "revokeOthers": "Terminer toutes les autres sessions",
+  "noOtherSessions": "Il n’y a pas d’autres sessions actives.",
+  "sessionRevoked": "Session terminée.",
+  "othersRevoked": "Les autres sessions ont été terminées.",
+  "loadFailed": "Impossible de charger les sessions.",
+  "passwordTitle": "Changer le mot de passe",
+  "currentPassword": "Mot de passe actuel",
+  "newPassword": "Nouveau mot de passe",
+  "newPasswordHint": "Au moins 12 caractères et différent de l’actuel.",
+  "changePassword": "Changer le mot de passe",
+  "changing": "Modification…",
+  "passwordChanged": "Mot de passe modifié. Les autres sessions ont été terminées.",
+  "errors": {
+    "wrongCurrent": "Le mot de passe actuel n’est pas correct.",
+    "sameAsCurrent": "Le nouveau mot de passe doit être différent de l’actuel."
+  }
+}
