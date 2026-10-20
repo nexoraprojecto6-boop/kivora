@@ -7,7 +7,7 @@
   "rewrites": [
     {
       "source": "/v1/:path*",
-      "destination": "https://kivora-api.onrender.com/v1/:path*"
+      "destination": "https://kivora-api-ngf1.onrender.com/v1/:path*"
     },
     {
       "source": "/((?!v1/).*)",
