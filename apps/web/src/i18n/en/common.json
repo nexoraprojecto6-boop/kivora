@@ -11,7 +11,10 @@
     "back": "Back",
     "cancel": "Cancel",
     "save": "Save",
-    "submit": "Submit"
+    "submit": "Submit",
+    "logout": "Log out",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "states": {
     "loading": "Loading…",

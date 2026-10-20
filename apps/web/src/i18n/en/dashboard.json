@@ -1,0 +1,15 @@
+{
+  "title": "Home",
+  "greeting": "Hello, {name}",
+  "accountStatus": "Account status",
+  "status": {
+    "active": "Active",
+    "limited": "Limited",
+    "suspended": "Suspended"
+  },
+  "emailStatus": "Email",
+  "emailVerified": "Verified",
+  "emailNotVerified": "Not verified",
+  "emptyTitle": "There is nothing to show yet.",
+  "emptyBody": "This area is under construction."
+}

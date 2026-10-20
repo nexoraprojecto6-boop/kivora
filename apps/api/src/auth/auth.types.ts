@@ -1,4 +1,6 @@
-import type { UserAccountStatus } from "@kivora/shared";
+import type { PublicUser, UserAccountStatus } from "@kivora/shared";
+
+export type { PublicUser };
 
 export interface UserRecord {
   id: string;
@@ -42,16 +44,6 @@ export interface AuditEventInput {
   outcome: "success" | "failure";
   /** Contexto mínimo. Nunca palavras-passe, tokens ou documentos. */
   metadata?: Record<string, string | number | boolean>;
-}
-
-/** Utilizador visível ao cliente. Nunca inclui credenciais. */
-export interface PublicUser {
-  id: string;
-  email: string;
-  fullName: string;
-  countryOfResidence: string;
-  status: UserAccountStatus;
-  emailVerified: boolean;
 }
 
 export function toPublicUser(u: UserRecord): PublicUser {

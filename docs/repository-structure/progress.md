@@ -18,25 +18,28 @@ Um item só passa a "Testada" com evidência de execução. "Verificada em ambie
 | 9 | Tokens de design: apps/web/src/styles/tokens.css e docs/frontend/design-tokens.md | Implementada (contrastes calculados; aspecto visual não verificado) |
 | 10 | Inventário de dados e retenção; .env.example | Implementada |
 | 11 | Decisões de infraestrutura | Implementada (nenhum fornecedor escolhido) |
+| 14 | Aplicação web (Vite e React): login, registo, início protegido e terminar sessão ligados à API; selector de idioma no canto superior direito com pt, en, fr, es; tokens de design aplicados; PublicUser passa a contrato partilhado | Testada em jsdom: 26 testes na web (73 no total). Aspecto visual em navegador real por verificar |
 | 13 | Autenticação: registo, login, sessão, logout e /me; esquemas partilhados em packages/validation (zod); palavras-passe com scrypt; sessões com cookie HttpOnly; limitação de tentativas; auditoria; esquema Prisma de autenticação | Testada com armazenamento em memória: 36 testes na API + 5 em validation + 6 em shared (47). Prisma/PostgreSQL por verificar |
 | 12 | Fundação executável: dependências com versões reais e pnpm-lock.yaml; packages/shared compilável; API NestJS com /v1/health, contrato de erros, identificador de pedido, cabeçalhos de segurança, CORS, verificação de Origin e configuração validada | Testada: 19 testes passam (6 shared, 13 API) |
 
 ## Versões fixadas (verificadas no registo npm em 2026-10-19)
 
-TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest), helmet 8.3.0, cookie-parser 1.4.7, reflect-metadata 0.2.2, rxjs 7.8.2, zod 4.6.7. Prisma estável: 7.10.1 (a série 8 ainda está em candidata a lançamento).
+TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest), helmet 8.3.0, cookie-parser 1.4.7, reflect-metadata 0.2.2, rxjs 7.8.2, zod 4.6.7, React 19.3.1, Vite 8.3.4, react-router-dom 7.18.4, Vitest 5.0.5, @vitejs/plugin-react 6.1.2, jsdom 30.1.3. Prisma estável: 7.10.1 (a série 8 ainda está em candidata a lançamento).
 
 ## Verificado em ambiente de execução
 
 - Instalação limpa a partir do pnpm-lock.yaml (frozen lockfile).
 - Compilação de packages/shared e apps/api.
-- 47 testes (pnpm test na raiz). Os testes de segurança foram também validados por mutação: ao partir de propósito o armazenamento do token e a verificação de suspensão, os testes falharam como esperado.
+- 73 testes (pnpm test na raiz: 6 shared, 5 validation, 36 API, 26 web). Os testes de segurança foram também validados por mutação: ao partir de propósito o armazenamento do token e a verificação de suspensão, os testes falharam como esperado.
 - A API arranca e responde em /v1/health.
 
 ## Não verificado
 
 - Prisma/PostgreSQL: o ambiente de verificação não consegue descarregar os binários do Prisma. O esquema (prisma/schema.prisma) não foi validado nem migrado e não existe ainda um repositório Prisma. Em produção a API recusa arrancar sem persistência.
 - Revisão de segurança da autenticação por um especialista: não feita.
-- Aplicações web e admin: ainda sem código.
+- Aplicação web: compilada (tsc e vite build) e testada em jsdom, mas nunca aberta num navegador real. Aspecto visual, responsividade, leitores de ecrã e contraste real por rever à mão. O pré-pedido CORS foi verificado contra a API real.
+- Aplicação admin: ainda sem código.
+- Recuperação de acesso: a página não existe (a API ainda não tem o endpoint); a ligação "Esqueceu a palavra-passe?" não foi adicionada.
 - Ficheiros JSON de internacionalização: validade não confirmada por ferramenta.
 - Traduções em en, fr e es: rascunho, sem revisão por falante nativo.
 - Aspecto visual dos tokens em navegadores.
@@ -52,4 +55,4 @@ TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest)
 
 ## Próxima etapa recomendada
 
-Aplicação web (Vite e React): páginas de login e registo ligadas à API, com selector de idioma, textos traduzidos e tokens de design. Em paralelo, num ambiente com acesso aos binários do Prisma: validar o esquema, gerar a primeira migração e escrever o repositório PostgreSQL.
+Base de dados real: num ambiente com acesso aos binários do Prisma, validar o esquema, gerar a primeira migração e escrever o repositório PostgreSQL. Depois: perfil e onboarding, e verificação de identidade. Em paralelo, rever a aplicação web à mão num navegador.

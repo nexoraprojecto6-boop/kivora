@@ -11,7 +11,10 @@
     "back": "Voltar",
     "cancel": "Cancelar",
     "save": "Guardar",
-    "submit": "Enviar"
+    "submit": "Enviar",
+    "logout": "Terminar sessão",
+    "showPassword": "Mostrar palavra-passe",
+    "hidePassword": "Esconder palavra-passe"
   },
   "states": {
     "loading": "A carregar…",

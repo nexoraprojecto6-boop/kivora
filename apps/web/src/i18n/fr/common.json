@@ -11,7 +11,10 @@
     "back": "Retour",
     "cancel": "Annuler",
     "save": "Enregistrer",
-    "submit": "Envoyer"
+    "submit": "Envoyer",
+    "logout": "Se déconnecter",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "states": {
     "loading": "Chargement…",
