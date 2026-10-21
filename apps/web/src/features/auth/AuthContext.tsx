@@ -11,6 +11,8 @@ interface AuthContextValue {
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
+  /** Volta a perguntar ao backend quem está autenticado (por exemplo, quando uma chamada devolve 401). */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -61,7 +63,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value = useMemo(() => ({ status, user, login, register, logout }), [status, user, login, register, logout]);
+  const refresh = useCallback(async () => {
+    try {
+      const u = await authApi.me();
+      setUser(u);
+      setStatus("authenticated");
+    } catch {
+      setUser(null);
+      setStatus("anonymous");
+    }
+  }, []);
+
+  const value = useMemo(
+    () => ({ status, user, login, register, logout, refresh }),
+    [status, user, login, register, logout, refresh],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

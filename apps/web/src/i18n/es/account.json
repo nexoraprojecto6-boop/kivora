@@ -1,0 +1,27 @@
+{
+  "title": "Seguridad de la cuenta",
+  "back": "Volver al inicio",
+  "sessionsTitle": "Sesiones activas",
+  "sessionsHelp": "Dispositivos y navegadores en los que su cuenta tiene la sesión iniciada.",
+  "currentSession": "Esta sesión",
+  "startedAt": "Iniciada el {date}",
+  "expiresAt": "Caduca el {date}",
+  "revoke": "Cerrar",
+  "revokeLabel": "Cerrar la sesión iniciada el {date}",
+  "revokeOthers": "Cerrar todas las demás sesiones",
+  "noOtherSessions": "No hay otras sesiones activas.",
+  "sessionRevoked": "Sesión cerrada.",
+  "othersRevoked": "Las demás sesiones se han cerrado.",
+  "loadFailed": "No se pudieron cargar las sesiones.",
+  "passwordTitle": "Cambiar contraseña",
+  "currentPassword": "Contraseña actual",
+  "newPassword": "Nueva contraseña",
+  "newPasswordHint": "Al menos 12 caracteres y distinta de la actual.",
+  "changePassword": "Cambiar contraseña",
+  "changing": "Cambiando…",
+  "passwordChanged": "Contraseña cambiada. Las demás sesiones se han cerrado.",
+  "errors": {
+    "wrongCurrent": "La contraseña actual no es correcta.",
+    "sameAsCurrent": "La nueva contraseña debe ser distinta de la actual."
+  }
+}

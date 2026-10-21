@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { AccountSecurityPage } from "../features/account/AccountSecurityPage.js";
 import { LoginPage } from "../features/auth/LoginPage.js";
 import { ProtectedRoute } from "../features/auth/ProtectedRoute.js";
 import { RegisterPage } from "../features/auth/RegisterPage.js";
@@ -14,6 +15,14 @@ export function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account/security"
+        element={
+          <ProtectedRoute>
+            <AccountSecurityPage />
           </ProtectedRoute>
         }
       />

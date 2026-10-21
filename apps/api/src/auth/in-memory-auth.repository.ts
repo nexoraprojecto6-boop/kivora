@@ -68,4 +68,37 @@ export class InMemoryAuthRepository implements AuthRepository {
   async appendAudit(event: AuditEventInput): Promise<void> {
     this.audit.push(event);
   }
+
+  async listSessions(userId: string): Promise<SessionRecord[]> {
+    const now = Date.now();
+    return [...this.sessions.values()]
+      .filter((s) => s.userId === userId && s.expiresAt.getTime() > now)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async deleteSession(userId: string, sessionId: string): Promise<boolean> {
+    for (const [key, s] of this.sessions) {
+      if (s.id === sessionId && s.userId === userId) {
+        this.sessions.delete(key);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async deleteOtherSessions(userId: string, keepTokenHash: string): Promise<number> {
+    let n = 0;
+    for (const [key, s] of this.sessions) {
+      if (s.userId === userId && key !== keepTokenHash) {
+        this.sessions.delete(key);
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  async replacePasswordAndRevokeOtherSessions(userId: string, passwordHash: string, keepTokenHash: string): Promise<number> {
+    this.credentials.set(userId, passwordHash);
+    return this.deleteOtherSessions(userId, keepTokenHash);
+  }
 }

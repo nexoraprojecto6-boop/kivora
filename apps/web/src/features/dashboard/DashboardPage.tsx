@@ -1,6 +1,6 @@
+import { Link } from "react-router-dom";
 import { useI18n } from "../../i18n/I18nProvider.js";
-import { LanguageSelect } from "../../components/layout/LanguageSelect.js";
-import { Button } from "../../components/ui/Button.js";
+import { AppHeader } from "../../components/layout/AppHeader.js";
 import { useAuth } from "../auth/AuthContext.js";
 
 /**
@@ -9,17 +9,11 @@ import { useAuth } from "../auth/AuthContext.js";
  */
 export function DashboardPage() {
   const { t } = useI18n();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   if (!user) return null;
   return (
     <div className="dashboard">
-      <header className="auth-layout__header">
-        <span className="brand">{t("common.app.name")}</span>
-        <div className="header-actions">
-          <LanguageSelect />
-          <Button variant="secondary" onClick={() => void logout()}>{t("common.actions.logout")}</Button>
-        </div>
-      </header>
+      <AppHeader />
       <main className="dashboard__main">
         <h1>{t("dashboard.greeting", { name: user.fullName })}</h1>
         <dl className="status-list">
@@ -32,6 +26,9 @@ export function DashboardPage() {
             <dd>{user.emailVerified ? t("dashboard.emailVerified") : t("dashboard.emailNotVerified")}</dd>
           </div>
         </dl>
+        <p>
+          <Link to="/account/security">{t("dashboard.securityLink")}</Link>
+        </p>
         <section className="empty-state">
           <h2>{t("dashboard.emptyTitle")}</h2>
           <p>{t("dashboard.emptyBody")}</p>

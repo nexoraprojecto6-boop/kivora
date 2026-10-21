@@ -11,5 +11,6 @@
   "emailVerified": "Vérifié",
   "emailNotVerified": "Non vérifié",
   "emptyTitle": "Il n’y a encore rien à afficher.",
-  "emptyBody": "Cette zone est en construction."
+  "emptyBody": "Cette zone est en construction.",
+  "securityLink": "Sécurité du compte"
 }

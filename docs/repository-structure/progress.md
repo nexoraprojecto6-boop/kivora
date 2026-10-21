@@ -18,6 +18,7 @@ Um item só passa a "Testada" com evidência de execução. "Verificada em ambie
 | 9 | Tokens de design: apps/web/src/styles/tokens.css e docs/frontend/design-tokens.md | Implementada (contrastes calculados; aspecto visual não verificado) |
 | 10 | Inventário de dados e retenção; .env.example | Implementada |
 | 11 | Decisões de infraestrutura | Implementada (nenhum fornecedor escolhido) |
+| 16 | Segurança da conta: listar e terminar sessões, terminar todas as outras, alterar palavra-passe (termina as outras sessões); página web `/account/security` nos 4 idiomas; limite de falhas; auditoria. Depende do lote 15 | Testada: 137 testes com base de dados, 116 sem (6 shared, 6 validation, 80/59 API, 45 web); validada por mutação. Inclui a correcção do endereço base da API na web (ver nota abaixo) |
 | 15 | Persistência PostgreSQL (node-postgres) com migração SQL, executor de migrações com bloqueio e verificação de alterações, repositório PostgreSQL, arranque com base de dados e configuração por ambiente; configuração do Render (render.yaml) e da Vercel (apps/web/vercel.json); diagnóstico do IP do cliente; guia de implementação | Testada contra PostgreSQL 16 real: 101 testes com base de dados, 83 sem. Nunca executada no Render nem na Vercel |
 | 14 | Aplicação web (Vite e React): login, registo, início protegido e terminar sessão ligados à API; selector de idioma no canto superior direito com pt, en, fr, es; tokens de design aplicados; PublicUser passa a contrato partilhado | Testada em jsdom: 26 testes na web (73 no total). Aspecto visual em navegador real por verificar |
 | 13 | Autenticação: registo, login, sessão, logout e /me; esquemas partilhados em packages/validation (zod); palavras-passe com scrypt; sessões com cookie HttpOnly; limitação de tentativas; auditoria; esquema Prisma de autenticação | Testada com armazenamento em memória: 36 testes na API + 5 em validation + 6 em shared (47). Prisma/PostgreSQL por verificar |
@@ -31,7 +32,7 @@ TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest)
 
 - Instalação limpa a partir do pnpm-lock.yaml (frozen lockfile).
 - Compilação de packages/shared e apps/api.
-- 101 testes com base de dados e 83 sem (pnpm test na raiz; os 18 de PostgreSQL só correm com TEST_DATABASE_URL). Contra PostgreSQL 16 real: migrações (idempotência, concorrência, rollback, alteração detectada), contrato do repositório, restrições da base, corridas de registos simultâneos e fluxo HTTP completo.
+- 137 testes com base de dados e 116 sem (pnpm test na raiz; os 21 de PostgreSQL só correm com TEST_DATABASE_URL). Contra PostgreSQL 16 real: migrações (idempotência, concorrência, rollback, alteração detectada), contrato do repositório, restrições da base, corridas de registos simultâneos e fluxo HTTP completo.
 - Simulação de um deploy: build a partir de cópia limpa com os comandos do Render e da Vercel, arranque em produção com migração automática, persistência após reinício, recusa de arrancar sem DATABASE_URL. Os testes de segurança foram também validados por mutação: ao partir de propósito o armazenamento do token e a verificação de suspensão, os testes falharam como esperado.
 - A API arranca e responde em /v1/health.
 
@@ -59,4 +60,9 @@ TypeScript 7.0.2, pnpm 12.14.0, NestJS 12.1.3 (apenas ESM), Express 5 (via Nest)
 
 ## Próxima etapa recomendada
 
-Fazer a primeira implementação no Render e na Vercel seguindo docs/deploy/render-vercel.md e enviar os registos de qualquer falha. Depois: perfil e onboarding, e verificação de identidade.
+Fazer a primeira implementação no Render e na Vercel seguindo docs/deploy/render-vercel.md e enviar os registos de qualquer falha. Depois: verificação de identidade (precisa das decisões 4, 5 e 10) e painel administrativo com permissões.
+
+## Erro encontrado no primeiro deploy real
+
+- Render: o build falhou por faltar `packages/shared/src/api.ts` no GitHub (um ficheiro de um lote antigo nunca foi gravado). Resolvido com um pacote de reposição. Lição: depois de cada lote, comparar a lista de ficheiros do repositório com a esperada.
+- Web: em produção a página tentava falar com `http://localhost:3000` (o computador do visitante) porque a variável `VITE_API_BASE_URL` não estava definida e o valor por defeito era a API local. Sintoma: "Não foi possível contactar o serviço". Corrigido: em produção, sem variável, a web usa o próprio domínio (a Vercel reencaminha `/v1` para o Render). Há testes que o garantem.

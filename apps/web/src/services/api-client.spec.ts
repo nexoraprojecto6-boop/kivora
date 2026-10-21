@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { ApiError, authApi } from "./api-client";
+import { ApiError, authApi, resolveBaseUrl } from "./api-client";
 
 function mockFetch(response: Response | Error) {
   const fn = vi.fn(async () => {
@@ -64,5 +64,51 @@ describe("cliente da API", () => {
     const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toMatch(/\/v1\/auth\/logout$/);
     expect(init.method).toBe("POST");
+  });
+});
+
+describe("endereço base da API", () => {
+  test("em produção sem variável usa o mesmo domínio (vazio), nunca localhost", () => {
+    expect(resolveBaseUrl(undefined, true)).toBe("");
+    expect(resolveBaseUrl("", true)).toBe("");
+    expect(resolveBaseUrl("   ", true)).toBe("");
+  });
+
+  test("em desenvolvimento sem variável usa a API local", () => {
+    expect(resolveBaseUrl(undefined, false)).toBe("http://localhost:3000");
+  });
+
+  test("uma variável definida tem prioridade e perde a barra final", () => {
+    expect(resolveBaseUrl("https://api.exemplo.com/", true)).toBe("https://api.exemplo.com");
+    expect(resolveBaseUrl("http://localhost:4000", false)).toBe("http://localhost:4000");
+  });
+});
+
+describe("ligação ao módulo (como corre em produção)", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  test("em produção sem variável, o pedido sai para o próprio domínio: /v1/auth/me", async () => {
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_API_BASE_URL", "");
+    vi.resetModules();
+    const fresh = await import("./api-client");
+    const fetchFn = mockFetch(json(200, { data: { user: { id: "1" } } }));
+    await fresh.authApi.me();
+    const [url] = fetchFn.mock.calls[0] as unknown as [string];
+    expect(url).toBe("/v1/auth/me");
+  });
+
+  test("em desenvolvimento sem variável, o pedido vai para a API local", async () => {
+    vi.stubEnv("PROD", false);
+    vi.stubEnv("VITE_API_BASE_URL", "");
+    vi.resetModules();
+    const fresh = await import("./api-client");
+    const fetchFn = mockFetch(json(200, { data: { user: { id: "1" } } }));
+    await fresh.authApi.me();
+    const [url] = fetchFn.mock.calls[0] as unknown as [string];
+    expect(url).toBe("http://localhost:3000/v1/auth/me");
   });
 });

@@ -52,6 +52,7 @@ No Render, define `REGISTRATION_ENABLED` = `true`, cria uma conta de teste, entr
 |---|---|
 | Build falha no Render ou na Vercel | Copia as últimas 40 linhas do registo |
 | Render publicado mas `/v1/health` não responde | Verifica em **Environment** que `DATABASE_URL` existe; vê os **Logs** |
+| "Não foi possível contactar o serviço" | Ou a API está a acordar (abre `/v1/health` do Render, espera o `ok` e repete), ou a página publicada é anterior à correcção do endereço base (confirma que o último commit foi publicado na Vercel) |
 | Erro ao entrar na primeira tentativa | Pode ser o serviço a acordar: espera um minuto e repete |
 | Erro 403 ao entrar ou registar | `CORS_ALLOWED_ORIGINS` não coincide com o URL da Vercel (tem de ser `https://`, sem barra no fim) |
 | Página em branco | Remove o cabeçalho `Content-Security-Policy` em `apps/web/vercel.json` para testar e diz-me |

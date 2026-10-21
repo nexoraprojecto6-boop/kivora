@@ -68,3 +68,17 @@ export function toFieldErrors(error: z.ZodError): ApiFieldError[] {
   }
   return out;
 }
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string({ error: "required" })
+      .min(1, { error: "required" })
+      .max(PASSWORD_MAX_LENGTH, { error: "tooLong" }),
+    newPassword: z
+      .string({ error: "required" })
+      .min(PASSWORD_MIN_LENGTH, { error: "passwordTooShort" })
+      .max(PASSWORD_MAX_LENGTH, { error: "tooLong" }),
+  })
+  .refine((d) => d.currentPassword !== d.newPassword, { path: ["newPassword"], error: "sameAsCurrent" });
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

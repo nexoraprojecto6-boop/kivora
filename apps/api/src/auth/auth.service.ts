@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { API_ERROR_CODE } from "@kivora/shared";
-import type { LoginInput, RegisterInput } from "@kivora/validation";
+import type { SessionSummary } from "@kivora/shared";
+import type { ChangePasswordInput, LoginInput, RegisterInput } from "@kivora/validation";
 import { ApiException } from "../common/api-error.js";
 import type { AppConfig } from "../config/env.js";
 import { APP_CONFIG, AUTH_REPOSITORY } from "../config/tokens.js";
@@ -10,6 +11,8 @@ import { toPublicUser, type PublicUser } from "./auth.types.js";
 import { PasswordHasher } from "./password.service.js";
 import { FixedWindowRateLimiter } from "./rate-limiter.js";
 import { SessionService } from "./session.service.js";
+
+const UUID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface RequestContext {
   ip: string;
@@ -34,6 +37,10 @@ export class AuthService {
     LOGIN_LIMITS.windowMs,
   );
   private readonly registerIpLimiter: FixedWindowRateLimiter;
+  private readonly passwordChangeFailures = new FixedWindowRateLimiter(
+    LOGIN_LIMITS.perEmailFailures,
+    LOGIN_LIMITS.windowMs,
+  );
   private dummyHash: Promise<string> | undefined;
 
   constructor(
@@ -145,6 +152,82 @@ export class AuthService {
         outcome: "success",
       });
     }
+  }
+
+  /** Sessões abertas do próprio utilizador. Nunca devolve tokens nem hashes. */
+  async listSessions(userId: string, currentTokenHash: string): Promise<SessionSummary[]> {
+    const sessions = await this.repo.listSessions(userId);
+    return sessions.map((s) => ({
+      id: s.id,
+      createdAt: s.createdAt.toISOString(),
+      expiresAt: s.expiresAt.toISOString(),
+      current: s.tokenHash === currentTokenHash,
+    }));
+  }
+
+  /** Termina uma sessão do próprio utilizador. Inexistente ou de outra pessoa: NOT_FOUND. */
+  async revokeSession(userId: string, sessionId: string, ctx: RequestContext): Promise<void> {
+    const found = UUID_FORMAT.test(sessionId) && (await this.repo.deleteSession(userId, sessionId));
+    if (!found) throw new ApiException(API_ERROR_CODE.NOT_FOUND);
+    await this.repo.appendAudit({
+      action: "auth.session_revoke",
+      actorUserId: userId,
+      requestId: ctx.requestId,
+      outcome: "success",
+    });
+  }
+
+  async revokeOtherSessions(userId: string, currentTokenHash: string, ctx: RequestContext): Promise<number> {
+    const revoked = await this.repo.deleteOtherSessions(userId, currentTokenHash);
+    await this.repo.appendAudit({
+      action: "auth.sessions_revoke_others",
+      actorUserId: userId,
+      requestId: ctx.requestId,
+      outcome: "success",
+      metadata: { revoked },
+    });
+    return revoked;
+  }
+
+  /**
+   * Altera a palavra-passe. Exige a actual (limite de 5 falhas em 15 minutos) e
+   * termina todas as outras sessões, para que quem tivesse acesso perca-o.
+   */
+  async changePassword(
+    userId: string,
+    currentTokenHash: string,
+    input: ChangePasswordInput,
+    ctx: RequestContext,
+  ): Promise<number> {
+    const blocked = this.passwordChangeFailures.isBlocked(userId);
+    if (!blocked.allowed) {
+      throw new ApiException(API_ERROR_CODE.RATE_LIMITED, { retryAfterSeconds: blocked.retryAfterSeconds });
+    }
+    const storedHash = await this.repo.getPasswordHash(userId);
+    const ok = storedHash !== null && (await this.hasher.verify(input.currentPassword, storedHash));
+    if (!ok) {
+      this.passwordChangeFailures.consume(userId);
+      await this.repo.appendAudit({
+        action: "auth.password_change",
+        actorUserId: userId,
+        requestId: ctx.requestId,
+        outcome: "failure",
+        metadata: { reason: "invalid_current_password" },
+      });
+      throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, {
+        fieldErrors: [{ field: "currentPassword", code: "invalidCredentials" }],
+      });
+    }
+    const newHash = await this.hasher.hash(input.newPassword);
+    const revoked = await this.repo.replacePasswordAndRevokeOtherSessions(userId, newHash, currentTokenHash);
+    await this.repo.appendAudit({
+      action: "auth.password_change",
+      actorUserId: userId,
+      requestId: ctx.requestId,
+      outcome: "success",
+      metadata: { revokedSessions: revoked },
+    });
+    return revoked;
   }
 
   private getDummyHash(): Promise<string> {

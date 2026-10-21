@@ -130,6 +130,48 @@ export class PgAuthRepository implements AuthRepository {
     );
   }
 
+  async listSessions(userId: string): Promise<SessionRecord[]> {
+    const r = await this.pool.query<{ id: string; user_id: string; token_hash: string; created_at: Date; expires_at: Date }>(
+      `SELECT id, user_id, token_hash, created_at, expires_at FROM sessions
+       WHERE user_id = $1 AND expires_at > now() ORDER BY created_at DESC`,
+      [userId],
+    );
+    return r.rows.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      tokenHash: row.token_hash,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    }));
+  }
+
+  async deleteSession(userId: string, sessionId: string): Promise<boolean> {
+    // O filtro por utilizador impede terminar sessões de outras pessoas.
+    const r = await this.pool.query("DELETE FROM sessions WHERE id = $1 AND user_id = $2", [sessionId, userId]);
+    return (r.rowCount ?? 0) > 0;
+  }
+
+  async deleteOtherSessions(userId: string, keepTokenHash: string): Promise<number> {
+    const r = await this.pool.query("DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2", [userId, keepTokenHash]);
+    return r.rowCount ?? 0;
+  }
+
+  async replacePasswordAndRevokeOtherSessions(userId: string, passwordHash: string, keepTokenHash: string): Promise<number> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query("UPDATE credentials SET password_hash = $2, updated_at = now() WHERE user_id = $1", [userId, passwordHash]);
+      const r = await client.query("DELETE FROM sessions WHERE user_id = $1 AND token_hash <> $2", [userId, keepTokenHash]);
+      await client.query("COMMIT");
+      return r.rowCount ?? 0;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   /** Remove sessões expiradas, no máximo uma vez por hora por instância. */
   private async cleanupExpiredSessions(): Promise<void> {
     const now = Date.now();

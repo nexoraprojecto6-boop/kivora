@@ -21,6 +21,7 @@
   "namespaces": [
     "common",
     "auth",
-    "dashboard"
+    "dashboard",
+    "account"
   ]
 }

@@ -11,5 +11,6 @@
   "emailVerified": "Verificado",
   "emailNotVerified": "Por verificar",
   "emptyTitle": "Ainda não há nada para mostrar.",
-  "emptyBody": "Esta área está em construção."
+  "emptyBody": "Esta área está em construção.",
+  "securityLink": "Segurança da conta"
 }

@@ -3,8 +3,9 @@ import {
   type ApiErrorCode,
   type ApiFieldError,
   type PublicUser,
+  type SessionSummary,
 } from "@kivora/shared";
-import type { LoginInput, RegisterInput } from "@kivora/validation";
+import type { ChangePasswordInput, LoginInput, RegisterInput } from "@kivora/validation";
 
 export type ClientErrorCode = ApiErrorCode | "NETWORK";
 
@@ -21,14 +22,29 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL: string =
-  (import.meta.env["VITE_API_BASE_URL"] as string | undefined) ?? "http://localhost:3000";
+/**
+ * Endereço base da API.
+ * - Se VITE_API_BASE_URL estiver definida, usa-a.
+ * - Em produção, sem variável: vazio, isto é, o mesmo domínio da página. A Vercel reencaminha
+ *   /v1/... para a API (ver apps/web/vercel.json), por isso o cookie de sessão fica no domínio da web.
+ * - Em desenvolvimento, sem variável: a API local na porta 3000.
+ */
+export function resolveBaseUrl(configured: string | undefined, isProduction: boolean): string {
+  const value = configured?.trim();
+  if (value) return value.replace(/\/+$/, "");
+  return isProduction ? "" : "http://localhost:3000";
+}
+
+const BASE_URL: string = resolveBaseUrl(
+  import.meta.env["VITE_API_BASE_URL"] as string | undefined,
+  import.meta.env.PROD,
+);
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
-async function request<T>(path: string, method: "GET" | "POST", body?: unknown): Promise<T> {
+async function request<T>(path: string, method: "GET" | "POST" | "DELETE", body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}${API_VERSION_PREFIX}${path}`, {
@@ -69,4 +85,13 @@ export const authApi = {
   logout: async (): Promise<void> => {
     await request<{ loggedOut: true }>("/auth/logout", "POST", {});
   },
+  sessions: async (): Promise<SessionSummary[]> =>
+    (await request<{ sessions: SessionSummary[] }>("/auth/sessions", "GET")).sessions,
+  revokeSession: async (id: string): Promise<void> => {
+    await request<{ revoked: true }>(`/auth/sessions/${encodeURIComponent(id)}`, "DELETE");
+  },
+  revokeOtherSessions: async (): Promise<number> =>
+    (await request<{ revokedSessions: number }>("/auth/sessions/revoke-others", "POST", {})).revokedSessions,
+  changePassword: async (input: ChangePasswordInput): Promise<number> =>
+    (await request<{ revokedSessions: number }>("/auth/change-password", "POST", input)).revokedSessions,
 };

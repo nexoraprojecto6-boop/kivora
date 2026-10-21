@@ -1,0 +1,27 @@
+{
+  "title": "Segurança da conta",
+  "back": "Voltar ao início",
+  "sessionsTitle": "Sessões ativas",
+  "sessionsHelp": "Dispositivos e navegadores em que a sua conta está iniciada.",
+  "currentSession": "Esta sessão",
+  "startedAt": "Iniciada em {date}",
+  "expiresAt": "Expira em {date}",
+  "revoke": "Terminar",
+  "revokeLabel": "Terminar a sessão iniciada em {date}",
+  "revokeOthers": "Terminar todas as outras sessões",
+  "noOtherSessions": "Não há outras sessões ativas.",
+  "sessionRevoked": "Sessão terminada.",
+  "othersRevoked": "As outras sessões foram terminadas.",
+  "loadFailed": "Não foi possível carregar as sessões.",
+  "passwordTitle": "Alterar palavra-passe",
+  "currentPassword": "Palavra-passe atual",
+  "newPassword": "Nova palavra-passe",
+  "newPasswordHint": "Pelo menos 12 caracteres e diferente da atual.",
+  "changePassword": "Alterar palavra-passe",
+  "changing": "A alterar…",
+  "passwordChanged": "Palavra-passe alterada. As outras sessões foram terminadas.",
+  "errors": {
+    "wrongCurrent": "A palavra-passe atual não está correta.",
+    "sameAsCurrent": "A nova palavra-passe tem de ser diferente da atual."
+  }
+}

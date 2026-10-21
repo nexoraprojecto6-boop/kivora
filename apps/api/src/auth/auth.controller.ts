@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res, UseGuards } from "@nestjs/common";
-import type { ApiSuccessResponse } from "@kivora/shared";
-import { loginSchema, registerSchema } from "@kivora/validation";
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Post, Req, Res, UseGuards } from "@nestjs/common";
+import type { ApiSuccessResponse, SessionSummary } from "@kivora/shared";
+import { changePasswordSchema, loginSchema, registerSchema } from "@kivora/validation";
 import type { Request, Response } from "express";
 import { parseOrThrow } from "../common/validation.js";
 import type { AppConfig } from "../config/env.js";
@@ -67,5 +67,53 @@ export class AuthController {
   me(@Req() req: AuthenticatedRequest): ApiSuccessResponse<{ user: PublicUser }> {
     // A guarda garante que authUser existe.
     return { data: { user: toPublicUser(req.authUser!) } };
+  }
+
+  @Get("sessions")
+  @UseGuards(AuthGuard)
+  async sessions(@Req() req: AuthenticatedRequest): Promise<ApiSuccessResponse<{ sessions: SessionSummary[] }>> {
+    const sessions = await this.auth.listSessions(req.authUser!.id, req.authSession!.tokenHash);
+    return { data: { sessions } };
+  }
+
+  @Post("sessions/revoke-others")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async revokeOthers(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiSuccessResponse<{ revokedSessions: number }>> {
+    const revokedSessions = await this.auth.revokeOtherSessions(req.authUser!.id, req.authSession!.tokenHash, contextOf(req, res));
+    return { data: { revokedSessions } };
+  }
+
+  @Delete("sessions/:id")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async revokeSession(
+    @Param("id") id: string,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiSuccessResponse<{ revoked: true }>> {
+    await this.auth.revokeSession(req.authUser!.id, id, contextOf(req, res));
+    return { data: { revoked: true } };
+  }
+
+  @Post("change-password")
+  @HttpCode(200)
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ApiSuccessResponse<{ revokedSessions: number }>> {
+    const input = parseOrThrow(changePasswordSchema, body);
+    const revokedSessions = await this.auth.changePassword(
+      req.authUser!.id,
+      req.authSession!.tokenHash,
+      input,
+      contextOf(req, res),
+    );
+    return { data: { revokedSessions } };
   }
 }

@@ -10,6 +10,10 @@ Estado: implementado na API e testado com armazenamento em memória e com Postgr
 | POST /auth/login | Inicia sessão e define o cookie | 200 `{ data: { user } }` |
 | POST /auth/logout | Termina a sessão e limpa o cookie | 200 `{ data: { loggedOut: true } }` |
 | GET /auth/me | Utilizador da sessão actual | 200 `{ data: { user } }` |
+| GET /auth/sessions | Sessões abertas do próprio (id, datas, qual é a actual) | 200 `{ data: { sessions } }` |
+| DELETE /auth/sessions/:id | Termina uma sessão do próprio | 200 `{ data: { revoked: true } }` |
+| POST /auth/sessions/revoke-others | Termina todas as outras sessões | 200 `{ data: { revokedSessions } }` |
+| POST /auth/change-password | Altera a palavra-passe (exige a actual) | 200 `{ data: { revokedSessions } }` |
 
 Erros seguem `docs/api/api-conventions.md`. O registo responde `FEATURE_DISABLED` enquanto `REGISTRATION_ENABLED` não for exactamente `true`.
 
@@ -27,6 +31,13 @@ Erros seguem `docs/api/api-conventions.md`. O registo responde `FEATURE_DISABLED
 - Cookie `kivora_session`: HttpOnly, SameSite=Lax, Path=/, Secure em produção.
 - Uma conta suspensa deixa de ter sessões válidas, mesmo as já criadas.
 - Nada fica em localStorage.
+
+## Gestão da conta
+
+- A lista de sessões mostra apenas id, datas de início e de expiração e se é a sessão actual. Nunca o token nem o seu hash. Não guarda IP nem navegador (decisão de privacidade; pode vir depois).
+- Terminar uma sessão só funciona nas do próprio utilizador. Uma sessão de outra pessoa, inexistente ou com id inválido responde NOT_FOUND, sem revelar que existe.
+- Alterar a palavra-passe exige a actual (5 falhas em 15 minutos bloqueiam novas tentativas), recusa uma nova igual à actual e termina todas as outras sessões, de forma atómica com a troca. A actual continua aberta.
+- Cada acção fica na auditoria (`auth.password_change`, `auth.session_revoke`, `auth.sessions_revoke_others`), sem palavras-passe.
 
 ## Protecções
 

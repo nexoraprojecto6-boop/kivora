@@ -161,6 +161,38 @@ function repositoryContract(name: string, make: () => Promise<{ repo: AuthReposi
       await repo.appendAudit({ action: "auth.login", actorUserId: null, requestId: "req-2", outcome: "failure", metadata: { reason: "invalid_credentials", n: 1, ok: false } });
     });
 
+    test("sessões: listar só as não expiradas do utilizador, terminar com âmbito, terminar as outras", async () => {
+      const ana = (await repo.findUserByEmail("ana@example.com"))!;
+      const outro = (await repo.createUserWithCredential({ email: "outro@example.com", fullName: "O", countryOfResidence: "AO" }, HASH, []))!;
+      const future = new Date(Date.now() + 3_600_000);
+      const s1 = await repo.createSession({ userId: ana.id, tokenHash: "1".repeat(64), expiresAt: future });
+      const s2 = await repo.createSession({ userId: ana.id, tokenHash: "2".repeat(64), expiresAt: future });
+      await repo.createSession({ userId: ana.id, tokenHash: "3".repeat(64), expiresAt: new Date(Date.now() - 1000) });
+      const so = await repo.createSession({ userId: outro.id, tokenHash: "4".repeat(64), expiresAt: future });
+
+      const listed = await repo.listSessions(ana.id);
+      assert.deepEqual(listed.map((s) => s.id).sort(), [s1.id, s2.id].sort());
+      assert.equal(await repo.deleteSession(ana.id, so.id), false, "não pode terminar sessões de outro utilizador");
+      assert.ok(await repo.findSessionByTokenHash("4".repeat(64)));
+      assert.equal(await repo.deleteSession(ana.id, s1.id), true);
+      assert.equal(await repo.deleteSession(ana.id, s1.id), false);
+      assert.equal(await repo.deleteOtherSessions(ana.id, "9".repeat(64)) >= 1, true);
+      assert.equal((await repo.listSessions(ana.id)).length, 0);
+      assert.ok(await repo.findSessionByTokenHash("4".repeat(64)), "as sessões de outros ficam");
+    });
+
+    test("trocar palavra-passe e terminar as outras sessões num só passo", async () => {
+      const u = (await repo.createUserWithCredential({ email: "troca@example.com", fullName: "T", countryOfResidence: "AO" }, HASH, []))!;
+      const future = new Date(Date.now() + 3_600_000);
+      await repo.createSession({ userId: u.id, tokenHash: "a".repeat(64), expiresAt: future });
+      await repo.createSession({ userId: u.id, tokenHash: "b".repeat(64), expiresAt: future });
+      const revoked = await repo.replacePasswordAndRevokeOtherSessions(u.id, "novo-hash", "a".repeat(64));
+      assert.equal(revoked, 1);
+      assert.equal(await repo.getPasswordHash(u.id), "novo-hash");
+      assert.ok(await repo.findSessionByTokenHash("a".repeat(64)));
+      assert.equal(await repo.findSessionByTokenHash("b".repeat(64)), null);
+    });
+
     test("entradas com aspas e SQL são tratadas como texto", async () => {
       const evil = "x'; DROP TABLE users; --@example.com";
       assert.equal(await repo.findUserByEmail(evil), null);
@@ -297,6 +329,23 @@ describe("fluxo HTTP completo com PostgreSQL", { skip }, () => {
       "auth.register:SUCCESS", "auth.login:SUCCESS", "auth.logout:SUCCESS",
     ]);
     assert.ok(!JSON.stringify(audit.rows).includes(PASSWORD));
+  });
+
+  test("alterar palavra-passe contra a base real termina as outras sessões e actualiza o hash", async () => {
+    await post("/v1/auth/register", registration("chg@example.com"));
+    const cookieOf = async (pw: string) => (await post("/v1/auth/login", { email: "chg@example.com", password: pw })).headers.getSetCookie().find((c) => c.startsWith(`${SESSION_COOKIE_NAME}=`))!.split(";")[0]!;
+    const keep = await cookieOf(PASSWORD);
+    const other = await cookieOf(PASSWORD);
+    const before = (await pool.query("SELECT password_hash FROM credentials c JOIN users u ON u.id = c.user_id WHERE u.email = 'chg@example.com'")).rows[0].password_hash as string;
+    const r = await post("/v1/auth/change-password", { currentPassword: PASSWORD, newPassword: "outra-palavra-passe-bem-longa" }, keep);
+    assert.equal(r.status, 200);
+    const after = (await pool.query("SELECT password_hash FROM credentials c JOIN users u ON u.id = c.user_id WHERE u.email = 'chg@example.com'")).rows[0].password_hash as string;
+    assert.notEqual(after, before);
+    assert.equal((await fetch(`${base}/v1/auth/me`, { headers: { Cookie: keep } })).status, 200);
+    assert.equal((await fetch(`${base}/v1/auth/me`, { headers: { Cookie: other } })).status, 401);
+    const list = (await (await fetch(`${base}/v1/auth/sessions`, { headers: { Cookie: keep } })).json()) as { data: { sessions: Array<{ current: boolean }> } };
+    assert.equal(list.data.sessions.length, 1);
+    assert.equal(list.data.sessions[0]!.current, true);
   });
 
   test("registos simultâneos com o mesmo email: um 201 e os restantes 409", async () => {

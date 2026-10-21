@@ -58,3 +58,24 @@ test("erros não repetem valores enviados pelo cliente", () => {
   if (r.success) return;
   assert.ok(!JSON.stringify(toFieldErrors(r.error)).includes("segredo"));
 });
+
+import { changePasswordSchema } from "./auth.js";
+
+test("alterar palavra-passe: códigos estáveis para campos em falta, curta e igual à actual", () => {
+  const missing = changePasswordSchema.safeParse({});
+  assert.equal(missing.success, false);
+  if (!missing.success) {
+    const errs = toFieldErrors(missing.error);
+    assert.ok(errs.some((e) => e.field === "currentPassword" && e.code === "required"));
+    assert.ok(errs.some((e) => e.field === "newPassword" && e.code === "required"));
+  }
+  const short = changePasswordSchema.safeParse({ currentPassword: "abc", newPassword: "curta" });
+  assert.equal(short.success, false);
+  if (!short.success) assert.ok(toFieldErrors(short.error).some((e) => e.field === "newPassword" && e.code === "passwordTooShort"));
+
+  const same = changePasswordSchema.safeParse({ currentPassword: "uma-palavra-passe-longa", newPassword: "uma-palavra-passe-longa" });
+  assert.equal(same.success, false);
+  if (!same.success) assert.ok(toFieldErrors(same.error).some((e) => e.field === "newPassword" && e.code === "sameAsCurrent"));
+
+  assert.equal(changePasswordSchema.safeParse({ currentPassword: "uma-palavra-passe-longa", newPassword: "outra-palavra-passe-longa" }).success, true);
+});

@@ -9,6 +9,7 @@ Estado: login, registo, início e terminar sessão funcionam contra a API. Testa
 | /login | Início de sessão, com selector de idioma no canto superior direito |
 | /register | Criar conta (campos provisórios, decisões 4 e 6) |
 | /dashboard | Início, protegido; só mostra dados reais da API |
+| /account/security | Segurança da conta, protegida: sessões abertas (terminar uma ou todas as outras) e alterar palavra-passe |
 | qualquer outra | Redirecciona para /dashboard (e daí para /login sem sessão) |
 
 ## Princípios
