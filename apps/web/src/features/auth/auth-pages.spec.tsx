@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+
+vi.mock("../../services/navigation", () => ({ DASHBOARD_URL: "/app/", LOGIN_URL: "/login", redirectTo: vi.fn() }));
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { App } from "../../app/App";
 import { I18nProvider } from "../../i18n/I18nProvider";
 import { AuthProvider } from "./AuthContext";
+import { redirectTo } from "../../services/navigation";
 
 const USER = { id: "u1", email: "maria@example.com", fullName: "Maria Teste", countryOfResidence: "AO", status: "active", emailVerified: false };
 
@@ -35,7 +38,10 @@ function renderApp(path: string) {
 
 const anonymous: Handler = (url) => (url.endsWith("/auth/me") ? apiError(401, "UNAUTHENTICATED") : apiError(404, "NOT_FOUND"));
 
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  window.localStorage.clear();
+  vi.mocked(redirectTo).mockClear();
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe("página de login", () => {
@@ -64,7 +70,7 @@ describe("página de login", () => {
     expect(fn.mock.calls.some(([u]) => String(u).endsWith("/auth/login"))).toBe(false);
   });
 
-  test("login com sucesso envia credenciais e vai para o início", async () => {
+  test("login com sucesso envia credenciais e passa para o dashboard (/app/)", async () => {
     const fn = mockApi((url) => {
       if (url.endsWith("/auth/me")) return apiError(401, "UNAUTHENTICATED");
       if (url.endsWith("/auth/login")) return json(200, { data: { user: USER } });
@@ -75,7 +81,7 @@ describe("página de login", () => {
     await user.type(await screen.findByLabelText("Email"), "Maria@Example.com");
     await user.type(screen.getByLabelText("Palavra-passe"), "uma-palavra-passe-longa");
     await user.click(screen.getByRole("button", { name: "Entrar" }));
-    expect(await screen.findByRole("heading", { name: "Olá, Maria Teste" })).toBeInTheDocument();
+    await waitFor(() => expect(redirectTo).toHaveBeenCalledWith("/app/"));
     const loginCall = fn.mock.calls.find(([u]) => String(u).endsWith("/auth/login"))!;
     expect(JSON.parse((loginCall[1] as RequestInit).body as string)).toEqual({
       email: "maria@example.com",
@@ -189,32 +195,18 @@ describe("página de registo", () => {
   });
 });
 
-describe("rotas protegidas e início", () => {
-  test("sem sessão, /dashboard redirecciona para o login", async () => {
-    mockApi(anonymous);
-    renderApp("/dashboard");
-    expect(await screen.findByRole("heading", { name: "Iniciar sessão" })).toBeInTheDocument();
+describe("acesso e dashboard", () => {
+  test("quem já tem sessão e abre o login é levado ao dashboard", async () => {
+    mockApi((url) => (url.endsWith("/auth/me") ? json(200, { data: { user: USER } }) : apiError(404, "NOT_FOUND")));
+    renderApp("/login");
+    await waitFor(() => expect(redirectTo).toHaveBeenCalledWith("/app/"));
   });
 
-  test("com sessão válida mostra só dados reais e permite terminar sessão", async () => {
-    let loggedOut = false;
-    mockApi((url) => {
-      if (url.endsWith("/auth/me")) return loggedOut ? apiError(401, "UNAUTHENTICATED") : json(200, { data: { user: USER } });
-      if (url.endsWith("/auth/logout")) {
-        loggedOut = true;
-        return json(200, { data: { loggedOut: true } });
-      }
-      return apiError(404, "NOT_FOUND");
-    });
-    const user = userEvent.setup();
-    renderApp("/dashboard");
-    expect(await screen.findByRole("heading", { name: "Olá, Maria Teste" })).toBeInTheDocument();
-    expect(screen.getByText("Ativa")).toBeInTheDocument();
-    expect(screen.getByText("Por verificar")).toBeInTheDocument();
-    expect(screen.getByText("Ainda não há nada para mostrar.")).toBeInTheDocument();
-    expect(document.body.textContent).not.toMatch(/Kz|AOA|\d+[.,]\d{2}/); // nenhum saldo inventado
-    await user.click(screen.getByRole("button", { name: "Terminar sessão" }));
+  test("endereços desconhecidos levam ao login", async () => {
+    mockApi(anonymous);
+    renderApp("/qualquer-coisa");
     expect(await screen.findByRole("heading", { name: "Iniciar sessão" })).toBeInTheDocument();
+    expect(redirectTo).not.toHaveBeenCalled();
   });
 
   test("nenhum token fica em localStorage ou sessionStorage", async () => {
@@ -224,7 +216,7 @@ describe("rotas protegidas e início", () => {
     await user.type(await screen.findByLabelText("Email"), "maria@example.com");
     await user.type(screen.getByLabelText("Palavra-passe"), "uma-palavra-passe-longa");
     await user.click(screen.getByRole("button", { name: "Entrar" }));
-    await screen.findByRole("heading", { name: "Olá, Maria Teste" });
+    await waitFor(() => expect(redirectTo).toHaveBeenCalled());
     const stored = JSON.stringify({ ...window.localStorage }) + JSON.stringify({ ...window.sessionStorage });
     expect(stored).not.toMatch(/token|session|password|uma-palavra/i);
   });

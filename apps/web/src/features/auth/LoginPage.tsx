@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { loginSchema } from "@kivora/validation";
 import { Alert } from "../../components/ui/Alert.js";
 import { Button } from "../../components/ui/Button.js";
@@ -8,6 +8,7 @@ import { AuthLayout } from "../../components/layout/AuthLayout.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { ApiError } from "../../services/api-client.js";
 import { useAuth } from "./AuthContext.js";
+import { RedirectToDashboard } from "./RedirectToDashboard.js";
 import { fieldErrorKey, formErrorKey, toErrorMap, zodToErrorMap, type FieldErrorMap } from "./form-errors.js";
 import { useFocusFirstError } from "./useFocusFirstError.js";
 
@@ -25,7 +26,7 @@ export function LoginPage() {
 
   useFocusFirstError(errors, FIELD_ORDER, "login");
 
-  if (status === "authenticated") return <Navigate to="/dashboard" replace />;
+  if (status === "authenticated") return <RedirectToDashboard />;
 
   const fieldError = (field: string) => {
     const code = errors[field];

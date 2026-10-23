@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "wallet": "Portefeuille",
+    "plans": "Offres",
+    "deposits": "Dépôts",
+    "withdrawals": "Retraits",
+    "history": "Historique des transactions",
+    "agreements": "Accords et contrats",
+    "verification": "Vérification d’identité",
+    "notifications": "Notifications",
+    "support": "Support et aide",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "menu": "Menu"
+  },
+  "aria": {
+    "back": "Retour",
+    "notifications": "Notifications",
+    "openProfile": "Ouvrir le profil",
+    "closeMenu": "Fermer le menu",
+    "mainNav": "Navigation principale"
+  },
+  "home": {
+    "eyebrow": "VOTRE COMPTE",
+    "title": "Bonjour, {name}",
+    "text": "Consultez l’état du compte et gérez la sécurité.",
+    "button": "Sécurité du compte",
+    "plansTitle": "Offres",
+    "seeAll": "Tout voir",
+    "plansUnavailable": "Les offres ne sont pas encore disponibles.",
+    "accountTitle": "Résumé du compte",
+    "statAccount": "Statut du compte",
+    "statEmail": "E-mail",
+    "recentTitle": "Activité récente",
+    "seeAllRecent": "Tout voir",
+    "recentEmpty": "Il n’y a pas encore d’activité à afficher."
+  },
+  "actions": {
+    "security": "Sécurité",
+    "profile": "Profil",
+    "sessions": "Sessions",
+    "settings": "Paramètres"
+  },
+  "unavailable": {
+    "text": "Cette zone n’est pas encore disponible. Elle sera activée lorsque les services nécessaires seront prêts.",
+    "back": "Retour à l’accueil",
+    "modules": {
+      "wallet": "Consultez le solde et les mouvements du compte.",
+      "plans": "Consultez les offres disponibles et leurs conditions.",
+      "deposits": "Effectuez des dépôts sur votre compte.",
+      "withdrawals": "Demandez des retraits de votre compte.",
+      "history": "Consultez l’historique des transactions.",
+      "agreements": "Consultez et acceptez les accords et contrats.",
+      "verification": "Vérifiez votre identité.",
+      "notifications": "Consultez vos notifications.",
+      "support": "Demandez de l’aide et consultez les réponses."
+    }
+  },
+  "profile": {
+    "personal": "Données personnelles",
+    "contacts": "Contacts",
+    "country": "Pays de résidence",
+    "language": "Langue",
+    "notifications": "Notifications",
+    "password": "Changer le mot de passe",
+    "security": "Sécurité",
+    "sessions": "Sessions actives",
+    "fullName": "Nom complet",
+    "email": "E-mail",
+    "accountStatus": "Statut du compte",
+    "editUnavailable": "La modification des données personnelles n’est pas encore disponible.",
+    "noPhone": "Le téléphone n’est pas encore collecté."
+  },
+  "settings": {
+    "preferences": "Préférences",
+    "language": "Langue",
+    "notifications": "Notifications",
+    "unavailableTag": "Indisponible",
+    "theme": "Thème",
+    "light": "Clair",
+    "dark": "Sombre",
+    "security": "Sécurité",
+    "password": "Changer le mot de passe",
+    "sessions": "Sessions actives",
+    "notificationsSwitch": "Notifications (indisponible)"
+  },
+  "rail": {
+    "tagline": "Une gestion financière simple, sûre et intelligente."
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "home": "Home",
+    "wallet": "Wallet",
+    "plans": "Plans",
+    "deposits": "Deposits",
+    "withdrawals": "Withdrawals",
+    "history": "Transaction history",
+    "agreements": "Agreements and contracts",
+    "verification": "Identity verification",
+    "notifications": "Notifications",
+    "support": "Support and help",
+    "settings": "Settings",
+    "profile": "Profile",
+    "menu": "Menu"
+  },
+  "aria": {
+    "back": "Back",
+    "notifications": "Notifications",
+    "openProfile": "Open profile",
+    "closeMenu": "Close menu",
+    "mainNav": "Main navigation"
+  },
+  "home": {
+    "eyebrow": "YOUR ACCOUNT",
+    "title": "Hello, {name}",
+    "text": "Check your account status and manage security.",
+    "button": "Account security",
+    "plansTitle": "Plans",
+    "seeAll": "See all",
+    "plansUnavailable": "Plans are not available yet.",
+    "accountTitle": "Account summary",
+    "statAccount": "Account status",
+    "statEmail": "Email",
+    "recentTitle": "Recent activity",
+    "seeAllRecent": "See all",
+    "recentEmpty": "There is no activity to show yet."
+  },
+  "actions": {
+    "security": "Security",
+    "profile": "Profile",
+    "sessions": "Sessions",
+    "settings": "Settings"
+  },
+  "unavailable": {
+    "text": "This area is not available yet. It will be enabled when the required services are ready.",
+    "back": "Back to home",
+    "modules": {
+      "wallet": "Check your balance and account movements.",
+      "plans": "Check the available plans and their terms.",
+      "deposits": "Make deposits into your account.",
+      "withdrawals": "Request withdrawals from your account.",
+      "history": "Check your transaction history.",
+      "agreements": "Check and accept agreements and contracts.",
+      "verification": "Verify your identity.",
+      "notifications": "Check your notifications.",
+      "support": "Ask for help and read answers."
+    }
+  },
+  "profile": {
+    "personal": "Personal data",
+    "contacts": "Contacts",
+    "country": "Country of residence",
+    "language": "Language",
+    "notifications": "Notifications",
+    "password": "Change password",
+    "security": "Security",
+    "sessions": "Active sessions",
+    "fullName": "Full name",
+    "email": "Email",
+    "accountStatus": "Account status",
+    "editUnavailable": "Editing personal data is not available yet.",
+    "noPhone": "A phone number is not collected yet."
+  },
+  "settings": {
+    "preferences": "Preferences",
+    "language": "Language",
+    "notifications": "Notifications",
+    "unavailableTag": "Unavailable",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "security": "Security",
+    "password": "Change password",
+    "sessions": "Active sessions",
+    "notificationsSwitch": "Notifications (unavailable)"
+  },
+  "rail": {
+    "tagline": "Simple, secure and smart financial management."
+  }
+}

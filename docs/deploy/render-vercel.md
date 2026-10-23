@@ -26,6 +26,10 @@ Estado: a configuração foi validada contra as regras do esquema do Render e os
 4. Se a Vercel mostrar a versão do Node, escolhe 22.x ou superior.
 5. Clica **Deploy**. Anota o URL (`https://….vercel.app`).
 
+## Notas sobre o dashboard (/app)
+
+O dashboard é uma página própria em `/app/`. Depois do login a aplicação passa para lá. As regras de `apps/web/vercel.json` encaminham `/v1/...` para a API, `/app/...` para o dashboard e o resto para o login. O cabeçalho de segurança permite o Google Fonts (usado pelo CSS do dashboard).
+
 ## Parte 3 — Ligar as duas
 
 1. No Render, serviço `kivora-api` → **Environment** → edita `CORS_ALLOWED_ORIGINS` para o URL da Vercel, **sem barra no fim** (por exemplo `https://kivora-web.vercel.app`). Grava: o Render volta a publicar.

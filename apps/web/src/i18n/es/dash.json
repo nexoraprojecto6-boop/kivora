@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "wallet": "Cartera",
+    "plans": "Planes",
+    "deposits": "Depósitos",
+    "withdrawals": "Retiros",
+    "history": "Historial de transacciones",
+    "agreements": "Acuerdos y contratos",
+    "verification": "Verificación de identidad",
+    "notifications": "Notificaciones",
+    "support": "Soporte y ayuda",
+    "settings": "Ajustes",
+    "profile": "Perfil",
+    "menu": "Menú"
+  },
+  "aria": {
+    "back": "Volver",
+    "notifications": "Notificaciones",
+    "openProfile": "Abrir perfil",
+    "closeMenu": "Cerrar menú",
+    "mainNav": "Navegación principal"
+  },
+  "home": {
+    "eyebrow": "SU CUENTA",
+    "title": "Hola, {name}",
+    "text": "Consulte el estado de la cuenta y gestione la seguridad.",
+    "button": "Seguridad de la cuenta",
+    "plansTitle": "Planes",
+    "seeAll": "Ver todos",
+    "plansUnavailable": "Los planes aún no están disponibles.",
+    "accountTitle": "Resumen de la cuenta",
+    "statAccount": "Estado de la cuenta",
+    "statEmail": "Correo electrónico",
+    "recentTitle": "Actividad reciente",
+    "seeAllRecent": "Ver todas",
+    "recentEmpty": "Todavía no hay actividad que mostrar."
+  },
+  "actions": {
+    "security": "Seguridad",
+    "profile": "Perfil",
+    "sessions": "Sesiones",
+    "settings": "Ajustes"
+  },
+  "unavailable": {
+    "text": "Esta área aún no está disponible. Se activará cuando los servicios necesarios estén listos.",
+    "back": "Volver al inicio",
+    "modules": {
+      "wallet": "Consulte el saldo y los movimientos de la cuenta.",
+      "plans": "Consulte los planes disponibles y sus condiciones.",
+      "deposits": "Haga depósitos en su cuenta.",
+      "withdrawals": "Solicite retiros de su cuenta.",
+      "history": "Consulte el historial de transacciones.",
+      "agreements": "Consulte y acepte acuerdos y contratos.",
+      "verification": "Verifique su identidad.",
+      "notifications": "Consulte sus notificaciones.",
+      "support": "Pida ayuda y consulte respuestas."
+    }
+  },
+  "profile": {
+    "personal": "Datos personales",
+    "contacts": "Contactos",
+    "country": "País de residencia",
+    "language": "Idioma",
+    "notifications": "Notificaciones",
+    "password": "Cambiar contraseña",
+    "security": "Seguridad",
+    "sessions": "Sesiones activas",
+    "fullName": "Nombre completo",
+    "email": "Correo electrónico",
+    "accountStatus": "Estado de la cuenta",
+    "editUnavailable": "La edición de los datos personales aún no está disponible.",
+    "noPhone": "El teléfono aún no se recoge."
+  },
+  "settings": {
+    "preferences": "Preferencias",
+    "language": "Idioma",
+    "notifications": "Notificaciones",
+    "unavailableTag": "No disponible",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "security": "Seguridad",
+    "password": "Cambiar contraseña",
+    "sessions": "Sesiones activas",
+    "notificationsSwitch": "Notificaciones (no disponible)"
+  },
+  "rail": {
+    "tagline": "Gestión financiera simple, segura e inteligente."
+  }
+}

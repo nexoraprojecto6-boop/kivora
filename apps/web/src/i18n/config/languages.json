@@ -22,6 +22,7 @@
     "common",
     "auth",
     "dashboard",
-    "account"
+    "account",
+    "dash"
   ]
 }

@@ -1,0 +1,91 @@
+{
+  "nav": {
+    "home": "Início",
+    "wallet": "Carteira",
+    "plans": "Planos",
+    "deposits": "Depósitos",
+    "withdrawals": "Levantamentos",
+    "history": "Histórico de Transações",
+    "agreements": "Acordos e Contratos",
+    "verification": "Verificação de identidade",
+    "notifications": "Notificações",
+    "support": "Suporte e Ajuda",
+    "settings": "Definições",
+    "profile": "Perfil",
+    "menu": "Menu"
+  },
+  "aria": {
+    "back": "Voltar",
+    "notifications": "Notificações",
+    "openProfile": "Abrir perfil",
+    "closeMenu": "Fechar menu",
+    "mainNav": "Navegação principal"
+  },
+  "home": {
+    "eyebrow": "A SUA CONTA",
+    "title": "Olá, {name}",
+    "text": "Consulte o estado da conta e gira a segurança.",
+    "button": "Segurança da conta",
+    "plansTitle": "Planos",
+    "seeAll": "Ver todos",
+    "plansUnavailable": "Os planos ainda não estão disponíveis.",
+    "accountTitle": "Resumo da conta",
+    "statAccount": "Estado da conta",
+    "statEmail": "Email",
+    "recentTitle": "Atividade recente",
+    "seeAllRecent": "Ver todas",
+    "recentEmpty": "Ainda não há atividade para mostrar."
+  },
+  "actions": {
+    "security": "Segurança",
+    "profile": "Perfil",
+    "sessions": "Sessões",
+    "settings": "Definições"
+  },
+  "unavailable": {
+    "text": "Esta área ainda não está disponível. Será ativada quando os serviços necessários estiverem prontos.",
+    "back": "Voltar ao início",
+    "modules": {
+      "wallet": "Consulte o saldo e os movimentos da conta.",
+      "plans": "Consulte os planos disponíveis e as suas condições.",
+      "deposits": "Faça depósitos na sua conta.",
+      "withdrawals": "Peça levantamentos da sua conta.",
+      "history": "Consulte o histórico de transações.",
+      "agreements": "Consulte e aceite acordos e contratos.",
+      "verification": "Verifique a sua identidade.",
+      "notifications": "Consulte as suas notificações.",
+      "support": "Peça ajuda e consulte respostas."
+    }
+  },
+  "profile": {
+    "personal": "Dados pessoais",
+    "contacts": "Contactos",
+    "country": "País de residência",
+    "language": "Idioma",
+    "notifications": "Notificações",
+    "password": "Alterar palavra-passe",
+    "security": "Segurança",
+    "sessions": "Sessões ativas",
+    "fullName": "Nome completo",
+    "email": "Email",
+    "accountStatus": "Estado da conta",
+    "editUnavailable": "A edição dos dados pessoais ainda não está disponível.",
+    "noPhone": "O telefone ainda não é recolhido."
+  },
+  "settings": {
+    "preferences": "Preferências",
+    "language": "Idioma",
+    "notifications": "Notificações",
+    "unavailableTag": "Indisponível",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "security": "Segurança",
+    "password": "Alterar palavra-passe",
+    "sessions": "Sessões ativas",
+    "notificationsSwitch": "Notificações (indisponível)"
+  },
+  "rail": {
+    "tagline": "Gestão financeira simples, segura e inteligente."
+  }
+}
