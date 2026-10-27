@@ -38,7 +38,7 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { SUPPORTED_LANGUAGES, isLanguageCode } from "../i18n/resources.js"
 import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
-import { LogoMark } from "../brand/index.js"
+import { Logo } from "../brand/index.js"
 import { demoEnabled } from "./demo.js"
 import {
   AgreementsPage, DepositPage, HistoryPage, HomeDemo, NotificationsPage, PlanDetailPage, PlansPage,
@@ -107,15 +107,6 @@ function useStatusLabels() {
 
 type IconType = typeof Home
 
-function Logo() {
-  return (
-    <div className="logo" aria-label="Kivora">
-      <LogoMark size={30} />
-      <span>KIVORA</span>
-    </div>
-  )
-}
-
 function IconButton({
   label,
   children,
@@ -161,7 +152,7 @@ export function Header({ title, back = false }: { title?: string; back?: boolean
             </strong>
           </div>
         ) : (
-          <Logo />
+          <Logo height={32} />
         )}
         <div className="header-actions">
           <IconButton label={t("dash.aria.notifications")} onClick={() => navigate("/notifications")}>
@@ -203,7 +194,7 @@ function ProfileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
       <button className="drawer-scrim" aria-label={t("dash.aria.closeMenu")} onClick={onClose} />
       <aside className="drawer">
         <div className="drawer-head">
-          <Logo />
+          <Logo height={30} onDark />
           <IconButton label={t("dash.aria.closeMenu")} onClick={onClose}>
             <X size={20} />
           </IconButton>
@@ -910,7 +901,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <div className="desktop-rail">
-        <Logo />
+        <Logo height={52} onDark />
         <p>{t("dash.rail.tagline")}</p>
       </div>
       <div className="mobile-app" style={COLUMN_WIDTH}>
@@ -981,13 +972,13 @@ export function Gate({ children }: { children: ReactNode }) {
     return (
       <div className="app-shell">
         <div className="desktop-rail">
-          <Logo />
+          <Logo height={52} onDark />
           <p>{t("dash.rail.tagline")}</p>
         </div>
         <div className="mobile-app" style={COLUMN_WIDTH}>
           <main className="page">
             <header className="topbar">
-              <Logo />
+              <Logo height={32} />
             </header>
             <p role="status">{t("common.states.loading")}</p>
           </main>

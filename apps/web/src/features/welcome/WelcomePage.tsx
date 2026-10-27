@@ -65,7 +65,7 @@ export function WelcomePage() {
   return (
     <div className="wl">
       <header className="wl-header">
-        <Link to="/" aria-label={t("common.app.name")}><Logo /></Link>
+        <Link to="/" aria-label={t("common.app.name")}><Logo height={34} /></Link>
         <nav className="wl-actions" aria-label={t("common.app.name")}>
           {status === "authenticated" ? (
             <a className="wl-btn wl-btn--solid" href={DASHBOARD_URL}>{w("openAccount")}</a>
@@ -126,7 +126,7 @@ export function WelcomePage() {
       </main>
 
       <footer className="wl-footer">
-        <Logo />
+        <Logo height={28} />
         <p>{w("risk")}</p>
         <div className="wl-footer__row">
           <LanguageSelect />

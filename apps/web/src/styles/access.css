@@ -3,11 +3,8 @@
  * Carregado depois de global.css. Usa só variáveis de tokens.css, mais tons de apoio locais.
  */
 
-.logo-lockup { display: inline-flex; align-items: center; gap: 10px; color: var(--color-text); }
-.auth-layout__header .logo-lockup, .dashboard .auth-layout__header .logo-lockup { color: var(--color-on-surface-dark); }
 .brand-link { text-decoration: none; }
 .brand-link:focus-visible { outline-color: var(--color-focus-on-dark); }
-.logo-lockup__name { font-weight: var(--font-weight-bold); font-size: var(--font-size-xl); letter-spacing: 0.06em; }
 
 /* ---------- Olho dentro do campo (todas as páginas de acesso) ---------- */
 .field__control { position: relative; }
