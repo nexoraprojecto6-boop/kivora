@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 /** Se mudares o logótipo de propósito, actualiza este valor (sha256 de logo-mark.svg). */
-const EXPECTED_SHA256 = "84e62d98b0fa4d9154280b2cd7976008a15408279fb8b90548289e3ee23dd5e2";
+const EXPECTED_SHA256 = "8d42a66cb5360792ac94c79e6bd2deded4dadb29088e6fc831973450ab1490cb";
 
 test("o ficheiro do logótipo não foi alterado", () => {
   const file = join(dirname(fileURLToPath(import.meta.url)), "logo-mark.svg");

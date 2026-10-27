@@ -10,7 +10,7 @@ export function AuthLayout({ title, children }: { title: string; children: React
   return (
     <div className="auth-layout">
       <header className="auth-layout__header">
-        <Link to="/" className="brand-link" aria-label={t("common.app.name")}><Logo height={30} onDark /></Link>
+        <Link to="/" className="brand-link" aria-label={t("common.app.name")}><Logo height={30} /></Link>
         <LanguageSelect />
       </header>
       <main className="auth-layout__main">

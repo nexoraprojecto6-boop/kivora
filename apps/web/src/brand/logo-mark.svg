@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1105" height="320" viewBox="0 0 1105 320" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" width="1021" height="244" viewBox="42 32 1021 244" fill="none">
   <defs>
     <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#1677FF"/>
@@ -10,30 +10,35 @@
     </linearGradient>
   </defs>
 
-  <!-- K estilizado -->
-  <path d="M52 55 Q52 42 66 42 H104 Q118 42 118 56 V132 L184 51 Q191 42 204 42 H246 Q258 42 250 54 L178 141 L258 250 Q267 264 249 264 H205 Q193 264 185 252 L130 174 L118 188 V250 Q118 264 104 264 H66 Q52 264 52 250 Z" fill="url(#blue)"/>
-  <path d="M62 225 C91 187 133 159 196 137 L174 166 C130 187 94 211 63 250 Z" fill="url(#gold)"/>
+  <!-- Fundo transparente. Borda branca fina: traço desenhado por baixo do preenchimento (só a metade de fora aparece). -->
+  <g stroke="#FFFFFF" stroke-width="10" stroke-linejoin="round" paint-order="stroke">
+    <!-- K -->
+    <path d="M52 55 Q52 42 66 42 H104 Q118 42 118 56 V132 L184 51 Q191 42 204 42 H246 Q258 42 250 54 L178 141 L258 250 Q267 264 249 264 H205 Q193 264 185 252 L130 174 L118 188 V250 Q118 264 104 264 H66 Q52 264 52 250 Z" fill="url(#blue)"/>
+    <path d="M62 225 C91 187 133 159 196 137 L174 166 C130 187 94 211 63 250 Z" fill="url(#gold)"/>
 
-  <!-- i -->
-  <path d="M291 111 Q291 101 301 101 H326 Q336 101 336 111 V253 Q336 263 326 263 H301 Q291 263 291 253 Z" fill="url(#blue)"/>
-  <circle cx="313.5" cy="69" r="17" fill="url(#gold)"/>
+    <!-- i -->
+    <path d="M291 111 Q291 101 301 101 H326 Q336 101 336 111 V253 Q336 263 326 263 H301 Q291 263 291 253 Z" fill="url(#blue)"/>
+    <circle cx="313.5" cy="69" r="17" fill="url(#gold)"/>
 
-  <!-- v -->
-  <path d="M353 112 Q347 101 360 101 H386 Q395 101 399 110 L431 184 L463 110 Q467 101 477 101 H503 Q516 101 510 113 L453 254 Q449 263 439 263 H424 Q414 263 410 254 Z" fill="url(#blue)"/>
+    <!-- v -->
+    <path d="M353 112 Q347 101 360 101 H386 Q395 101 399 110 L431 184 L463 110 Q467 101 477 101 H503 Q516 101 510 113 L453 254 Q449 263 439 263 H424 Q414 263 410 254 Z" fill="url(#blue)"/>
 
-  <!-- o financeiro -->
-  <circle cx="630" cy="181" r="83" fill="url(#blue)"/>
-  <circle cx="630" cy="181" r="51" fill="#FFFFFF"/>
-  <rect x="594" y="185" width="15" height="34" rx="4" fill="url(#gold)"/>
-  <rect x="616" y="166" width="15" height="53" rx="4" fill="url(#gold)"/>
-  <rect x="638" y="143" width="15" height="76" rx="4" fill="url(#gold)"/>
+    <!-- o: anel com centro vazado (transparente) -->
+    <path fill-rule="evenodd" d="M547 181 A83 83 0 1 1 713 181 A83 83 0 1 1 547 181 Z M579 181 A51 51 0 1 0 681 181 A51 51 0 1 0 579 181 Z" fill="url(#blue)"/>
+    <rect x="594" y="185" width="15" height="34" rx="4" fill="url(#gold)"/>
+    <rect x="616" y="166" width="15" height="53" rx="4" fill="url(#gold)"/>
+    <rect x="638" y="143" width="15" height="76" rx="4" fill="url(#gold)"/>
+    <path d="M654 177 L675 166 L672 190 Z" fill="url(#gold)"/>
+
+    <!-- r -->
+    <path d="M739 101 H764 Q774 101 774 111 V126 C790 106 815 98 842 98 H858 Q868 98 868 108 V128 Q868 138 858 138 H848 C805 138 774 156 774 196 V253 Q774 263 764 263 H739 Q729 263 729 253 V111 Q729 101 739 101 Z" fill="url(#blue)"/>
+
+    <!-- a -->
+    <path d="M887 181 A83 83 0 1 1 1053 181 A83 83 0 1 1 887 181 Z M927 181 A43 43 0 1 0 1013 181 A43 43 0 1 0 927 181 Z M1018 101 H1043 Q1053 101 1053 111 V253 Q1053 263 1043 263 H1018 Q1008 263 1008 253 V111 Q1008 101 1018 101 Z" fill="url(#blue)"/>
+  </g>
+
+  <!-- seta do o (traços dourados com contorno branco por baixo) -->
+  <path d="M588 222 C614 227 649 212 670 177" stroke="#FFFFFF" stroke-width="19" stroke-linecap="round"/>
   <path d="M588 222 C614 227 649 212 670 177" stroke="url(#gold)" stroke-width="9" stroke-linecap="round"/>
-  <path d="M654 177 L675 166 L672 190 Z" fill="url(#gold)"/>
   <path d="M580 235 C611 248 648 241 675 218" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
-
-  <!-- r: haste com braço curvo -->
-  <path d="M739 101 H764 Q774 101 774 111 V126 C790 106 815 98 842 98 H858 Q868 98 868 108 V128 Q868 138 858 138 H848 C805 138 774 156 774 196 V253 Q774 263 764 263 H739 Q729 263 729 253 V111 Q729 101 739 101 Z" fill="url(#blue)"/>
-
-  <!-- a: bojo redondo com haste à direita (um só caminho, regra nonzero) -->
-  <path d="M887 181 A83 83 0 1 1 1053 181 A83 83 0 1 1 887 181 Z M927 181 A43 43 0 1 0 1013 181 A43 43 0 1 0 927 181 Z M1018 101 H1043 Q1053 101 1053 111 V253 Q1053 263 1043 263 H1018 Q1008 263 1008 253 V111 Q1008 101 1018 101 Z" fill="url(#blue)"/>
 </svg>
