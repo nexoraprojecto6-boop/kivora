@@ -181,13 +181,15 @@ describe("áreas que o servidor ainda não suporta", () => {
     expect(await screen.findByRole("heading", { name: "Olá, Maria" })).toBeInTheDocument()
   })
 
-  test("a barra de baixo tem as 5 ligações com a página activa assinalada", async () => {
+  test("a barra de baixo tem Início, Notificações, Planos ao centro, Perfil e Carteira", async () => {
     mockApi()
     renderDashboard("/wallet")
     await screen.findByRole("heading", { name: "Carteira", level: 1 })
     const nav = screen.getAllByRole("navigation", { name: "Navegação principal" }).find((n) => n.classList.contains("bottom-nav"))!
     const links = within(nav).getAllByRole("link")
-    expect(links.map((l) => l.getAttribute("href"))).toEqual(["/", "/wallet", "/plans", "/notifications", "/profile"])
+    expect(links.map((l) => l.getAttribute("href"))).toEqual(["/", "/notifications", "/plans", "/wallet"])
+    expect(within(nav).getAllByRole("button")).toHaveLength(1)
+    expect(within(nav).getByRole("button", { name: "Perfil" })).toBeInTheDocument()
     expect(within(nav).getByRole("link", { name: "Carteira" })).toHaveClass("active")
   })
 })

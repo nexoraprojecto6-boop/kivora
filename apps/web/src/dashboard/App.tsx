@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react"
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -18,7 +18,6 @@ import {
   Languages,
   LockKeyhole,
   LogOut,
-  Menu,
   Moon,
   PieChart,
   Settings,
@@ -125,11 +124,21 @@ function IconButton({
   )
 }
 
+/** Estado da gaveta do perfil, partilhado entre o cabeçalho (avatar) e a barra de baixo (Perfil). */
+const ProfileDrawerContext = createContext<{ open: boolean; setOpen: (open: boolean) => void }>({
+  open: false,
+  setOpen: () => {},
+})
+
+function useProfileDrawer() {
+  return useContext(ProfileDrawerContext)
+}
+
 export function Header({ title, back = false }: { title?: string; back?: boolean }) {
   const navigate = useNavigate()
   const { t } = useI18n()
   const { user } = useAuth()
-  const [open, setOpen] = useState(false)
+  const { setOpen } = useProfileDrawer()
   const initials = user ? initialsOf(user.fullName) : ""
 
   // Sem página anterior (por exemplo, acesso directo por endereço) volta ao início.
@@ -163,7 +172,6 @@ export function Header({ title, back = false }: { title?: string; back?: boolean
           </button>
         </div>
       </header>
-      <ProfileDrawer open={open} onClose={() => setOpen(false)} />
     </>
   )
 }
@@ -233,21 +241,30 @@ function ProfileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
 
 function BottomNav() {
   const { t } = useI18n()
+  const { open, setOpen } = useProfileDrawer()
+  // Ordem: Início, Notificações, Planos (ao centro), Perfil (abre o menu) e Carteira.
   const items = [
     ["home", Home, "/"],
-    ["wallet", WalletCards, "/wallet"],
-    ["plans", PieChart, "/plans"],
     ["notifications", Bell, "/notifications"],
-    ["menu", Menu, "/profile"],
+    ["plans", PieChart, "/plans"],
+    ["profile", null, null],
+    ["wallet", WalletCards, "/wallet"],
   ] as const
   return (
     <nav className="bottom-nav" aria-label={t("dash.aria.mainNav")}>
-      {items.map(([key, Icon, href]) => (
-        <NavLink key={key} to={href} end={href === "/"} className={({ isActive }) => (isActive ? "active" : "")}>
-          <Icon size={19} />
-          <span>{t(`dash.nav.${key}`)}</span>
-        </NavLink>
-      ))}
+      {items.map(([key, Icon, href]) =>
+        href === null || Icon === null ? (
+          <button key={key} type="button" className={open ? "active" : ""} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+            <UserRound size={19} />
+            <span>{t(`dash.nav.${key}`)}</span>
+          </button>
+        ) : (
+          <NavLink key={key} to={href} end={href === "/"} className={({ isActive }) => (isActive ? "active" : "")}>
+            <Icon size={19} />
+            <span>{t(`dash.nav.${key}`)}</span>
+          </NavLink>
+        ),
+      )}
     </nav>
   )
 }
@@ -886,6 +903,8 @@ const TITLE_KEYS: Record<string, string> = {
 export function AppShell() {
   const location = useLocation()
   const { t, language } = useI18n()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawer = useMemo(() => ({ open: drawerOpen, setOpen: setDrawerOpen }), [drawerOpen])
 
   useEffect(() => {
     applyTheme(readTheme())
@@ -904,10 +923,13 @@ export function AppShell() {
         <Logo height={52} />
         <p>{t("dash.rail.tagline")}</p>
       </div>
-      <div className="mobile-app" style={COLUMN_WIDTH}>
-        <DashboardRoutes />
-        <BottomNav />
-      </div>
+      <ProfileDrawerContext.Provider value={drawer}>
+        <div className="mobile-app" style={COLUMN_WIDTH}>
+          <DashboardRoutes />
+          <BottomNav />
+          <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        </div>
+      </ProfileDrawerContext.Provider>
     </div>
   )
 }
