@@ -1,10 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 34 34">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" fill="none">
   <defs>
-    <linearGradient id="kivoraMark" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#175bff"/>
-      <stop offset="1" stop-color="#0d42ca"/>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1677FF"/>
+      <stop offset="100%" stop-color="#073BA8"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFD928"/>
+      <stop offset="100%" stop-color="#F5A900"/>
     </linearGradient>
   </defs>
-  <rect width="34" height="34" rx="10" fill="url(#kivoraMark)"/>
-  <path d="M11 8v18M11 17l10-9M14.5 15l8.5 11" stroke="#ffd447" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- K estilizado -->
+  <path d="M52 55 Q52 42 66 42 H104 Q118 42 118 56 V132 L184 51 Q191 42 204 42 H246 Q258 42 250 54 L178 141 L258 250 Q267 264 249 264 H205 Q193 264 185 252 L130 174 L118 188 V250 Q118 264 104 264 H66 Q52 264 52 250 Z" fill="url(#blue)"/>
+  <path d="M62 225 C91 187 133 159 196 137 L174 166 C130 187 94 211 63 250 Z" fill="url(#gold)"/>
+
+  <!-- i -->
+  <path d="M291 111 Q291 101 301 101 H326 Q336 101 336 111 V253 Q336 263 326 263 H301 Q291 263 291 253 Z" fill="url(#blue)"/>
+  <circle cx="313.5" cy="69" r="17" fill="url(#gold)"/>
+
+  <!-- v -->
+  <path d="M353 112 Q347 101 360 101 H386 Q395 101 399 110 L431 184 L463 110 Q467 101 477 101 H503 Q516 101 510 113 L453 254 Q449 263 439 263 H424 Q414 263 410 254 Z" fill="url(#blue)"/>
+
+  <!-- o financeiro -->
+  <circle cx="630" cy="181" r="83" fill="url(#blue)"/>
+  <circle cx="630" cy="181" r="51" fill="#FFFFFF"/>
+  <rect x="594" y="185" width="15" height="34" rx="4" fill="url(#gold)"/>
+  <rect x="616" y="166" width="15" height="53" rx="4" fill="url(#gold)"/>
+  <rect x="638" y="143" width="15" height="76" rx="4" fill="url(#gold)"/>
+  <path d="M588 222 C614 227 649 212 670 177" stroke="url(#gold)" stroke-width="9" stroke-linecap="round"/>
+  <path d="M654 177 L675 166 L672 190 Z" fill="url(#gold)"/>
+  <path d="M580 235 C611 248 648 241 675 218" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- r -->
+  <path d="M729 102 H755 Q766 102 766 113 V126 Q783 98 818 98 Q861 98 884 128 Q907 158 907 202 Q907 230 895 250 Q883 267 862 267 Q851 267 846 258 L837 241 Q823 263 794 263 H729 Q718 263 718 252 V113 Q718 102 729 102 Z" fill="url(#blue)"/>
+
+  <!-- a -->
+  <path d="M939 111 Q929 101 939 101 H964 Q974 101 974 111 V126 Q991 98 1024 98 Q1067 98 1090 128 Q1113 158 1113 202 Q1113 230 1101 250 Q1089 267 1068 267 Q1057 267 1052 258 L1043 241 Q1029 263 1000 263 H939 Q929 263 929 252 Z" fill="url(#blue)"/>
 </svg>
