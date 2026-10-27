@@ -1,0 +1,10 @@
+:root { --kv-blue: #0b2a6f; }
+.pm { position: relative; }
+.pm-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #fff; background: transparent; color: #fff; cursor: pointer; overflow: hidden; font: inherit; }
+.pm-btn img { width: 100%; height: 100%; object-fit: cover; }
+.pm-pop { position: absolute; top: calc(100% + 8px); right: 0; min-width: 220px; background: var(--kv-blue); border: 1px solid rgba(255,255,255,.25); border-radius: 12px; padding: 6px; z-index: 50; display: flex; flex-direction: column; }
+.pm-head { padding: 10px 12px; display: flex; flex-direction: column; border-bottom: 1px solid rgba(255,255,255,.15); color: #fff; }
+.pm-head small { opacity: .7; }
+.pm-pop a, .pm-pop button { color: #fff; text-align: left; padding: 10px 12px; border: 0; background: none; border-radius: 8px; cursor: pointer; text-decoration: none; font: inherit; }
+.pm-pop a:hover, .pm-pop button:hover { background: rgba(255,255,255,.1); }
+.pm-pop .danger { color: #ff9b9b; }
