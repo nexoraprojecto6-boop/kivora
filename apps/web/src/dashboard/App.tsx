@@ -18,7 +18,6 @@ import {
   Languages,
   LockKeyhole,
   LogOut,
-  Menu,
   Moon,
   PieChart,
   Settings,
@@ -27,7 +26,6 @@ import {
   Sun,
   UserRound,
   WalletCards,
-  X,
 } from "lucide-react"
 import type { SessionSummary } from "@kivora/shared"
 import { changePasswordSchema } from "@kivora/validation"
@@ -44,6 +42,7 @@ import {
   AgreementsPage, DepositPage, HistoryPage, HomeDemo, NotificationsPage, PlanDetailPage, PlansPage,
   SupportPage, VerificationPage, WalletPage, WithdrawPage,
 } from "./demo-screens.js"
+import "./dashboard-overrides.css"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -107,6 +106,15 @@ function useStatusLabels() {
 
 type IconType = typeof Home
 
+/** Logo sobre fundo azul: sem preenchimento branco, apenas contorno branco fino (ver dashboard-overrides.css). */
+function OutlineLogo({ height }: { height: number }) {
+  return (
+    <span className="logo-outline">
+      <Logo height={height} onDark />
+    </span>
+  )
+}
+
 function IconButton({
   label,
   children,
@@ -140,65 +148,77 @@ export function Header({ title, back = false }: { title?: string; back?: boolean
   }
 
   return (
-    <>
-      <header className="topbar">
-        {back ? (
-          <div className="topbar-title">
-            <IconButton label={t("dash.aria.back")} onClick={goBack}>
-              <ArrowLeft size={20} />
-            </IconButton>
-            <strong role="heading" aria-level={1}>
-              {title}
-            </strong>
-          </div>
-        ) : (
-          <Logo height={32} />
-        )}
-        <div className="header-actions">
-          <IconButton label={t("dash.aria.notifications")} onClick={() => navigate("/notifications")}>
-            <Bell size={20} />
+    <header className="topbar">
+      {back ? (
+        <div className="topbar-title">
+          <IconButton label={t("dash.aria.back")} onClick={goBack}>
+            <ArrowLeft size={20} />
           </IconButton>
-          <button className="avatar" aria-label={`${initials} – ${t("dash.aria.openProfile")}`} onClick={() => setOpen(true)}>
-            {initials}
-          </button>
+          <strong role="heading" aria-level={1}>
+            {title}
+          </strong>
         </div>
-      </header>
-      <ProfileDrawer open={open} onClose={() => setOpen(false)} />
-    </>
+      ) : (
+        <Logo height={32} />
+      )}
+      <div className="header-actions">
+        <IconButton label={t("dash.aria.notifications")} onClick={() => navigate("/notifications")}>
+          <Bell size={20} />
+        </IconButton>
+        <button
+          className="avatar"
+          aria-label={`${initials} – ${t("dash.aria.openProfile")}`}
+          aria-expanded={open}
+          aria-haspopup="true"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {initials}
+        </button>
+        <ProfileDrawer open={open} onClose={() => setOpen(false)} />
+      </div>
+    </header>
   )
 }
 
+/** Opções do menu do perfil: navegação do dashboard + opções do perfil. Para acrescentar uma opção basta uma linha. */
 const menuItems = [
-  ["home", Home, "/"],
-  ["wallet", WalletCards, "/wallet"],
-  ["plans", PieChart, "/plans"],
-  ["deposits", ArrowDownToLine, "/deposit"],
-  ["withdrawals", ArrowUpFromLine, "/withdraw"],
-  ["history", History, "/history"],
-  ["agreements", FileText, "/agreements"],
-  ["verification", Fingerprint, "/verification"],
-  ["notifications", Bell, "/notifications"],
-  ["support", CircleHelp, "/support"],
-  ["settings", Settings, "/settings"],
-  ["profile", UserRound, "/profile"],
+  ["dash.nav.home", Home, "/"],
+  ["dash.nav.wallet", WalletCards, "/wallet"],
+  ["dash.nav.plans", PieChart, "/plans"],
+  ["dash.nav.deposits", ArrowDownToLine, "/deposit"],
+  ["dash.nav.withdrawals", ArrowUpFromLine, "/withdraw"],
+  ["dash.nav.history", History, "/history"],
+  ["dash.nav.agreements", FileText, "/agreements"],
+  ["dash.nav.verification", Fingerprint, "/verification"],
+  ["dash.nav.notifications", Bell, "/notifications"],
+  ["dash.nav.support", CircleHelp, "/support"],
+  ["dash.nav.settings", Settings, "/settings"],
+  ["dash.nav.profile", UserRound, "/profile"],
+  ["dash.profile.security", ShieldCheck, "/security"],
+  ["dash.profile.password", LockKeyhole, "/security/password"],
+  ["dash.profile.sessions", Clock3, "/security/sessions"],
 ] as const
 
+/** Menu do perfil: caixa que abre no canto superior ao clicar no avatar (mesmas classes e atributos da antiga gaveta). */
 function ProfileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
   const { t } = useI18n()
   const { user, logout } = useAuth()
   const status = useStatusLabels()
 
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [open, onClose])
+
   return (
     <div className={`drawer-wrap ${open ? "is-open" : ""}`} aria-hidden={!open} inert={!open}>
       <button className="drawer-scrim" aria-label={t("dash.aria.closeMenu")} onClick={onClose} />
       <aside className="drawer">
-        <div className="drawer-head">
-          <Logo height={30} onDark />
-          <IconButton label={t("dash.aria.closeMenu")} onClick={onClose}>
-            <X size={20} />
-          </IconButton>
-        </div>
         <div className="user-row">
           <span className="avatar large">{user ? initialsOf(user.fullName) : ""}</span>
           <div>
@@ -218,7 +238,7 @@ function ProfileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
               }}
             >
               <Icon size={17} />
-              <span>{t(`dash.nav.${key}`)}</span>
+              <span>{t(key)}</span>
               <ChevronRight size={16} />
             </button>
           ))}
@@ -238,7 +258,6 @@ function BottomNav() {
     ["wallet", WalletCards, "/wallet"],
     ["plans", PieChart, "/plans"],
     ["notifications", Bell, "/notifications"],
-    ["menu", Menu, "/profile"],
   ] as const
   return (
     <nav className="bottom-nav" aria-label={t("dash.aria.mainNav")}>
@@ -901,7 +920,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <div className="desktop-rail">
-        <Logo height={52} onDark />
+        <OutlineLogo height={52} />
         <p>{t("dash.rail.tagline")}</p>
       </div>
       <div className="mobile-app" style={COLUMN_WIDTH}>
@@ -972,7 +991,7 @@ export function Gate({ children }: { children: ReactNode }) {
     return (
       <div className="app-shell">
         <div className="desktop-rail">
-          <Logo height={52} onDark />
+          <OutlineLogo height={52} />
           <p>{t("dash.rail.tagline")}</p>
         </div>
         <div className="mobile-app" style={COLUMN_WIDTH}>

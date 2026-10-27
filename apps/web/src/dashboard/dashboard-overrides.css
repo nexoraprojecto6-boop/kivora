@@ -1,0 +1,28 @@
+/* Sobreposições do dashboard (o CSS original não é alterado).
+   Seletores com prefixo para vencerem as regras antigas da gaveta, independentemente da ordem de carga. */
+
+/* Menu do perfil: abre como caixa no canto superior, junto ao avatar */
+.topbar .header-actions { position: relative; }
+.topbar .drawer-wrap { position: static; inset: auto; z-index: auto; visibility: hidden; }
+.topbar .drawer-wrap.is-open { visibility: visible; }
+.topbar .drawer-wrap .drawer-scrim { position: fixed; inset: 0; z-index: 59; width: 100%; background: transparent; backdrop-filter: none; opacity: 1; }
+.topbar .drawer-wrap .drawer {
+  position: absolute; z-index: 60; top: calc(100% + 10px); right: 0; left: auto;
+  width: min(88vw, 300px); height: auto; max-height: min(72dvh, 580px); padding: 12px;
+  border: 1px solid rgba(255, 255, 255, .2); border-radius: 16px; background: #061f42;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+  transform: translateY(-6px) scale(.98); transform-origin: top right; opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.topbar .drawer-wrap.is-open .drawer { transform: none; opacity: 1; }
+.topbar .drawer-wrap .user-row { padding: 4px 4px 12px; }
+.topbar .drawer-wrap .drawer-nav { min-height: 0; }
+
+/* Barra de baixo sem o botão "Menu": 4 ligações */
+nav.bottom-nav { grid-template-columns: repeat(4, 1fr); }
+
+/* Logo em fundos azuis: sem preenchimento branco, só contorno branco fino */
+.logo-outline svg, .logo-outline svg * {
+  fill: none !important; stroke: #fff !important; stroke-width: 1px !important;
+  vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round;
+}
