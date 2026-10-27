@@ -1,0 +1,16 @@
+/* Extras do modo de exemplo. Não altera index.css (mantido byte a byte). */
+.demo-flash { margin: 0 0 12px; }
+.demo-flash p { color: var(--navy); }
+.stack { display: grid; gap: 12px; }
+.field textarea { width: 100%; min-height: 96px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--navy); background: var(--surface); font: inherit; font-size: 10px; resize: vertical; }
+.check-row { display: flex; gap: 9px; align-items: flex-start; margin: 12px 0; color: var(--muted); font-size: 10px; }
+button.transaction { width: 100%; text-align: left; color: inherit; background: none; }
+.secondary-button { display: flex; width: 100%; min-height: 46px; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; border: 1px solid var(--border); border-radius: 12px; color: var(--navy); font-size: 11px; font-weight: 700; }
+.upload-row { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px; border: 1px dashed var(--border); border-radius: 12px; color: var(--muted); font-size: 10px; }
+.upload-row label { margin-left: auto; color: var(--primary); font-weight: 700; cursor: pointer; }
+.upload-row input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.upload-row:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.notice.unread strong::before { content: "● "; color: var(--primary); }
+.notice { width: 100%; text-align: left; }
+.faq-list small[hidden] { display: none; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

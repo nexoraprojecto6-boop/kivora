@@ -58,3 +58,12 @@ Também ficaram sem indicador de foco visível: o CSS retira o contorno de `butt
 ## Painel administrativo
 
 Não ficou ligado: o servidor ainda não tem funções, permissões nem endpoints de administração, e `apps/admin` não tem código. Ver `docs/api/endpoints.md`.
+
+## Modo de exemplo (lote 18)
+
+Os 9 módulos sem servidor (carteira, planos, depósitos, levantamentos, histórico, acordos, verificação, notificações, suporte) têm agora ecrãs completos e clicáveis em `apps/web/src/dashboard/demo-screens.tsx`, alimentados por dados de exemplo em `demo.ts`. Cada ecrã mostra o aviso "Pré-visualização com dados de exemplo"; nenhuma ação chega ao servidor.
+
+- Ligado por omissão. `VITE_DEMO_UI=false` repõe os ecrãs "indisponível" (é o que os testes existentes usam, em `src/test/setup.ts`).
+- `demo.css` acrescenta só o que falta (textarea, upload, botão secundário, foco visível); `index.css` não foi alterado.
+- Textos novos em `dash.s.*` só em português (en, fr e es usam o português até serem traduzidos).
+- Ao existir um módulo no servidor, substitui-se a leitura de `demo.ts` por chamadas à API nesse ecrã. Antes de produção, desligar o modo de exemplo.

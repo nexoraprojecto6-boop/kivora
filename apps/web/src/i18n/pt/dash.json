@@ -87,5 +87,182 @@
   },
   "rail": {
     "tagline": "Gestão financeira simples, segura e inteligente."
+  },
+  "s": {
+    "banner": "Pré-visualização com dados de exemplo. Nada nesta área é real e nenhuma ação chega ao servidor.",
+    "actionDone": "Ação simulada. Será ligada ao servidor quando o módulo existir.",
+    "kind": {
+      "deposit": "Depósito",
+      "withdraw": "Levantamento",
+      "plan": "Subscrição de plano",
+      "refund": "Estorno"
+    },
+    "kindShort": {
+      "deposit": "Depósitos",
+      "withdraw": "Levantam.",
+      "plan": "Planos"
+    },
+    "status": {
+      "pending": "Pendente",
+      "confirmed": "Confirmado",
+      "rejected": "Rejeitado",
+      "review": "Em revisão"
+    },
+    "statusLabel": "Estado",
+    "reference": "Referência",
+    "tab": {
+      "all": "Tudo",
+      "in": "Entradas",
+      "out": "Saídas",
+      "unread": "Não lidas"
+    },
+    "balanceTitle": "Saldo total (exemplo)",
+    "available": "Disponível",
+    "reserved": "Reservado",
+    "verifyTitle": "Verifique a sua identidade",
+    "verifyText": "Necessário para ativar depósitos e levantamentos.",
+    "chartTitle": "Movimentos (7 dias)",
+    "chartNote": "Gráfico ilustrativo",
+    "filter": {
+      "all": "Todos",
+      "open": "Disponíveis",
+      "soon": "Em breve"
+    },
+    "planTitle": "Plano",
+    "notFound": "Plano não encontrado.",
+    "planText": "Descrição de um plano de exemplo. As condições reais só serão apresentadas depois de definidas, aprovadas e legalmente autorizadas.",
+    "planMin": "Mínimo",
+    "planTerm": "Prazo",
+    "planRisk": "Risco",
+    "planState": "Estado",
+    "months": "{n} meses",
+    "open": "Disponível",
+    "soon": "Em breve",
+    "details": "Detalhes",
+    "risk": {
+      "low": "Baixo",
+      "mid": "Médio",
+      "high": "Alto"
+    },
+    "participation": "Preenchimento",
+    "subscribe": "Subscrever",
+    "reminder": "Avisar-me quando houver novidades",
+    "steps": "Passos",
+    "step": {
+      "amount": "Montante",
+      "method": "Método",
+      "destination": "Destino",
+      "confirm": "Confirmar",
+      "document": "Documento",
+      "selfie": "Selfie"
+    },
+    "amount": "Montante (Kz)",
+    "availableLabel": "Disponível: {amount}",
+    "invalidAmount": "Introduza um montante válido.",
+    "exceeds": "O montante excede o saldo disponível.",
+    "chooseOne": "Escolha uma opção.",
+    "invalidAccount": "Introduza uma conta de destino válida.",
+    "account": "IBAN / número de conta",
+    "method": {
+      "bank": "Transferência bancária",
+      "express": "Pagamento móvel",
+      "ref": "Pagamento por referência"
+    },
+    "methodNote": "Método de exemplo, ainda não configurado.",
+    "methodLabel": "Método",
+    "fee": "Comissão",
+    "tbd": "A definir",
+    "continue": "Continuar",
+    "back": "Voltar",
+    "confirmRequest": "Confirmar pedido",
+    "depositDone": "Pedido de depósito registado (exemplo). Só ficará confirmado quando o servidor verificar o pagamento.",
+    "withdrawDone": "Pedido de levantamento enviado para revisão (exemplo).",
+    "seeHistory": "Ver histórico",
+    "newRequest": "Novo pedido",
+    "search": "Pesquisar",
+    "noResults": "Nenhum resultado.",
+    "loadMore": "Carregar mais",
+    "agreement": {
+      "terms": "Termos e Condições",
+      "privacy": "Política de Privacidade",
+      "risk": "Aviso de risco",
+      "plan": "Acordo de plano (exemplo)"
+    },
+    "version": "Versão {v}",
+    "accepted": "Aceite",
+    "toAccept": "Por aceitar",
+    "agreementText": "Texto de exemplo do acordo. O texto jurídico real será versionado e aprovado antes de ser mostrado.",
+    "acceptCheck": "Li e aceito este acordo",
+    "acceptButton": "Aceitar acordo",
+    "issuingCountry": "País emissor do documento",
+    "docType": "Tipo de documento",
+    "other": "Outro",
+    "doc": {
+      "id": "Bilhete de identidade",
+      "passport": "Passaporte",
+      "residence": "Cartão de residente"
+    },
+    "upload": {
+      "front": "Frente do documento",
+      "back": "Verso do documento",
+      "selfie": "Selfie com o documento"
+    },
+    "chooseFile": "Escolher ficheiro",
+    "selfieText": "Tire uma selfie com o documento visível.",
+    "submitReview": "Enviar para revisão",
+    "verifyDone": "Pedido enviado para revisão (exemplo). O estado real será definido pelo servidor.",
+    "markAll": "Marcar todas como lidas",
+    "noNotifications": "Sem notificações.",
+    "notif": {
+      "n1": {
+        "title": "Depósito confirmado",
+        "body": "O seu depósito de exemplo foi confirmado."
+      },
+      "n2": {
+        "title": "Levantamento em revisão",
+        "body": "O pedido está a ser analisado."
+      },
+      "n3": {
+        "title": "Novo acordo disponível",
+        "body": "Leia e aceite o acordo de exemplo."
+      },
+      "n4": {
+        "title": "Novo início de sessão",
+        "body": "Reveja as sessões ativas se não foi você."
+      }
+    },
+    "faqTitle": "Perguntas frequentes",
+    "faq": {
+      "q1": {
+        "q": "Como verifico a minha identidade?",
+        "a": "Abra Verificação de identidade, envie o documento e aguarde a revisão."
+      },
+      "q2": {
+        "q": "Quanto tempo demora um depósito?",
+        "a": "Depende da confirmação do pagamento pelo servidor. Prazos reais ainda por definir."
+      },
+      "q3": {
+        "q": "Como peço um levantamento?",
+        "a": "Em Levantamentos, indique o montante e a conta de destino. O pedido é revisto antes de ser executado."
+      },
+      "q4": {
+        "q": "Como altero a palavra-passe?",
+        "a": "Em Perfil, Segurança, Alterar palavra-passe."
+      }
+    },
+    "newTicket": "Novo pedido de suporte",
+    "subject": "Assunto",
+    "message": "Mensagem",
+    "send": "Enviar pedido",
+    "myTickets": "Os meus pedidos",
+    "noTickets": "Ainda não há pedidos.",
+    "ticketOpen": "Aberto",
+    "subjects": {
+      "account": "Conta",
+      "deposit": "Depósitos",
+      "withdraw": "Levantamentos",
+      "verification": "Verificação",
+      "other": "Outro"
+    }
   }
 }

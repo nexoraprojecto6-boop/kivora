@@ -38,6 +38,11 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { SUPPORTED_LANGUAGES, isLanguageCode } from "../i18n/resources.js"
 import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
+import { demoEnabled } from "./demo.js"
+import {
+  AgreementsPage, DepositPage, HistoryPage, HomeDemo, NotificationsPage, PlanDetailPage, PlansPage,
+  SupportPage, VerificationPage, WalletPage, WithdrawPage,
+} from "./demo-screens.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -128,7 +133,7 @@ function IconButton({
   )
 }
 
-function Header({ title, back = false }: { title?: string; back?: boolean }) {
+export function Header({ title, back = false }: { title?: string; back?: boolean }) {
   const navigate = useNavigate()
   const { t } = useI18n()
   const { user } = useAuth()
@@ -255,11 +260,11 @@ function BottomNav() {
   )
 }
 
-function Page({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Page({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <main className={`page ${className}`}>{children}</main>
 }
 
-function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
+export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="section-title">
       <h2>{children}</h2>
@@ -268,7 +273,7 @@ function SectionTitle({ children, action }: { children: ReactNode; action?: Reac
   )
 }
 
-function ActionTile({ icon: Icon, label, onClick }: { icon: IconType; label: string; onClick?: () => void }) {
+export function ActionTile({ icon: Icon, label, onClick }: { icon: IconType; label: string; onClick?: () => void }) {
   return (
     <button className="action-tile" onClick={onClick}>
       <span>
@@ -928,13 +933,28 @@ const UNAVAILABLE_ROUTES = [
 ] as const
 
 export function DashboardRoutes() {
+  const demo = demoEnabled()
+  const demoRoutes = [
+    ["/wallet", <WalletPage />],
+    ["/plans", <PlansPage />],
+    ["/plans/:id", <PlanDetailPage />],
+    ["/deposit", <DepositPage />],
+    ["/withdraw", <WithdrawPage />],
+    ["/history", <HistoryPage />],
+    ["/agreements", <AgreementsPage />],
+    ["/verification", <VerificationPage />],
+    ["/notifications", <NotificationsPage />],
+    ["/support", <SupportPage />],
+  ] as const
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      {UNAVAILABLE_ROUTES.map(([path, moduleId]) => (
-        <Route key={path} path={path} element={<UnavailablePage moduleId={moduleId} />} />
-      ))}
-      <Route path="/plans/:id" element={<Navigate to="/plans" replace />} />
+      <Route path="/" element={demo ? <HomeDemo /> : <HomePage />} />
+      {demo
+        ? demoRoutes.map(([path, element]) => <Route key={path} path={path} element={element} />)
+        : UNAVAILABLE_ROUTES.map(([path, moduleId]) => (
+            <Route key={path} path={path} element={<UnavailablePage moduleId={moduleId} />} />
+          ))}
+      {!demo && <Route path="/plans/:id" element={<Navigate to="/plans" replace />} />}
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/data" element={<PersonalDataPage />} />
       <Route path="/profile/contacts" element={<ContactsPage />} />
