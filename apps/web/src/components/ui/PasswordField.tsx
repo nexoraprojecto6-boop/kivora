@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { TextField } from "./TextField.js";
 
@@ -12,7 +13,7 @@ interface PasswordFieldProps {
   error?: string | undefined;
 }
 
-/** Campo de palavra-passe com botão de mostrar/esconder. */
+/** Campo de palavra-passe com um pequeno olho dentro do campo (mostrar/esconder). */
 export function PasswordField({ id, label, value, onChange, autoComplete, hint, error }: PasswordFieldProps) {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
@@ -27,8 +28,14 @@ export function PasswordField({ id, label, value, onChange, autoComplete, hint, 
       hint={hint}
       error={error}
       trailing={
-        <button type="button" className="field__toggle" aria-pressed={visible} onClick={() => setVisible((v) => !v)}>
-          {visible ? t("common.actions.hidePassword") : t("common.actions.showPassword")}
+        <button
+          type="button"
+          className="field__eye"
+          aria-label={visible ? t("common.actions.hidePassword") : t("common.actions.showPassword")}
+          aria-pressed={visible}
+          onClick={() => setVisible((v) => !v)}
+        >
+          {visible ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
         </button>
       }
     />
