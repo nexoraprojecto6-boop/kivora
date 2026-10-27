@@ -1,7 +1,7 @@
 import { Fingerprint, Languages, ScanEye, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSelect } from "../../components/layout/LanguageSelect.js";
-import { Logo } from "../../components/ui/Logo.js";
+import { Logo } from "../../brand/index.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { DASHBOARD_URL } from "../../services/navigation.js";
 import { useAuth } from "../auth/AuthContext.js";

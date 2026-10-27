@@ -11,10 +11,11 @@ interface PasswordFieldProps {
   autoComplete: "current-password" | "new-password";
   hint?: string | undefined;
   error?: string | undefined;
+  placeholder?: string | undefined;
 }
 
 /** Campo de palavra-passe com um pequeno olho dentro do campo (mostrar/esconder). */
-export function PasswordField({ id, label, value, onChange, autoComplete, hint, error }: PasswordFieldProps) {
+export function PasswordField({ id, label, value, onChange, autoComplete, hint, error, placeholder }: PasswordFieldProps) {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   return (
@@ -27,6 +28,7 @@ export function PasswordField({ id, label, value, onChange, autoComplete, hint, 
       onChange={(e) => onChange(e.target.value)}
       hint={hint}
       error={error}
+      placeholder={placeholder}
       trailing={
         <button
           type="button"

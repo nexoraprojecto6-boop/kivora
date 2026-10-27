@@ -6,7 +6,6 @@ import { Button } from "../../components/ui/Button.js";
 import { Logo } from "../../components/ui/Logo.js";
 import { PasswordField } from "../../components/ui/PasswordField.js";
 import { TextField } from "../../components/ui/TextField.js";
-import { LanguageSelect } from "../../components/layout/LanguageSelect.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { ApiError } from "../../services/api-client.js";
 import { useAuth } from "./AuthContext.js";
@@ -57,40 +56,36 @@ export function LoginPage() {
   }
 
   return (
-    <div className="lg">
-      <div className="lg__top"><LanguageSelect /></div>
-      <main className="lg__main">
-        <Link to="/" className="lg__logo" aria-label={t("common.app.name")}><Logo /></Link>
-        <h1 className="lg__title">{t("auth.login.title")}</h1>
-        <p className="lg__sub">{t("auth.login.subtitle")}</p>
-        <form onSubmit={(e) => void onSubmit(e)} noValidate className="form lg__form">
-          {formError ? <Alert>{formError}</Alert> : null}
-          {Object.keys(errors).length > 0 ? <Alert>{t("auth.errors.formSummary")}</Alert> : null}
-          <TextField
-            id="login-email"
-            label={t("auth.login.email")}
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={fieldError("email")}
-          />
-          <PasswordField
-            id="login-password"
-            label={t("auth.login.password")}
-            autoComplete="current-password"
-            value={password}
-            onChange={setPassword}
-            error={fieldError("password")}
-          />
-          <Button type="submit" busy={busy}>
-            {busy ? t("auth.login.submitting") : t("auth.login.submit")}
-          </Button>
-        </form>
-        <p className="lg__foot">
-          {t("auth.login.noAccount")} <Link to="/register">{t("auth.login.createAccount")}</Link>
-        </p>
-      </main>
-    </div>
+    <AuthLayout title={t("auth.login.title")}>
+      <form onSubmit={(e) => void onSubmit(e)} noValidate className="form">
+        {formError ? <Alert>{formError}</Alert> : null}
+        {Object.keys(errors).length > 0 ? <Alert>{t("auth.errors.formSummary")}</Alert> : null}
+        <TextField
+          id="login-email"
+          label={t("auth.login.email")}
+          type="email"
+          autoComplete="username"
+          placeholder={t("auth.login.emailPlaceholder")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={fieldError("email")}
+        />
+        <PasswordField
+          id="login-password"
+          label={t("auth.login.password")}
+          autoComplete="current-password"
+          placeholder={t("auth.login.passwordPlaceholder")}
+          value={password}
+          onChange={setPassword}
+          error={fieldError("password")}
+        />
+        <Button type="submit" busy={busy}>
+          {busy ? t("auth.login.submitting") : t("auth.login.submit")}
+        </Button>
+      </form>
+      <p className="card__footer">
+        {t("auth.login.noAccount")} <Link to="/register">{t("auth.login.createAccount")}</Link>
+      </p>
+    </AuthLayout>
   );
 }

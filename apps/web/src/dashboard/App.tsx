@@ -38,6 +38,7 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { SUPPORTED_LANGUAGES, isLanguageCode } from "../i18n/resources.js"
 import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
+import { LogoMark } from "../brand/index.js"
 import { demoEnabled } from "./demo.js"
 import {
   AgreementsPage, DepositPage, HistoryPage, HomeDemo, NotificationsPage, PlanDetailPage, PlansPage,
@@ -109,7 +110,7 @@ type IconType = typeof Home
 function Logo() {
   return (
     <div className="logo" aria-label="Kivora">
-      <span className="logo-mark">K</span>
+      <LogoMark size={30} />
       <span>KIVORA</span>
     </div>
   )

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { Logo } from "../../brand/index.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { LanguageSelect } from "./LanguageSelect.js";
 
@@ -8,7 +10,7 @@ export function AuthLayout({ title, children }: { title: string; children: React
   return (
     <div className="auth-layout">
       <header className="auth-layout__header">
-        <span className="brand">{t("common.app.name")}</span>
+        <Link to="/" className="brand-link" aria-label={t("common.app.name")}><Logo /></Link>
         <LanguageSelect />
       </header>
       <main className="auth-layout__main">

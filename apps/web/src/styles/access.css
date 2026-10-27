@@ -4,6 +4,9 @@
  */
 
 .logo-lockup { display: inline-flex; align-items: center; gap: 10px; color: var(--color-text); }
+.auth-layout__header .logo-lockup, .dashboard .auth-layout__header .logo-lockup { color: var(--color-on-surface-dark); }
+.brand-link { text-decoration: none; }
+.brand-link:focus-visible { outline-color: var(--color-focus-on-dark); }
 .logo-lockup__name { font-weight: var(--font-weight-bold); font-size: var(--font-size-xl); letter-spacing: 0.06em; }
 
 /* ---------- Olho dentro do campo (todas as páginas de acesso) ---------- */
@@ -17,28 +20,6 @@
   cursor: pointer;
 }
 .field__eye:hover { color: var(--color-primary); }
-
-/* ---------- Login: liso, sem cartão nem bordas ---------- */
-.lg { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-bg); }
-.lg__top { display: flex; justify-content: flex-end; padding: var(--space-3) var(--space-4); }
-.lg .language-select select { border: 0; background: transparent; color: var(--color-text-muted); min-height: 44px; }
-.lg__main { flex: 1; width: 100%; max-width: 24rem; margin: 0 auto; padding: var(--space-4) var(--space-5) var(--space-6); display: flex; flex-direction: column; }
-.lg__logo { align-self: center; margin: var(--space-4) 0 var(--space-6); text-decoration: none; }
-.lg__title { margin: 0; font-size: var(--font-size-3xl); }
-.lg__sub { margin: var(--space-1) 0 var(--space-5); color: var(--color-text-muted); }
-.lg__form { gap: var(--space-4); }
-.lg .field { gap: 6px; }
-.lg .field__label { font-size: var(--font-size-sm); color: var(--color-text-muted); }
-.lg .field__input {
-  min-height: 54px; padding: 0 var(--space-4);
-  background: #eef3fb; border: 0; border-radius: 16px;
-}
-.lg .field__input--error { border: 0; background: var(--color-error-bg); }
-.lg .field__input:focus-visible { outline: var(--focus-ring-width) solid var(--color-focus); outline-offset: 0; background: #fff; }
-.lg .alert { border: 0; }
-.lg .button { width: 100%; min-height: 54px; margin-top: var(--space-2); border: 0; border-radius: 16px; font-size: var(--font-size-lg); }
-.lg__foot { margin: var(--space-5) 0 0; text-align: center; color: var(--color-text-muted); }
-.lg__foot a { font-weight: var(--font-weight-semibold); text-decoration: none; }
 
 /* ---------- Boas-vindas ---------- */
 .wl { background: #fff; color: var(--color-text); }
