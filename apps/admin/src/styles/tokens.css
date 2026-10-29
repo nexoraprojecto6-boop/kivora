@@ -1,0 +1,120 @@
+/*
+ * KIVORA — Tokens de design (apenas variáveis, sem estilos de componentes).
+ * Documentação: docs/frontend/design-tokens.md
+ *
+ * Regra de contraste: o amarelo NUNCA é cor de texto sobre fundo claro
+ * (contraste 1,42). Usa-se como fundo, com texto azul-marinho, ou sobre azul-marinho.
+ */
+
+:root {
+  /* ---------- Paleta base ---------- */
+  --kivora-white: #ffffff;
+  --kivora-blue-600: #175bff; /* azul eléctrico — cor principal */
+  --kivora-blue-700: #0f47cc; /* estado hover da cor principal */
+  --kivora-navy-900: #14233b; /* azul-marinho — texto e contraste */
+  --kivora-yellow-400: #ffd447; /* amarelo — destaque */
+
+  /* ---------- Neutros ---------- */
+  --kivora-gray-50: #f5f7fa;
+  --kivora-gray-300: #c3cad6; /* só divisórias decorativas */
+  --kivora-gray-400: #8a94a6; /* bordas de campos e controlos */
+  --kivora-gray-600: #566176; /* texto secundário */
+
+  /* ---------- Estados ---------- */
+  --kivora-success-700: #0b6b3a;
+  --kivora-success-50: #e6f4ec;
+  --kivora-error-700: #b3261e;
+  --kivora-error-50: #fce8e6;
+  --kivora-warning-700: #7a4f00;
+  --kivora-warning-50: #fff4d1;
+
+  /* ---------- Cores semânticas (usar estas nos componentes) ---------- */
+  --color-bg: var(--kivora-white);
+  --color-bg-subtle: var(--kivora-gray-50);
+  --color-text: var(--kivora-navy-900);
+  --color-text-muted: var(--kivora-gray-600);
+  --color-border: var(--kivora-gray-400);
+  --color-divider: var(--kivora-gray-300);
+
+  --color-primary: var(--kivora-blue-600);
+  --color-primary-hover: var(--kivora-blue-700);
+  --color-on-primary: var(--kivora-white);
+
+  --color-accent: var(--kivora-yellow-400);
+  --color-on-accent: var(--kivora-navy-900);
+
+  --color-surface-dark: var(--kivora-navy-900);
+  --color-on-surface-dark: var(--kivora-white);
+
+  --color-success: var(--kivora-success-700);
+  --color-success-bg: var(--kivora-success-50);
+  --color-error: var(--kivora-error-700);
+  --color-error-bg: var(--kivora-error-50);
+  --color-warning: var(--kivora-warning-700);
+  --color-warning-bg: var(--kivora-warning-50);
+
+  --color-focus: var(--kivora-blue-600);
+  --color-focus-on-dark: var(--kivora-yellow-400);
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
+  /* ---------- Tipografia ---------- */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* ---------- Espaçamento (escala de 4 px) ---------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---------- Forma ---------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 35, 59, 0.08);
+  --shadow-md: 0 4px 12px rgba(20, 35, 59, 0.12);
+
+  /* ---------- Interacção ---------- */
+  --size-touch-min: 2.75rem;
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+
+  /* ---------- Camadas ---------- */
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-normal: 0.01ms;
+  }
+}
