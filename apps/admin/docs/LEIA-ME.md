@@ -16,8 +16,7 @@ Nada foi executado nem testado; a primeira verificação é o *build* da Vercel.
 - **Root Directory:** `apps/admin`. O resto vem do `vercel.json` que está na pasta.
 - Não precisa de variáveis de ambiente: o `vercel.json` reencaminha `/v1/*` para `https://kivora-api-ngf1.onrender.com`,
   por isso o cookie de sessão fica no domínio do admin (igual ao que já faz no `web`).
-- O `installCommand` usa `--no-frozen-lockfile` porque o `pnpm-lock.yaml` ainda não conhece as dependências do admin.
-  Quando abrir um Codespace, corra `pnpm install` na raiz e faça *commit* do `pnpm-lock.yaml`; depois pode voltar a `--frozen-lockfile`.
+- O `pnpm-lock.yaml` incluído neste ZIP já tem o admin; substitua o da raiz do repositório por ele.
 
 ## 3. Permitir o novo domínio na API (obrigatório)
 
