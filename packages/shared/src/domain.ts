@@ -3,10 +3,10 @@
  * Montantes: inteiros na menor unidade da moeda (decisão 7: provisório). Nenhum valor comercial é fixo no código.
  */
 export type RequestStatus = "PENDING" | "CONFIRMED" | "REJECTED" | "CANCELLED";
-export type WithdrawalStatus = "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
+export type WithdrawalRequestStatus = "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
 export type SubscriptionStatus = "PENDING" | "ACTIVE" | "REJECTED" | "CANCELLED";
 export type PlanStatus = "DRAFT" | "COMING_SOON" | "OPEN" | "CLOSED";
-export type VerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type KycStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type VerificationDocType = "ID_CARD" | "PASSPORT" | "RESIDENCE_PERMIT";
 export type VerificationFileKind = "FRONT" | "BACK" | "SELFIE";
 export type TicketStatus = "OPEN" | "ANSWERED" | "CLOSED";
@@ -22,7 +22,7 @@ export interface WalletDto {
   /** Falso enquanto o interruptor FINANCE_ENABLED estiver desligado no servidor (decisão 1). */
   financeEnabled: boolean;
   requireVerification: boolean;
-  verificationStatus: VerificationStatus | "NONE";
+  verificationStatus: KycStatus | "NONE";
 }
 
 export interface PaymentMethodDto {
@@ -58,7 +58,7 @@ export interface WithdrawalDto {
   reference: string;
   amountMinor: number;
   currency: string;
-  status: WithdrawalStatus;
+  status: WithdrawalRequestStatus;
   destination: string;
   decisionNote: string;
   createdAt: string;
@@ -116,7 +116,7 @@ export interface AgreementDto {
 
 export interface VerificationDto {
   id: string;
-  status: VerificationStatus;
+  status: KycStatus;
   docType: VerificationDocType;
   issuingCountry: string;
   rejectionReason: string;
@@ -171,7 +171,7 @@ export interface AdminUserDto {
   status: "ACTIVE" | "LIMITED" | "SUSPENDED";
   role: StaffRole;
   createdAt: string;
-  verificationStatus: VerificationStatus | "NONE";
+  verificationStatus: KycStatus | "NONE";
 }
 
 export interface AdminUserDetailDto extends AdminUserDto {

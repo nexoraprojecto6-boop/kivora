@@ -6,7 +6,7 @@ import {
   type DepositDto,
   type PaymentMethodDto,
   type TransactionDto,
-  type VerificationStatus,
+  type KycStatus,
   type WalletDto,
   type WithdrawalDto,
 } from "@kivora/shared";
@@ -44,7 +44,7 @@ export class PaymentsService {
 
   async wallet(userId: string): Promise<WalletDto> {
     const b = await getBalance(this.pool, userId);
-    const v = await one<{ status: VerificationStatus }>(
+    const v = await one<{ status: KycStatus }>(
       this.pool,
       "SELECT status FROM verification_submissions WHERE user_id = $1 ORDER BY (status = 'APPROVED') DESC, created_at DESC LIMIT 1",
       [userId],
