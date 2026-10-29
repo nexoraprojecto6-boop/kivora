@@ -5,9 +5,11 @@ import {
 } from "lucide-react"
 import type { PaymentMethodDto, PlanDto, TransactionDto, VerificationDocType, VerificationFileKind, WalletDto } from "@kivora/shared"
 import { useNavigate, useParams } from "react-router-dom"
+import { useAuth } from "../features/auth/AuthContext.js"
 import { useI18n } from "../i18n/I18nProvider.js"
 import { ApiError, platformApi } from "../services/api-client.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
+import { InviteCard } from "./invite.js"
 
 /* ============================== base: carregar, erros, dinheiro ============================== */
 
@@ -130,6 +132,28 @@ function BalanceCard({ w }: { w: WalletDto }) {
   )
 }
 
+/** Resumo da conta (estado e email). Vive na carteira, junto ao histórico de transações. */
+function AccountSummary() {
+  const { t } = useI18n()
+  const { user } = useAuth()
+  if (!user) return null
+  return (
+    <>
+      <SectionTitle>{t("dash.home.accountTitle")}</SectionTitle>
+      <div className="account-grid">
+        <div className="stat-card">
+          <span><ShieldCheck size={17} /> {t("dash.home.statAccount")}</span>
+          <strong>{t(`dashboard.status.${user.status}`)}</strong>
+        </div>
+        <div className="stat-card">
+          <span><Fingerprint size={17} /> {t("dash.home.statEmail")}</span>
+          <strong>{user.emailVerified ? t("dashboard.emailVerified") : t("dashboard.emailNotVerified")}</strong>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function TxRow({ tx, currency, open, onClick }: { tx: TransactionDto; currency: string; open?: boolean; onClick?: () => void }) {
   const s = useS()
   const m = useMoney(currency)
@@ -186,7 +210,6 @@ export function HomeLive() {
   const { t } = useI18n()
   const wallet = useLoad(() => platformApi.wallet(), [])
   const plans = useLoad(() => platformApi.plans(), [])
-  const txs = useLoad(() => platformApi.transactions({}), [])
   return (
     <>
       <Load q={wallet}>{(w) => (
@@ -199,14 +222,11 @@ export function HomeLive() {
             <ActionTile icon={PieChart} label={t("dash.nav.plans")} onClick={() => navigate("/plans")} />
             <ActionTile icon={FileText} label={t("dash.nav.agreements")} onClick={() => navigate("/agreements")} />
           </div>
+          <InviteCard />
           <SectionTitle action={<button className="text-button" onClick={() => navigate("/plans")}>{t("dash.home.seeAll")}</button>}>{t("dash.home.plansTitle")}</SectionTitle>
           <Load q={plans}>{(list) => list.length === 0
             ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyPlans")}</p></div>
             : <div className="plan-scroll">{list.slice(0, 3).map((p, i) => <PlanCard key={p.id} plan={p} index={i} currency={w.currency} compact />)}</div>}</Load>
-          <SectionTitle action={<button className="text-button" onClick={() => navigate("/history")}>{t("dash.home.seeAllRecent")}</button>}>{t("dash.home.recentTitle")}</SectionTitle>
-          <Load q={txs}>{(r) => r.items.length === 0
-            ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyHistory")}</p></div>
-            : <div className="list-card">{r.items.slice(0, 4).map((x) => <TxRow key={x.id} tx={x} currency={w.currency} />)}</div>}</Load>
         </>
       )}</Load>
     </>
@@ -234,6 +254,7 @@ export function WalletPage() {
             <ActionTile icon={Receipt} label={t("dash.nav.history")} onClick={() => navigate("/history")} />
             <ActionTile icon={PieChart} label={t("dash.nav.plans")} onClick={() => navigate("/plans")} />
           </div>
+          <AccountSummary />
           <SectionTitle>{t("dash.nav.history")}</SectionTitle>
           <Load q={txs}>{(r) => r.items.length === 0
             ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyHistory")}</p></div>

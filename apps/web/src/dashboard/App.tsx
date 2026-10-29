@@ -2,7 +2,6 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import {
   ArrowDownToLine,
   ArrowLeft,
-  ArrowRight,
   ArrowUpFromLine,
   Bell,
   Check,
@@ -294,69 +293,23 @@ export function ActionTile({ icon: Icon, label, onClick }: { icon: IconType; lab
 
 /* ------------------------------------------------------------------ Início */
 
+/**
+ * Início: só o cartão da carteira (saldo), atalhos, convite de amigos e planos.
+ * O resumo da conta e a atividade recente passaram para a página Carteira (histórico de transações).
+ */
 function HomePage() {
   const navigate = useNavigate()
   const { t } = useI18n()
-  const { user } = useAuth()
-  const status = useStatusLabels()
-  const firstName = user?.fullName.trim().split(/\s+/)[0] ?? ""
 
   return (
     <Page>
       <Header />
-      <section className="hero-card">
-        <div>
-          <span className="eyebrow">{t("dash.home.eyebrow")}</span>
-          <h1>{t("dash.home.title", { name: firstName })}</h1>
-          <p>{t("dash.home.text")}</p>
-          <button onClick={() => navigate("/security")}>
-            {t("dash.home.button")} <ArrowRight size={16} />
-          </button>
-        </div>
-        <div className="hero-art" aria-hidden="true">
-          <span className="bar b1" />
-          <span className="bar b2" />
-          <span className="bar b3" />
-          <ArrowUpFromLine size={40} />
-        </div>
-      </section>
       <HomeLive />
-      <SectionTitle>{t("dash.home.accountTitle")}</SectionTitle>
-      <div className="account-grid">
-        <div className="stat-card">
-          <span>
-            <ShieldCheck size={17} /> {t("dash.home.statAccount")}
-          </span>
-          <strong>{status.account}</strong>
-        </div>
-        <div className="stat-card">
-          <span>
-            <Fingerprint size={17} /> {t("dash.home.statEmail")}
-          </span>
-          <strong>{status.email}</strong>
-        </div>
-      </div>
       <div className="quick-actions">
         <ActionTile icon={LockKeyhole} label={t("dash.actions.security")} onClick={() => navigate("/security")} />
         <ActionTile icon={UserRound} label={t("dash.actions.profile")} onClick={() => navigate("/profile")} />
         <ActionTile icon={Clock3} label={t("dash.actions.sessions")} onClick={() => navigate("/security/sessions")} />
         <ActionTile icon={Settings} label={t("dash.actions.settings")} onClick={() => navigate("/settings")} />
-      </div>
-      <SectionTitle
-        action={
-          <button className="text-button" onClick={() => navigate("/history")}>
-            {t("dash.home.seeAllRecent")}
-          </button>
-        }
-      >
-        {t("dash.home.recentTitle")}
-      </SectionTitle>
-      <div className="list-card">
-        <div className="transaction">
-          <div className="transaction-main">
-            <small>{t("dash.home.recentEmpty")}</small>
-          </div>
-        </div>
       </div>
     </Page>
   )

@@ -1,0 +1,11 @@
+/* Cartão "Convidar amigos" (ficheiro novo; não altera o CSS original do dashboard) */
+.invite-card { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 1px solid rgba(37, 99, 235, .28);
+  background: linear-gradient(135deg, rgba(37, 99, 235, .14), rgba(14, 165, 233, .08)); }
+.invite-card .invite-head { display: flex; align-items: center; gap: 10px; }
+.invite-card .invite-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: rgba(37, 99, 235, .18); flex: none; }
+.invite-card h3 { margin: 0; font-size: 1rem; }
+.invite-card p { margin: 0; font-size: .86rem; opacity: .82; line-height: 1.45; }
+.invite-card .invite-link { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127, 127, 127, .35);
+  background: rgba(127, 127, 127, .08); color: inherit; font-size: .8rem; }
+.invite-card .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.invite-card .invite-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border-radius: 12px; cursor: pointer; font-weight: 600; }

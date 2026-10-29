@@ -1,9 +1,15 @@
-# Patch do dashboard Kivora
+# Kivora – atualização do dashboard (passo 1)
 
-Não consegui ler o código do repositório (GitHub bloqueia acesso automático), por isso este pacote traz peças prontas a encaixar, não o projecto completo.
+Copiar a pasta `apps/` por cima do repositório (mesmos caminhos).
 
-1. Copia `src/` para `apps/web/src/` (ou onde está o dashboard).
-2. No header do dashboard: apaga o botão de menu e o estado `menuOpen`; coloca `<ProfileMenu />` no canto superior direito.
-3. Logo: em todas as formas do SVG usa `fill="none" stroke="#fff" stroke-width="1"` (ver `public/logo-kivora-template.svg`). Remove qualquer `fill="#fff"`.
-4. Fundo azul: usa `background: var(--kv-blue)` nas páginas.
-5. Backend: só editar `src/services/session.ts` e as rotas em `DEFAULT_ITEMS`.
+Ficheiros:
+- apps/web/src/dashboard/App.tsx      (alterado: Início sem banner "Olá", sem resumo da conta, sem atividade recente)
+- apps/web/src/dashboard/screens.tsx  (alterado: Início com carteira + convite + planos; Carteira com resumo da conta + histórico)
+- apps/web/src/dashboard/invite.tsx   (novo: cartão "Convidar amigos e ganhar")
+- apps/web/src/dashboard/invite.css   (novo)
+
+Notas:
+- O link de convite é `<site>/register?ref=<id do utilizador>`. Falta o servidor guardar o ?ref= no registo e
+  calcular bónus/comissões (passo do backend/admin).
+- Verificar se a rota de registo é mesmo `/register`; se for outra, alterar a linha `const link` em invite.tsx.
+- As traduções do cartão estão dentro de invite.tsx (pt, en, es, fr) para não mexer nos JSON de idioma.
