@@ -4,7 +4,7 @@ import App from "./App.js"
 import { AuthProvider } from "../features/auth/AuthContext.js"
 import { I18nProvider } from "../i18n/I18nProvider.js"
 import "./index.css"
-import "./demo.css"
+import "./screens.css"
 
 const root = document.getElementById("root")
 if (!root) throw new Error("Elemento #root não encontrado.")

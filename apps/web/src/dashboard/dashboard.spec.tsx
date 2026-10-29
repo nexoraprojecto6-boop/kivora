@@ -43,6 +43,11 @@ function mockApi(opts: Opts = {}) {
       if (url.includes("/auth/sessions/") && method === "DELETE")
         return opts.onRevoke?.(decodeURIComponent(url.split("/").pop()!)) ?? json(200, { data: { revoked: true } })
       if (url.endsWith("/auth/change-password")) return opts.onChangePassword?.(body) ?? json(200, { data: { revokedSessions: 0 } })
+      if (url.endsWith("/wallet")) return json(200, { data: { currency: "AOA", available: 0, reserved: 0, total: 0, financeEnabled: false, requireVerification: true, verificationStatus: "NONE" } })
+      if (url.endsWith("/plans") || url.includes("/payment-methods") || url.endsWith("/agreements") || url.endsWith("/support/tickets")) return json(200, { data: [] })
+      if (url.includes("/transactions")) return json(200, { data: { items: [], nextCursor: null } })
+      if (url.endsWith("/verification")) return json(200, { data: { submission: null } })
+      if (url.endsWith("/notifications")) return json(200, { data: { items: [], unread: 0 } })
       return apiError(404, "NOT_FOUND")
     }),
   )
@@ -106,15 +111,15 @@ describe("início: só dados reais", () => {
     expect(summary.getByText("Por verificar")).toBeInTheDocument()
   })
 
-  test("não mostra saldos, rendimentos, transações nem contadores inventados", async () => {
+  test("com a carteira vazia mostra estados vazios reais, sem rendimentos nem dados inventados", async () => {
     mockApi()
     const { container } = renderDashboard()
     await screen.findByRole("heading", { name: "Olá, Maria" })
     const text = document.body.textContent ?? ""
-    expect(text).not.toMatch(/AOA|Kz|João|Silva|rendimento|lucro|Investimentos seguros|\d\s?%|\d+[.,]\d{2}/i)
+    expect(text).not.toMatch(/João|Silva|rendimento|lucro|Investimentos seguros|\d\s?%/i)
     expect(container.querySelector(".notification-dot")).toBeNull()
-    expect(screen.getByText("Os planos ainda não estão disponíveis.")).toBeInTheDocument()
-    expect(screen.getByText("Ainda não há atividade para mostrar.")).toBeInTheDocument()
+    expect(await screen.findByText("Ainda não há planos publicados.")).toBeInTheDocument()
+    expect(await screen.findByText("Ainda não há movimentos.")).toBeInTheDocument()
   })
 
   test("o avatar mostra as iniciais reais e o botão tem nome acessível com o texto visível", async () => {
@@ -144,7 +149,7 @@ describe("início: só dados reais", () => {
   })
 })
 
-describe("áreas que o servidor ainda não suporta", () => {
+describe("módulos operacionais ligados à API", () => {
   test.each([
     ["/wallet", "Carteira"],
     ["/plans", "Planos"],
@@ -155,18 +160,17 @@ describe("áreas que o servidor ainda não suporta", () => {
     ["/verification", "Verificação de identidade"],
     ["/notifications", "Notificações"],
     ["/support", "Suporte e Ajuda"],
-  ])("%s explica que não está disponível e não mostra dados", async (path, title) => {
+  ])("%s abre o ecrã real, sem textos de demonstração", async (path, title) => {
     mockApi()
     renderDashboard(path)
     expect(await screen.findByRole("heading", { name: title, level: 1 })).toBeInTheDocument()
-    expect(screen.getByText(/ainda não está disponível/)).toBeInTheDocument()
-    expect(document.body.textContent).not.toMatch(/AOA|Kz|\d+[.,]\d{2}|\d\s?%/)
+    expect(document.body.textContent).not.toMatch(/Pré-visualização|dados de exemplo|ainda não está disponível/)
   })
 
-  test("um plano antigo redirecciona para a lista de planos", async () => {
+  test("um plano que não existe mostra o erro da API", async () => {
     mockApi()
-    renderDashboard("/plans/gold")
-    expect(await screen.findByRole("heading", { name: "Planos", level: 1 })).toBeInTheDocument()
+    renderDashboard("/plans/inexistente")
+    expect(await screen.findByText("Não encontrado.")).toBeInTheDocument()
   })
 
   test("o botão 'Voltar ao início' e o botão de voltar funcionam", async () => {

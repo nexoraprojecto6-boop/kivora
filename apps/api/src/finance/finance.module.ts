@@ -1,0 +1,31 @@
+import { Module, type DynamicModule } from "@nestjs/common";
+import type { Pool } from "pg";
+import { AuthModule } from "../auth/auth.module.js";
+import { AdminService } from "./admin.service.js";
+import { AdminController, StaffController } from "./admin.controllers.js";
+import { AgreementsService } from "./agreements.service.js";
+import { NotificationsService, SupportService } from "./engagement.service.js";
+import { FINANCE_CONFIG, FinanceGate, PG_POOL, loadFinanceConfig, type FinanceConfig } from "./finance.config.js";
+import { PaymentsService } from "./payments.service.js";
+import { PlansService } from "./plans.service.js";
+import { AdminOnlyGuard, StaffGuard } from "./staff.guard.js";
+import { AccountController, PaymentsController, PlansController } from "./user.controllers.js";
+import { VerificationService } from "./verification.service.js";
+
+/** Módulos operacionais (carteira, pedidos, planos, acordos, verificação, notificações, suporte, administração). Só com base de dados. */
+@Module({})
+export class FinanceModule {
+  static register(pool: Pool, config: FinanceConfig = loadFinanceConfig()): DynamicModule {
+    return {
+      module: FinanceModule,
+      imports: [AuthModule],
+      controllers: [PaymentsController, PlansController, AccountController, StaffController, AdminController],
+      providers: [
+        { provide: PG_POOL, useValue: pool },
+        { provide: FINANCE_CONFIG, useValue: config },
+        FinanceGate, StaffGuard, AdminOnlyGuard,
+        PaymentsService, PlansService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService,
+      ],
+    };
+  }
+}

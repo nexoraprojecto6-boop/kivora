@@ -11,10 +11,13 @@ import { InMemoryAuthRepository } from "./auth/in-memory-auth.repository.js";
 import { AllExceptionsFilter } from "./common/all-exceptions.filter.js";
 import { originCheckMiddleware } from "./common/origin-check.middleware.js";
 import { requestIdMiddleware } from "./common/request-id.middleware.js";
+import type { Pool } from "pg";
 import type { AppConfig } from "./config/env.js";
 
 export interface CreateAppOptions {
   authRepository?: AuthRepository;
+  /** Base de dados: liga os módulos operacionais (carteira, planos, administração...). */
+  pool?: Pool;
   extraControllers?: Type<unknown>[];
 }
 
@@ -39,10 +42,13 @@ export async function createApp(
     AppModule.register({
       config,
       authRepository,
+      ...(options.pool ? { pool: options.pool } : {}),
       ...(options.extraControllers ? { extraControllers: options.extraControllers } : {}),
     }),
-    { logger: config.nodeEnv === "test" ? false : ["log", "warn", "error"] },
+    { logger: config.nodeEnv === "test" ? false : ["log", "warn", "error"], bodyParser: false },
   );
+  // 5 MB: o envio de documentos de verificação vai em base64 num único pedido.
+  app.useBodyParser("json", { limit: "5mb" });
 
   if (config.trustProxyHops > 0) app.set("trust proxy", config.trustProxyHops);
 

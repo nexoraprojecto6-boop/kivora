@@ -33,6 +33,17 @@ services:
         fromDatabase:
           name: kivora-db
           property: connectionString
+      # Interruptor de segurança das operações financeiras (decisão 1 em aberto): só ligar com enquadramento jurídico.
+      - key: FINANCE_ENABLED
+        value: "false"
+      - key: FINANCE_REQUIRE_KYC
+        value: "true"
+      # Moeda única provisória (decisões 7 e 8).
+      - key: PLATFORM_CURRENCY
+        value: AOA
+      # Email de uma conta JÁ registada a promover a ADMIN no arranque. Remover depois do primeiro uso.
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
       # Aplica as migrações SQL ao arrancar (com bloqueio: seguro com várias instâncias).
       - key: RUN_MIGRATIONS_ON_START
         value: "true"

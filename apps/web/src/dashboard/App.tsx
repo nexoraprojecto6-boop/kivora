@@ -38,11 +38,10 @@ import { SUPPORTED_LANGUAGES, isLanguageCode } from "../i18n/resources.js"
 import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
 import { Logo } from "../brand/index.js"
-import { demoEnabled } from "./demo.js"
 import {
-  AgreementsPage, DepositPage, HistoryPage, HomeDemo, NotificationsPage, PlanDetailPage, PlansPage,
+  AgreementsPage, DepositPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlansPage,
   SupportPage, VerificationPage, WalletPage, WithdrawPage,
-} from "./demo-screens.js"
+} from "./screens.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -321,19 +320,7 @@ function HomePage() {
           <ArrowUpFromLine size={40} />
         </div>
       </section>
-      <SectionTitle
-        action={
-          <button className="text-button" onClick={() => navigate("/plans")}>
-            {t("dash.home.seeAll")}
-          </button>
-        }
-      >
-        {t("dash.home.plansTitle")}
-      </SectionTitle>
-      <div className="info-box">
-        <CircleHelp size={18} />
-        <p>{t("dash.home.plansUnavailable")}</p>
-      </div>
+      <HomeLive />
       <SectionTitle>{t("dash.home.accountTitle")}</SectionTitle>
       <div className="account-grid">
         <div className="stat-card">
@@ -376,27 +363,6 @@ function HomePage() {
 }
 
 /* ------------------------------------- Áreas que o servidor ainda não suporta */
-
-function UnavailablePage({ moduleId }: { moduleId: string }) {
-  const navigate = useNavigate()
-  const { t } = useI18n()
-  return (
-    <Page className="form-page">
-      <Header title={t(`dash.nav.${moduleId}`)} back />
-      <div className="form-surface">
-        <h2>{t(`dash.nav.${moduleId}`)}</h2>
-        <p className="body-copy">{t(`dash.unavailable.modules.${moduleId}`)}</p>
-        <div className="info-box">
-          <CircleHelp size={18} />
-          <p>{t("dash.unavailable.text")}</p>
-        </div>
-        <button className="primary-button" onClick={() => navigate("/")}>
-          {t("dash.unavailable.back")}
-        </button>
-      </div>
-    </Page>
-  )
-}
 
 /* ------------------------------------------------------------------- Perfil */
 
@@ -934,41 +900,20 @@ export function AppShell() {
   )
 }
 
-const UNAVAILABLE_ROUTES = [
-  ["/plans", "plans"],
-  ["/wallet", "wallet"],
-  ["/deposit", "deposits"],
-  ["/withdraw", "withdrawals"],
-  ["/history", "history"],
-  ["/agreements", "agreements"],
-  ["/verification", "verification"],
-  ["/notifications", "notifications"],
-  ["/support", "support"],
-] as const
-
 export function DashboardRoutes() {
-  const demo = demoEnabled()
-  const demoRoutes = [
-    ["/wallet", <WalletPage />],
-    ["/plans", <PlansPage />],
-    ["/plans/:id", <PlanDetailPage />],
-    ["/deposit", <DepositPage />],
-    ["/withdraw", <WithdrawPage />],
-    ["/history", <HistoryPage />],
-    ["/agreements", <AgreementsPage />],
-    ["/verification", <VerificationPage />],
-    ["/notifications", <NotificationsPage />],
-    ["/support", <SupportPage />],
-  ] as const
   return (
     <Routes>
-      <Route path="/" element={demo ? <HomeDemo /> : <HomePage />} />
-      {demo
-        ? demoRoutes.map(([path, element]) => <Route key={path} path={path} element={element} />)
-        : UNAVAILABLE_ROUTES.map(([path, moduleId]) => (
-            <Route key={path} path={path} element={<UnavailablePage moduleId={moduleId} />} />
-          ))}
-      {!demo && <Route path="/plans/:id" element={<Navigate to="/plans" replace />} />}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/wallet" element={<WalletPage />} />
+      <Route path="/plans" element={<PlansPage />} />
+      <Route path="/plans/:id" element={<PlanDetailPage />} />
+      <Route path="/deposit" element={<DepositPage />} />
+      <Route path="/withdraw" element={<WithdrawPage />} />
+      <Route path="/history" element={<HistoryPage />} />
+      <Route path="/agreements" element={<AgreementsPage />} />
+      <Route path="/verification" element={<VerificationPage />} />
+      <Route path="/notifications" element={<NotificationsPage />} />
+      <Route path="/support" element={<SupportPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/profile/data" element={<PersonalDataPage />} />
       <Route path="/profile/contacts" element={<ContactsPage />} />

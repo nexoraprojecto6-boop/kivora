@@ -89,161 +89,198 @@
     "tagline": "Gestão financeira simples, segura e inteligente."
   },
   "s": {
-    "banner": "Pré-visualização com dados de exemplo. Nada nesta área é real e nenhuma ação chega ao servidor.",
-    "actionDone": "Ação simulada. Será ligada ao servidor quando o módulo existir.",
+    "loading": "A carregar…",
+    "retry": "Tentar de novo",
+    "err": {
+      "NETWORK": "Sem ligação ao servidor.",
+      "UNAUTHENTICATED": "A sessão terminou. Inicie sessão de novo.",
+      "FORBIDDEN": "Operação não permitida para esta conta.",
+      "FEATURE_DISABLED": "As operações financeiras ainda não estão activas.",
+      "NOT_FOUND": "Não encontrado.",
+      "CONFLICT": "Já existe um pedido em curso ou o limite foi atingido.",
+      "INVALID_STATE_TRANSITION": "Este pedido já não pode ser alterado.",
+      "IDEMPOTENCY_CONFLICT": "Pedido repetido com dados diferentes. Recarregue a página.",
+      "RATE_LIMITED": "Demasiados pedidos. Tente mais tarde.",
+      "VALIDATION_ERROR": "Dados inválidos.",
+      "SERVICE_UNAVAILABLE": "Serviço indisponível.",
+      "INTERNAL_ERROR": "Erro inesperado. Tente de novo."
+    },
+    "field": {
+      "belowMinimum": "Abaixo do mínimo permitido.",
+      "aboveMaximum": "Acima do máximo permitido.",
+      "insufficientFunds": "Saldo disponível insuficiente.",
+      "capacityExceeded": "O plano não tem capacidade para este montante.",
+      "invalid": "Valor inválido.",
+      "required": "Em falta: documento (frente), selfie e tipo de documento.",
+      "duplicate": "Ficheiro repetido.",
+      "invalidFile": "Ficheiro inválido. Use JPG, PNG ou PDF.",
+      "fileSize": "Ficheiro demasiado grande (máximo 1,5 MB)."
+    },
+    "notice": {
+      "financeOff": "As operações financeiras ainda não estão activas.",
+      "verifyFirst": "Verifique a identidade antes de operar."
+    },
+    "wallet": {
+      "total": "Saldo total",
+      "available": "Disponível",
+      "reserved": "Reservado"
+    },
     "kind": {
-      "deposit": "Depósito",
-      "withdraw": "Levantamento",
-      "plan": "Subscrição de plano",
-      "refund": "Estorno"
+      "DEPOSIT": "Depósito",
+      "WITHDRAWAL": "Levantamento",
+      "SUBSCRIPTION": "Subscrição de plano"
     },
     "kindShort": {
-      "deposit": "Depósitos",
-      "withdraw": "Levantam.",
-      "plan": "Planos"
+      "DEPOSIT": "Depósitos",
+      "WITHDRAWAL": "Levantam.",
+      "SUBSCRIPTION": "Planos"
     },
     "status": {
-      "pending": "Pendente",
-      "confirmed": "Confirmado",
-      "rejected": "Rejeitado",
-      "review": "Em revisão"
+      "PENDING": "Pendente",
+      "CONFIRMED": "Confirmado",
+      "REJECTED": "Rejeitado",
+      "CANCELLED": "Cancelado",
+      "APPROVED": "Aprovado",
+      "PAID": "Pago",
+      "ACTIVE": "Activo"
     },
     "statusLabel": "Estado",
     "reference": "Referência",
     "tab": {
       "all": "Tudo",
-      "in": "Entradas",
-      "out": "Saídas",
       "unread": "Não lidas"
     },
-    "balanceTitle": "Saldo total (exemplo)",
-    "available": "Disponível",
-    "reserved": "Reservado",
-    "verifyTitle": "Verifique a sua identidade",
-    "verifyText": "Necessário para ativar depósitos e levantamentos.",
-    "chartTitle": "Movimentos (7 dias)",
-    "chartNote": "Gráfico ilustrativo",
+    "emptyHistory": "Ainda não há movimentos.",
+    "emptyPlans": "Ainda não há planos publicados.",
+    "emptyMethods": "Ainda não há métodos configurados.",
+    "emptyAgreements": "Ainda não há acordos publicados.",
     "filter": {
-      "all": "Todos",
-      "open": "Disponíveis",
-      "soon": "Em breve"
+      "ALL": "Todos",
+      "OPEN": "Abertos",
+      "COMING_SOON": "Em breve"
     },
     "planTitle": "Plano",
-    "notFound": "Plano não encontrado.",
-    "planText": "Descrição de um plano de exemplo. As condições reais só serão apresentadas depois de definidas, aprovadas e legalmente autorizadas.",
+    "planStatus": {
+      "OPEN": "Aberto",
+      "COMING_SOON": "Em breve",
+      "CLOSED": "Fechado",
+      "DRAFT": "Rascunho"
+    },
     "planMin": "Mínimo",
+    "planMax": "Máximo",
     "planTerm": "Prazo",
     "planRisk": "Risco",
-    "planState": "Estado",
-    "months": "{n} meses",
-    "open": "Disponível",
-    "soon": "Em breve",
+    "days": "{n} dias",
     "details": "Detalhes",
-    "risk": {
-      "low": "Baixo",
-      "mid": "Médio",
-      "high": "Alto"
-    },
     "participation": "Preenchimento",
     "subscribe": "Subscrever",
-    "reminder": "Avisar-me quando houver novidades",
+    "subscribed": "Pedido de subscrição enviado. Fica pendente até ser analisado.",
     "steps": "Passos",
     "step": {
       "amount": "Montante",
       "method": "Método",
       "destination": "Destino",
-      "confirm": "Confirmar",
-      "document": "Documento",
-      "selfie": "Selfie"
+      "confirm": "Confirmar"
     },
-    "amount": "Montante (Kz)",
+    "amount": "Montante",
     "availableLabel": "Disponível: {amount}",
-    "invalidAmount": "Introduza um montante válido.",
-    "exceeds": "O montante excede o saldo disponível.",
     "chooseOne": "Escolha uma opção.",
-    "invalidAccount": "Introduza uma conta de destino válida.",
     "account": "IBAN / número de conta",
-    "method": {
-      "bank": "Transferência bancária",
-      "express": "Pagamento móvel",
-      "ref": "Pagamento por referência"
-    },
-    "methodNote": "Método de exemplo, ainda não configurado.",
     "methodLabel": "Método",
     "fee": "Comissão",
-    "tbd": "A definir",
     "continue": "Continuar",
     "back": "Voltar",
     "confirmRequest": "Confirmar pedido",
-    "depositDone": "Pedido de depósito registado (exemplo). Só ficará confirmado quando o servidor verificar o pagamento.",
-    "withdrawDone": "Pedido de levantamento enviado para revisão (exemplo).",
     "seeHistory": "Ver histórico",
-    "newRequest": "Novo pedido",
+    "depositDone": "Pedido de depósito registado. Siga as instruções e aguarde a confirmação.",
+    "withdrawDone": "Pedido de levantamento registado. O valor fica reservado até ser decidido.",
     "search": "Pesquisar",
-    "noResults": "Nenhum resultado.",
     "loadMore": "Carregar mais",
-    "agreement": {
-      "terms": "Termos e Condições",
-      "privacy": "Política de Privacidade",
-      "risk": "Aviso de risco",
-      "plan": "Acordo de plano (exemplo)"
-    },
+    "cancelRequest": "Cancelar pedido",
     "version": "Versão {v}",
     "accepted": "Aceite",
     "toAccept": "Por aceitar",
-    "agreementText": "Texto de exemplo do acordo. O texto jurídico real será versionado e aprovado antes de ser mostrado.",
     "acceptCheck": "Li e aceito este acordo",
     "acceptButton": "Aceitar acordo",
     "issuingCountry": "País emissor do documento",
-    "docType": "Tipo de documento",
-    "other": "Outro",
     "doc": {
-      "id": "Bilhete de identidade",
-      "passport": "Passaporte",
-      "residence": "Cartão de residente"
+      "ID_CARD": "Bilhete de identidade",
+      "PASSPORT": "Passaporte",
+      "RESIDENCE_PERMIT": "Cartão de residente"
     },
     "upload": {
-      "front": "Frente do documento",
-      "back": "Verso do documento",
-      "selfie": "Selfie com o documento"
+      "FRONT": "Frente do documento",
+      "BACK": "Verso (opcional)",
+      "SELFIE": "Selfie com o documento"
     },
     "chooseFile": "Escolher ficheiro",
-    "selfieText": "Tire uma selfie com o documento visível.",
+    "fileRules": "JPG, PNG ou PDF, até 1,5 MB cada. Os ficheiros só são vistos pela equipa de revisão.",
     "submitReview": "Enviar para revisão",
-    "verifyDone": "Pedido enviado para revisão (exemplo). O estado real será definido pelo servidor.",
+    "verifyPending": "Pedido em revisão. Será notificado da decisão.",
+    "verifyApproved": "Identidade verificada.",
+    "verifyRejected": "A verificação foi recusada",
+    "vstatus": {
+      "PENDING": "Em revisão",
+      "APPROVED": "Aprovada",
+      "REJECTED": "Recusada"
+    },
     "markAll": "Marcar todas como lidas",
     "noNotifications": "Sem notificações.",
     "notif": {
-      "n1": {
+      "DEPOSIT_CONFIRMED": {
         "title": "Depósito confirmado",
-        "body": "O seu depósito de exemplo foi confirmado."
+        "body": "O depósito {reference} foi confirmado ({amount})."
       },
-      "n2": {
-        "title": "Levantamento em revisão",
-        "body": "O pedido está a ser analisado."
+      "DEPOSIT_REJECTED": {
+        "title": "Depósito recusado",
+        "body": "O depósito {reference} foi recusado."
       },
-      "n3": {
-        "title": "Novo acordo disponível",
-        "body": "Leia e aceite o acordo de exemplo."
+      "WITHDRAWAL_APPROVED": {
+        "title": "Levantamento aprovado",
+        "body": "O levantamento {reference} foi aprovado e aguarda pagamento."
       },
-      "n4": {
-        "title": "Novo início de sessão",
-        "body": "Reveja as sessões ativas se não foi você."
+      "WITHDRAWAL_PAID": {
+        "title": "Levantamento pago",
+        "body": "O levantamento {reference} foi pago ({amount})."
+      },
+      "WITHDRAWAL_REJECTED": {
+        "title": "Levantamento recusado",
+        "body": "O levantamento {reference} foi recusado e o valor voltou a ficar disponível."
+      },
+      "SUBSCRIPTION_APPROVED": {
+        "title": "Subscrição aprovada",
+        "body": "A subscrição {reference} foi aprovada."
+      },
+      "SUBSCRIPTION_REJECTED": {
+        "title": "Subscrição recusada",
+        "body": "A subscrição {reference} foi recusada e o valor voltou a ficar disponível."
+      },
+      "VERIFICATION_APPROVED": {
+        "title": "Identidade verificada",
+        "body": "A sua verificação foi aprovada."
+      },
+      "VERIFICATION_REJECTED": {
+        "title": "Verificação recusada",
+        "body": "Reveja os dados e envie novamente."
+      },
+      "SUPPORT_REPLY": {
+        "title": "Resposta do suporte",
+        "body": "Recebeu uma resposta a um pedido de suporte."
       }
     },
     "faqTitle": "Perguntas frequentes",
     "faq": {
       "q1": {
         "q": "Como verifico a minha identidade?",
-        "a": "Abra Verificação de identidade, envie o documento e aguarde a revisão."
+        "a": "Abra Verificação de identidade, envie o documento e a selfie e aguarde a revisão."
       },
       "q2": {
-        "q": "Quanto tempo demora um depósito?",
-        "a": "Depende da confirmação do pagamento pelo servidor. Prazos reais ainda por definir."
+        "q": "Quando fica confirmado um depósito?",
+        "a": "Depois de a equipa confirmar o pagamento. Até lá fica pendente."
       },
       "q3": {
         "q": "Como peço um levantamento?",
-        "a": "Em Levantamentos, indique o montante e a conta de destino. O pedido é revisto antes de ser executado."
+        "a": "Em Levantamentos, indique o montante e a conta de destino. O valor fica reservado até ser decidido."
       },
       "q4": {
         "q": "Como altero a palavra-passe?",
@@ -252,17 +289,24 @@
     },
     "newTicket": "Novo pedido de suporte",
     "subject": "Assunto",
+    "category": "Categoria",
     "message": "Mensagem",
-    "send": "Enviar pedido",
+    "send": "Enviar",
     "myTickets": "Os meus pedidos",
     "noTickets": "Ainda não há pedidos.",
-    "ticketOpen": "Aberto",
+    "staff": "Suporte",
+    "you": "Você",
+    "ticket": {
+      "OPEN": "Aberto",
+      "ANSWERED": "Respondido",
+      "CLOSED": "Fechado"
+    },
     "subjects": {
-      "account": "Conta",
-      "deposit": "Depósitos",
-      "withdraw": "Levantamentos",
-      "verification": "Verificação",
-      "other": "Outro"
+      "ACCOUNT": "Conta",
+      "DEPOSIT": "Depósitos",
+      "WITHDRAWAL": "Levantamentos",
+      "VERIFICATION": "Verificação",
+      "OTHER": "Outro"
     }
   }
 }

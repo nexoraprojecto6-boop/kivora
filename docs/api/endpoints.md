@@ -17,20 +17,36 @@ Estado em que o código se encontra. Prefixo `/v1`. Respostas de sucesso `{ data
 | POST /auth/sessions/revoke-others | cookie | — | `{ revokedSessions }` | UNAUTHENTICATED |
 | POST /auth/change-password | cookie | currentPassword, newPassword | `{ revokedSessions }` | VALIDATION_ERROR (campo currentPassword), RATE_LIMITED |
 
-## Funcionalidades do dashboard e o que lhes falta
+## Módulos operacionais (migração 0002)
 
-| Área do dashboard | Estado | O que falta no servidor | Dependências de decisão |
-|---|---|---|---|
-| Início, perfil (leitura), definições, segurança, sessões, alterar palavra-passe, idioma, tema, terminar sessão | **Ligado à API** | — | — |
-| Edição de dados pessoais | Indisponível | PATCH do perfil e regras de campos | Decisão 4 |
-| Verificação de email | Indisponível | Envio de email e endpoints de verificação | Decisão 6 |
-| Notificações (lista, lidas, contador) | Indisponível | Entidade e endpoints de notificações geradas por eventos reais | — |
-| Suporte e ajuda | Indisponível | Pedidos, mensagens e estados de suporte | — |
-| Verificação de identidade (KYC) | Indisponível | Submissões, armazenamento privado, fila de revisão | Decisões 4, 5 e 10 |
-| Planos | Indisponível | Catálogo configurável | Decisão 1 e condições comerciais aprovadas |
-| Acordos e contratos | Indisponível | Textos versionados, aceitação com prova | Decisão 2 |
-| Carteira, histórico de transações | Indisponível | Livro contabilístico | Decisões 7 e 8 |
-| Depósitos, levantamentos | Indisponível | Pedidos, estados, idempotência, fornecedores de pagamento | Decisões 1, 3, 7 e 8 |
-| Painel administrativo | Sem código | Funções, permissões e endpoints de administração | Decisão 1 e modelo de permissões |
+Todos exigem sessão. Montantes são inteiros na menor unidade (provisório, decisão 7). Quem altera dinheiro aceita o cabeçalho `Idempotency-Key`.
+Interruptores: `FINANCE_ENABLED` (por defeito falso: depósitos, levantamentos e subscrições devolvem FEATURE_DISABLED), `FINANCE_REQUIRE_KYC` (por defeito verdadeiro), `PLATFORM_CURRENCY` (AOA), `BOOTSTRAP_ADMIN_EMAIL` (promove uma conta existente a ADMIN no arranque).
 
-Nada disto é simulado: onde falta suporte, o dashboard diz que a área não está disponível.
+| Área | Rotas |
+|---|---|
+| Carteira | GET /wallet, GET /transactions?kind&q&cursor, GET /payment-methods?kind |
+| Depósitos | POST /deposits, GET /deposits, GET /deposits/:id, POST /deposits/:id/cancel |
+| Levantamentos | POST /withdrawals (reserva o valor), GET /withdrawals, GET /withdrawals/:id, POST /withdrawals/:id/cancel |
+| Planos | GET /plans, GET /plans/:id, POST /plans/:id/subscriptions, GET /subscriptions, POST /subscriptions/:id/cancel |
+| Acordos | GET /agreements, POST /agreements/:versionId/accept |
+| Verificação | GET /verification, POST /verification (ficheiros em base64: frente, selfie e verso opcional) |
+| Notificações | GET /notifications?unread, POST /notifications/:id/read, POST /notifications/read-all |
+| Suporte | GET/POST /support/tickets, GET /support/tickets/:id, POST /support/tickets/:id/messages |
+
+## Administração (prefixo /admin, função lida da base de dados em cada pedido)
+
+SUPPORT e ADMIN: GET /admin/summary, GET /admin/users, GET /admin/users/:id, GET /admin/support/tickets, GET /admin/support/tickets/:id, POST /admin/support/tickets/:id/messages, POST /admin/support/tickets/:id/close.
+
+Só ADMIN: PATCH /admin/users/:id/status; GET /admin/audit; GET/POST /admin/payment-methods e PUT /admin/payment-methods/:id; GET/POST /admin/plans e PUT /admin/plans/:id; GET /admin/deposits, POST .../:id/confirm e .../:id/reject; GET /admin/withdrawals, POST .../:id/approve, .../:id/paid e .../:id/reject; GET /admin/subscriptions, POST .../:id/approve e .../:id/reject; GET/POST /admin/agreements; GET /admin/verifications, GET /admin/verifications/:id/files/:kind, POST .../:id/approve e .../:id/reject.
+
+Regras fixas: o livro (`ledger_entries`) é só de acréscimo (gatilho na base de dados); nenhum administrador edita saldos; ninguém decide pedidos próprios; limites, comissões, métodos, planos e textos legais são dados configurados na administração, nunca valores no código.
+
+## Ainda por fazer
+
+| Área | Falta | Decisão |
+|---|---|---|
+| Edição de dados pessoais | PATCH do perfil | 4 |
+| Verificação de email | envio de email | 6 |
+| Pagamentos automáticos | integração com fornecedores (hoje: operação manual com confirmação da equipa) | 3 |
+| Contrapartida contabilística da plataforma | plano de contas | 8 |
+| Apps de administração (ecrãs) | aplicação `apps/admin` consome as rotas acima | — |
