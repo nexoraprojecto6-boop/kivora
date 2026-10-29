@@ -1,21 +1,25 @@
 {
-  "name": "kivora",
+  "name": "@kivora/admin",
   "version": "0.0.0",
   "private": true,
-  "description": "KIVORA — plataforma financeira web (monorepo).",
-  "license": "UNLICENSED",
-  "packageManager": "pnpm@12.14.0",
-  "engines": {
-    "node": ">=22",
-    "pnpm": ">=12"
+  "type": "module",
+  "description": "KIVORA Admin — painel administrativo separado, com autenticação e autorização próprias.",
+  "dependencies": {
+    "lucide-react": "^1.59.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
   },
   "scripts": {
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "dev": "vite --port 5174",
+    "build": "tsc -p tsconfig.json && vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "preview": "vite preview --port 5174"
   },
   "devDependencies": {
-    "typescript": "7.0.2",
-    "@types/node": "22"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.4"
   }
 }
