@@ -39,8 +39,9 @@ import { LOGIN_URL, redirectTo } from "../services/navigation.js"
 import { Logo } from "../brand/index.js"
 import {
   AgreementsPage, DepositPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlansPage,
-  SupportPage, VerificationPage, WalletPage, WithdrawPage,
+  SupportPage, WalletPage, WithdrawPage,
 } from "./screens.js"
+import { VerifyRedirect } from "./verify-banner.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -864,7 +865,7 @@ export function DashboardRoutes() {
       <Route path="/withdraw" element={<WithdrawPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/agreements" element={<AgreementsPage />} />
-      <Route path="/verification" element={<VerificationPage />} />
+      <Route path="/verification" element={<VerifyRedirect />} />
       <Route path="/notifications" element={<NotificationsPage />} />
       <Route path="/support" element={<SupportPage />} />
       <Route path="/profile" element={<ProfilePage />} />

@@ -51,7 +51,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
-    await authApi.register(input); // não inicia sessão: o utilizador entra a seguir
+    // O registo já abre sessão: o utilizador segue logo para a verificação (email e documentos).
+    const u = await authApi.register(input);
+    setUser(u);
+    setStatus("authenticated");
   }, []);
 
   const logout = useCallback(async () => {

@@ -28,9 +28,13 @@ export class VerificationService {
     input: { docType: VerificationDocType; issuingCountry: string; files: { kind: VerificationFileKind; mime: string; dataBase64: string }[] },
     requestId: string,
   ): Promise<VerificationDto> {
+    const u = await one<{ verified: boolean }>(this.pool, "SELECT email_verified AS verified FROM users WHERE id = $1", [userId]);
+    if (!u?.verified) throw new ApiException(API_ERROR_CODE.FORBIDDEN, { fieldErrors: [{ field: "email", code: "notVerified" }] });
     const kinds = new Set(input.files.map((f) => f.kind));
     if (kinds.size !== input.files.length) throw invalid("files", "duplicate");
     if (!kinds.has("FRONT") || !kinds.has("SELFIE")) throw invalid("files", "required");
+    // Bilhete e autorização de residência têm frente e verso; só o passaporte dispensa o verso.
+    if (input.docType !== "PASSPORT" && !kinds.has("BACK")) throw invalid("files", "backRequired");
     const decoded = input.files.map((f) => {
       if (!/^[A-Za-z0-9+/]+={0,2}$/.test(f.dataBase64)) throw invalid("files", "invalidFile");
       const content = Buffer.from(f.dataBase64, "base64");

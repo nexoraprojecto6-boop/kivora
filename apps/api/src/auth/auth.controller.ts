@@ -33,7 +33,8 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<ApiSuccessResponse<{ user: PublicUser }>> {
     const input = parseOrThrow(registerSchema, body);
-    const user = await this.auth.register(input, contextOf(req, res));
+    const { user, token, expiresAt } = await this.auth.registerWithSession(input, contextOf(req, res));
+    res.cookie(SESSION_COOKIE_NAME, token, sessionCookieOptions(this.config, expiresAt));
     return { data: { user } };
   }
 

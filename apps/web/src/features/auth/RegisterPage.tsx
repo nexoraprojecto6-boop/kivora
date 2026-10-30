@@ -1,13 +1,16 @@
-import { useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { registerSchema } from "@kivora/validation";
 import { Alert } from "../../components/ui/Alert.js";
 import { Button } from "../../components/ui/Button.js";
 import { Checkbox } from "../../components/ui/Checkbox.js";
+import { CountrySelect } from "../../components/ui/CountrySelect.js";
+import { PasswordField } from "../../components/ui/PasswordField.js";
 import { TextField } from "../../components/ui/TextField.js";
 import { AuthLayout } from "../../components/layout/AuthLayout.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
-import { ApiError } from "../../services/api-client.js";
+import { ApiError, authApi } from "../../services/api-client.js";
+import { useCopy } from "../verify/copy.js";
 import { useAuth } from "./AuthContext.js";
 import { RedirectToDashboard } from "./RedirectToDashboard.js";
 import { fieldErrorKey, formErrorKey, toErrorMap, zodToErrorMap, type FieldErrorMap } from "./form-errors.js";
@@ -15,25 +18,30 @@ import { useFocusFirstError } from "./useFocusFirstError.js";
 
 const FIELD_ORDER = ["fullName", "email", "password", "countryOfResidence", "acceptTerms", "acceptPrivacy"] as const;
 
-/** Os campos do registo são provisórios (decisões 4 e 6 em docs/compliance). */
+/**
+ * Registo: nome, email, palavra-passe (com olho dentro do campo), país (lista com nomes) e consentimentos.
+ * Ao criar a conta abre-se sessão e o utilizador segue para /verify (email → documentos).
+ */
 export function RegisterPage() {
   const { t } = useI18n();
+  const c = useCopy();
+  const navigate = useNavigate();
   const { status, register } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [country, setCountry] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [errors, setErrors] = useState<FieldErrorMap>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
+  /** Evita enviar para o painel no instante em que a sessão se abre: quem acabou de se registar vai para /verify. */
+  const justRegistered = useRef(false);
 
   useFocusFirstError(errors, FIELD_ORDER, "register");
 
-  if (status === "authenticated") return <RedirectToDashboard />;
+  if (status === "authenticated" && !justRegistered.current) return <RedirectToDashboard />;
 
   const fieldError = (field: string) => {
     const code = errors[field];
@@ -57,10 +65,14 @@ export function RegisterPage() {
     }
     setErrors({});
     setBusy(true);
+    justRegistered.current = true;
     try {
       await register(parsed.data);
-      setDone(true);
+      // Envia já o código de confirmação; se falhar, o passo seguinte oferece "Enviar código".
+      const sent = await authApi.sendEmailCode().then(() => true, () => false);
+      navigate("/verify", { replace: true, state: { sent } });
     } catch (error) {
+      justRegistered.current = false;
       if (error instanceof ApiError && error.code === "VALIDATION_ERROR" && error.fieldErrors.length > 0) {
         setErrors(toErrorMap(error.fieldErrors));
       } else {
@@ -69,15 +81,6 @@ export function RegisterPage() {
     } finally {
       setBusy(false);
     }
-  }
-
-  if (done) {
-    return (
-      <AuthLayout title={t("auth.register.successTitle")}>
-        <p role="status">{t("auth.register.successBody")}</p>
-        <Link to="/login" className="button button--primary">{t("auth.register.goToLogin")}</Link>
-      </AuthLayout>
-    );
   }
 
   return (
@@ -89,6 +92,8 @@ export function RegisterPage() {
           id="register-fullName"
           label={t("auth.register.fullName")}
           autoComplete="name"
+          placeholder={c("reg.fullNamePh")}
+          hint={c("reg.fullNameHint")}
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           error={fieldError("fullName")}
@@ -98,38 +103,31 @@ export function RegisterPage() {
           label={t("auth.register.email")}
           type="email"
           autoComplete="email"
+          placeholder={c("reg.emailPh")}
+          hint={c("reg.emailHint")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           error={fieldError("email")}
         />
-        <TextField
+        <PasswordField
           id="register-password"
           label={t("auth.register.password")}
-          type={showPassword ? "text" : "password"}
           autoComplete="new-password"
+          placeholder={c("reg.passwordPh")}
+          hint={c("reg.passwordHint")}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          hint={t("auth.register.passwordHint")}
+          onChange={setPassword}
           error={fieldError("password")}
-          trailing={
-            <button
-              type="button"
-              className="field__toggle"
-              aria-pressed={showPassword}
-              onClick={() => setShowPassword((v) => !v)}
-            >
-              {showPassword ? t("common.actions.hidePassword") : t("common.actions.showPassword")}
-            </button>
-          }
         />
-        <TextField
+        <CountrySelect
           id="register-countryOfResidence"
           label={t("auth.register.countryOfResidence")}
-          autoComplete="country"
-          maxLength={2}
           value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          hint={t("auth.register.countryHint")}
+          onChange={setCountry}
+          placeholder={c("reg.countryPh")}
+          commonLabel={c("reg.common")}
+          allLabel={c("reg.all")}
+          hint={c("reg.countryHint")}
           error={fieldError("countryOfResidence")}
         />
         <Checkbox

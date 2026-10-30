@@ -93,6 +93,16 @@ export class AuthService {
     return toPublicUser(user);
   }
 
+  /** Cria a conta e abre sessão, para o utilizador seguir logo para a verificação (email e documentos). */
+  async registerWithSession(
+    input: RegisterInput,
+    ctx: RequestContext,
+  ): Promise<{ user: PublicUser; token: string; expiresAt: Date }> {
+    const user = await this.register(input, ctx);
+    const { token, expiresAt } = await this.sessions.create(user.id);
+    return { user, token, expiresAt };
+  }
+
   async login(
     input: LoginInput,
     ctx: RequestContext,

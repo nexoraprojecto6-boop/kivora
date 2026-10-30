@@ -97,6 +97,9 @@ async function request<T>(
 
 export const authApi = {
   me: async (): Promise<PublicUser> => (await request<{ user: PublicUser }>("/auth/me", "GET")).user,
+  /** Envia um código de 6 dígitos para o email da conta. Devolve true se o email já estava verificado. */
+  sendEmailCode: async (): Promise<boolean> => (await request<{ alreadyVerified: boolean }>("/auth/email/send", "POST", {})).alreadyVerified,
+  verifyEmailCode: (code: string) => request<{ verified: true }>("/auth/email/verify", "POST", { code }),
   login: async (input: LoginInput): Promise<PublicUser> =>
     (await request<{ user: PublicUser }>("/auth/login", "POST", input)).user,
   register: async (input: RegisterInput): Promise<PublicUser> =>

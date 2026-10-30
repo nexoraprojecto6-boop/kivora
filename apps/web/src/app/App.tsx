@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { WelcomePage } from "../features/welcome/WelcomePage.js";
 import { LoginPage } from "../features/auth/LoginPage.js";
 import { RegisterPage } from "../features/auth/RegisterPage.js";
+import { VerifyPage } from "../features/verify/VerifyPage.js";
 
 /**
  * Páginas de acesso (login e registo). O dashboard é outra página (/app), com o seu próprio CSS.
@@ -13,6 +14,7 @@ export function App() {
       <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify" element={<VerifyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

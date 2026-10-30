@@ -3,6 +3,9 @@ import type { Pool } from "pg";
 import { AuthModule } from "../auth/auth.module.js";
 import { AdminService } from "./admin.service.js";
 import { AdminController, StaffController } from "./admin.controllers.js";
+import { EmailController } from "./email.controller.js";
+import { EmailVerificationService } from "./email-verification.service.js";
+import { Mailer } from "./mailer.service.js";
 import { AgreementsService } from "./agreements.service.js";
 import { NotificationsService, SupportService } from "./engagement.service.js";
 import { FINANCE_CONFIG, FinanceGate, PG_POOL, loadFinanceConfig, type FinanceConfig } from "./finance.config.js";
@@ -19,11 +22,11 @@ export class FinanceModule {
     return {
       module: FinanceModule,
       imports: [AuthModule],
-      controllers: [PaymentsController, PlansController, AccountController, StaffController, AdminController],
+      controllers: [EmailController, PaymentsController, PlansController, AccountController, StaffController, AdminController],
       providers: [
         { provide: PG_POOL, useValue: pool },
         { provide: FINANCE_CONFIG, useValue: config },
-        FinanceGate, StaffGuard, AdminOnlyGuard,
+        Mailer, EmailVerificationService, FinanceGate, StaffGuard, AdminOnlyGuard,
         PaymentsService, PlansService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService,
       ],
     };

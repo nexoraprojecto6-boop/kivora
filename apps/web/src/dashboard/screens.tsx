@@ -10,6 +10,7 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { ApiError, platformApi } from "../services/api-client.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
+import { VerifyBanner } from "./verify-banner.js"
 
 /* ============================== base: carregar, erros, dinheiro ============================== */
 
@@ -214,6 +215,7 @@ export function HomeLive() {
     <>
       <Load q={wallet}>{(w) => (
         <>
+          <VerifyBanner w={w} />
           <BalanceCard w={w} />
           <Gate w={w} />
           <div className="quick-actions">
