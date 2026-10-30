@@ -35,7 +35,9 @@ export class Mailer {
       throw new ApiException(API_ERROR_CODE.SERVICE_UNAVAILABLE);
     }
     if (!res.ok) {
-      this.log.error(`O serviço de email respondeu ${res.status}.`);
+      // Regista o motivo devolvido pelo Resend (nunca a chave) para diagnosticar no log do Render.
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      this.log.error(`O Resend respondeu ${res.status} (from=${from}): ${detail}`);
       throw new ApiException(API_ERROR_CODE.SERVICE_UNAVAILABLE);
     }
   }
