@@ -38,10 +38,11 @@ import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
 import { Logo } from "../brand/index.js"
 import {
-  AgreementsPage, DepositPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlansPage,
+  AgreementsPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlansPage,
   SupportPage, WalletPage, WithdrawPage,
 } from "./screens.js"
 import { VerifyRedirect } from "./verify-banner.js"
+import { DepositFlow } from "./deposit-flow.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -861,7 +862,7 @@ export function DashboardRoutes() {
       <Route path="/wallet" element={<WalletPage />} />
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/plans/:id" element={<PlanDetailPage />} />
-      <Route path="/deposit" element={<DepositPage />} />
+      <Route path="/deposit" element={<DepositFlow />} />
       <Route path="/withdraw" element={<WithdrawPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/agreements" element={<AgreementsPage />} />

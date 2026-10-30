@@ -11,6 +11,7 @@ import { ApiError, platformApi } from "../services/api-client.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
 import { VerifyBanner } from "./verify-banner.js"
+import { DepositHomeStatus } from "./deposit-flow.js"
 
 /* ============================== base: carregar, erros, dinheiro ============================== */
 
@@ -217,6 +218,7 @@ export function HomeLive() {
         <>
           <VerifyBanner w={w} />
           <BalanceCard w={w} />
+          <DepositHomeStatus />
           <Gate w={w} />
           <div className="quick-actions">
             <ActionTile icon={ArrowDownToLine} label={t("dash.nav.deposits")} onClick={() => navigate("/deposit")} />
@@ -502,7 +504,6 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
   }
 }
 
-export function DepositPage() { return <MoneyFlow mode="DEPOSIT" /> }
 export function WithdrawPage() { return <MoneyFlow mode="WITHDRAWAL" /> }
 
 /* ============================== histórico ============================== */
