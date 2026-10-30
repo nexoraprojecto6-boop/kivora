@@ -6,7 +6,7 @@ import { prepareImage } from "../features/verify/image.js"
 import { ApiError, platformApi } from "../services/api-client.js"
 import { Header, Page } from "./App.js"
 import { BrandIcon, type BrandId } from "./bank-icons.js"
-import { CoinLoader } from "./coin-loader.js"
+import { beginLoading } from "../services/loader-store.js"
 import "./deposit-flow.css"
 
 /* ======================================================================================
@@ -517,6 +517,7 @@ export function DepositFlow() {
     setError("")
     setLoader({ title, sub })
     active.current += 1
+    const endGlobal = beginLoading({ title, sub })
     try {
       const [out] = await Promise.all([work(), wait(MIN_LOADER_MS)])
       return out
@@ -524,6 +525,7 @@ export function DepositFlow() {
       if (alive.current) setError(errorText(e))
       return null
     } finally {
+      endGlobal()
       active.current -= 1
       if (alive.current && active.current === 0) setLoader(null)
     }
@@ -627,7 +629,6 @@ export function DepositFlow() {
       <Header title="Depósito" back />
       <div className="dp-wrap">
         {error ? <p className="dp-error dp-error--box" role="alert">{error}</p> : null}
-        {loader ? <CoinLoader title={loader.title} subtitle={loader.sub} /> : null}
         {!loader && step === "method" ? <MethodStep onBank={() => nav("rails", "A processar", "A verificar os métodos disponíveis")} /> : null}
         {!loader && step === "rails" ? <RailStep rails={rails} onPick={chooseRail} onBack={() => nav("method")} /> : null}
         {!loader && step === "accounts" && accountRail ? (
@@ -686,8 +687,8 @@ export function DepositHomeStatus() {
   const [currency, setCurrency] = useState("AOA")
 
   const load = useCallback(() => {
-    platformApi.deposits().then(setItems).catch(() => undefined)
-    platformApi.wallet().then((w) => setCurrency(w.currency)).catch(() => undefined)
+    platformApi.deposits({ silent: true }).then(setItems).catch(() => undefined)
+    platformApi.wallet({ silent: true }).then((w) => setCurrency(w.currency)).catch(() => undefined)
   }, [])
 
   useEffect(() => {

@@ -20,6 +20,7 @@ import {
   type WalletDto,
   type WithdrawalDto,
 } from "@kivora/shared";
+import { beginLoading } from "./loader-store.js";
 import type { ChangePasswordInput, LoginInput, RegisterInput } from "@kivora/validation";
 
 export type ClientErrorCode = ApiErrorCode | "NETWORK";
@@ -59,7 +60,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
 }
 
-async function request<T>(
+async function send<T>(
   path: string,
   method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   body?: unknown,
@@ -96,8 +97,26 @@ async function request<T>(
   return json["data"] as T;
 }
 
+/** Todos os pedidos mostram o loader global; { silent: true } é para pedidos em segundo plano. */
+type RequestOpts = { silent?: boolean };
+
+async function request<T>(
+  path: string,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  body?: unknown,
+  extraHeaders: Record<string, string> = {},
+  opts: RequestOpts = {},
+): Promise<T> {
+  const end = opts.silent ? null : beginLoading();
+  try {
+    return await send<T>(path, method, body, extraHeaders);
+  } finally {
+    end?.();
+  }
+}
+
 export const authApi = {
-  me: async (): Promise<PublicUser> => (await request<{ user: PublicUser }>("/auth/me", "GET")).user,
+  me: async (): Promise<PublicUser> => (await request<{ user: PublicUser }>("/auth/me", "GET", undefined, {}, { silent: true })).user,
   /** Envia um código de 6 dígitos para o email da conta. Devolve true se o email já estava verificado. */
   sendEmailCode: async (): Promise<boolean> => (await request<{ alreadyVerified: boolean }>("/auth/email/send", "POST", {})).alreadyVerified,
   verifyEmailCode: (code: string) => request<{ verified: true }>("/auth/email/verify", "POST", { code }),
@@ -127,13 +146,13 @@ const idem = (key: string): Record<string, string> => ({ "Idempotency-Key": key 
 
 /** Módulos operacionais. Tudo vem do servidor; nada é calculado nem inventado aqui. */
 export const platformApi = {
-  wallet: () => request<WalletDto>("/wallet", "GET"),
-  transactions: (p: { kind?: string; q?: string; cursor?: string }) =>
-    request<{ items: TransactionDto[]; nextCursor: string | null }>(`/transactions${qs({ ...p, limit: "10" })}`, "GET"),
+  wallet: (opts: RequestOpts = {}) => request<WalletDto>("/wallet", "GET", undefined, {}, opts),
+  transactions: (p: { kind?: string; q?: string; cursor?: string }, opts: RequestOpts = {}) =>
+    request<{ items: TransactionDto[]; nextCursor: string | null }>(`/transactions${qs({ ...p, limit: "10" })}`, "GET", undefined, {}, opts),
   methods: (kind: "DEPOSIT" | "WITHDRAWAL") => request<PaymentMethodDto[]>(`/payment-methods${qs({ kind })}`, "GET"),
   createDeposit: (input: { methodId: string; amountMinor: number; note?: string }, key: string) =>
     request<DepositDto>("/deposits", "POST", input, idem(key)),
-  deposits: () => request<DepositDto[]>("/deposits", "GET"),
+  deposits: (opts: RequestOpts = {}) => request<DepositDto[]>("/deposits", "GET", undefined, {}, opts),
   depositProof: (id: string, input: { txId: string; mime: string; dataBase64: string }) =>
     request<DepositDto>(`/deposits/${encodeURIComponent(id)}/proof`, "POST", input),
   paymentAccounts: () => request<PaymentAccountDto[]>("/payment-accounts", "GET"),

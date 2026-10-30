@@ -524,7 +524,7 @@ export function HistoryPage() {
   const fetchPage = useCallback(async (after: string | null) => {
     setState("loading")
     try {
-      const r = await platformApi.transactions({ ...(kind ? { kind } : {}), ...(q ? { q } : {}), ...(after ? { cursor: after } : {}) })
+      const r = await platformApi.transactions({ ...(kind ? { kind } : {}), ...(q ? { q } : {}), ...(after ? { cursor: after } : {}) }, { silent: !!q })
       setItems((prev) => (after ? [...prev, ...r.items] : r.items))
       setCursor(r.nextCursor)
       setState("ready")

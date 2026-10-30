@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App.js";
 import { AuthProvider } from "./features/auth/AuthContext.js";
+import { GlobalLoader } from "./components/loader/GlobalLoader.js";
 import { I18nProvider } from "./i18n/I18nProvider.js";
 import "./styles/tokens.css";
 import "./styles/global.css";
@@ -18,6 +19,7 @@ createRoot(root).render(
         <BrowserRouter>
           <App />
         </BrowserRouter>
+        <GlobalLoader />
       </AuthProvider>
     </I18nProvider>
   </StrictMode>,
