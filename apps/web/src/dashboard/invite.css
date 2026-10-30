@@ -1,11 +1,91 @@
-/* Cartão "Convidar amigos" (ficheiro novo; não altera o CSS original do dashboard) */
-.invite-card { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 1px solid rgba(37, 99, 235, .28);
-  background: linear-gradient(135deg, rgba(37, 99, 235, .14), rgba(14, 165, 233, .08)); }
+/* Convidar e ganhar (ficheiro próprio; não altera o CSS original do dashboard) */
+.invite-card { display: grid; gap: 12px; padding: 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--yellow) 12%, transparent)); }
 .invite-card .invite-head { display: flex; align-items: center; gap: 10px; }
-.invite-card .invite-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: rgba(37, 99, 235, .18); flex: none; }
+.invite-card .invite-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: color-mix(in srgb, var(--primary) 20%, transparent); flex: none; }
 .invite-card h3 { margin: 0; font-size: 1rem; }
 .invite-card p { margin: 0; font-size: .86rem; opacity: .82; line-height: 1.45; }
-.invite-card .invite-link { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127, 127, 127, .35);
-  background: rgba(127, 127, 127, .08); color: inherit; font-size: .8rem; }
-.invite-card .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.invite-card .invite-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border-radius: 12px; cursor: pointer; font-weight: 600; }
+.invite-card button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; border-radius: 12px; cursor: pointer; font-weight: 700; }
+.invite-link { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(127, 127, 127, .35); background: rgba(127, 127, 127, .08); color: inherit; font-size: .8rem; }
+
+.iv-page { display: grid; gap: 14px; align-content: start; }
+.iv-hero { display: grid; gap: 10px; padding: 20px 16px; border-radius: 20px; color: #fff; background: linear-gradient(140deg, var(--primary), #0ea5e9 60%, #22c55e); box-shadow: 0 10px 28px color-mix(in srgb, var(--primary) 30%, transparent); }
+.iv-hero h1 { margin: 0; font-size: 1.35rem; line-height: 1.2; }
+.iv-hero p { margin: 0; font-size: .88rem; line-height: 1.45; opacity: .95; }
+.iv-hero-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: rgba(255, 255, 255, .22); }
+.iv-linklabel { font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; opacity: .9; }
+.iv-hero .invite-link { background: rgba(255, 255, 255, .95); color: #14233b; border-color: transparent; }
+.iv-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.iv-actions > * { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 8px; border-radius: 12px; font-size: .82rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+.iv-off { font-weight: 700; }
+
+.iv-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent); }
+.iv-card h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .98rem; color: var(--navy); }
+.iv-note { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.4; }
+.iv-count { margin-left: auto; padding: 2px 9px; border-radius: 999px; font-size: .75rem; background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+
+.iv-funnel { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.iv-funnel li { position: relative; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 12px; background: var(--surface-soft); overflow: hidden; }
+.iv-funnel li > * { position: relative; z-index: 1; }
+.iv-funnel-ico { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.iv-funnel-label { font-size: .85rem; color: var(--navy); }
+.iv-funnel b { font-size: 1.05rem; color: var(--navy); }
+.iv-bar { position: absolute !important; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--primary), var(--green)); border-radius: 0 3px 0 0; transition: width .6s ease; z-index: 0 !important; }
+.iv-earn { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.iv-earn > div { display: grid; gap: 2px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--green) 12%, transparent); }
+.iv-earn > div:last-child { background: color-mix(in srgb, var(--yellow) 18%, transparent); }
+.iv-earn small { color: var(--muted); font-size: .72rem; }
+.iv-earn strong { font-size: 1.05rem; color: var(--navy); }
+
+.iv-chart { margin: 0; display: grid; gap: 8px; }
+.iv-chart svg { width: 100%; height: auto; display: block; }
+.iv-grid { stroke: color-mix(in srgb, var(--muted) 28%, transparent); stroke-width: 1; stroke-dasharray: 3 4; }
+.iv-axis { fill: var(--muted); font-size: 9px; }
+.iv-area { fill: color-mix(in srgb, var(--primary) 16%, transparent); }
+.iv-line { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.iv-line--reg, .iv-dot--reg, .iv-key--reg { stroke: var(--primary); fill: var(--primary); }
+.iv-line--reg { fill: none; }
+.iv-line--fund { stroke: var(--green); }
+.iv-dot--fund, .iv-key--fund { fill: var(--green); background: var(--green); }
+.iv-line--sub { stroke: #f59e0b; }
+.iv-dot--sub, .iv-key--sub { fill: #f59e0b; background: #f59e0b; }
+.iv-key--reg { background: var(--primary); }
+.iv-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .76rem; color: var(--muted); }
+.iv-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.iv-legend b { color: var(--navy); }
+.iv-key { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+.iv-unlock.is-open { border-color: color-mix(in srgb, var(--green) 45%, transparent); background: color-mix(in srgb, var(--green) 8%, var(--surface)); }
+.iv-progress { height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--muted) 20%, transparent); overflow: hidden; }
+.iv-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), var(--green)); transition: width .7s ease; }
+.iv-level-now { display: grid; gap: 2px; }
+.iv-level-now strong { font-size: 1.05rem; color: var(--navy); }
+.iv-level-now span { font-size: .82rem; color: var(--green); font-weight: 700; }
+.iv-levels { display: grid; gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; }
+.iv-level { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; background: var(--surface-soft); opacity: .65; }
+.iv-level.is-reached { opacity: 1; }
+.iv-level.is-current { outline: 2px solid var(--primary); }
+.iv-level small { display: block; color: var(--muted); font-size: .72rem; }
+.iv-level strong { color: var(--navy); font-size: .88rem; }
+.iv-level b { color: var(--green); font-size: .9rem; }
+.iv-level-ico { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: color-mix(in srgb, var(--yellow) 28%, transparent); }
+
+.iv-steps { display: grid; gap: 8px; margin: 0; padding-left: 20px; color: var(--navy); font-size: .86rem; line-height: 1.4; }
+.iv-steps li::marker { color: var(--primary); font-weight: 800; }
+
+.iv-empty { margin: 0; padding: 14px; text-align: center; border-radius: 12px; background: var(--surface-soft); color: var(--muted); font-size: .85rem; }
+.iv-invites { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.iv-invites li { position: relative; display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: var(--surface-soft); }
+.iv-inv-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; }
+.iv-inv-head strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .03em; color: var(--navy); }
+.iv-inv-head small { color: var(--muted); font-size: .72rem; }
+.iv-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.iv-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 600; color: var(--muted); background: color-mix(in srgb, var(--muted) 14%, transparent); }
+.iv-chip.is-on { color: #0b6b3a; background: color-mix(in srgb, var(--green) 22%, transparent); }
+.iv-chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; }
+.iv-review { justify-self: start; padding: 2px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; background: color-mix(in srgb, var(--yellow) 35%, transparent); color: #7a4b00; }
+.iv-comm { color: var(--green); font-size: .9rem; }
+.iv-rules { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 8px; color: var(--muted); font-size: .76rem; line-height: 1.4; }
+.iv-rules svg { flex: none; margin-top: 2px; }
+@media (max-width: 360px) { .iv-actions { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .iv-bar, .iv-progress i { transition: none; } }

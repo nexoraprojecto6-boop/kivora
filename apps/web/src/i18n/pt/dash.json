@@ -12,7 +12,8 @@
     "support": "Suporte e Ajuda",
     "settings": "Definições",
     "profile": "Perfil",
-    "menu": "Menu"
+    "menu": "Menu",
+    "invite": "Convidar e ganhar"
   },
   "aria": {
     "back": "Voltar",
@@ -266,6 +267,10 @@
       "SUPPORT_REPLY": {
         "title": "Resposta do suporte",
         "body": "Recebeu uma resposta a um pedido de suporte."
+      },
+      "REFERRAL_COMMISSION": {
+        "title": "Comissão recebida",
+        "body": "Recebeu uma comissão de convite de {amount}."
       }
     },
     "faqTitle": "Perguntas frequentes",

@@ -229,3 +229,62 @@ export interface AuditEventDto {
   outcome: "SUCCESS" | "FAILURE";
   createdAt: string;
 }
+
+/* ---------- Convidar e ganhar (tudo calculado no servidor) ---------- */
+export interface ReferralLevelDto {
+  level: number;
+  name: string;
+  minFunded: number;
+  /** Pontos base: 100 = 1 %. */
+  yieldBonusBps: number;
+}
+export interface ReferralInviteDto {
+  /** Identificador público curto do convidado (nunca o id interno, nome ou email). */
+  memberCode: string;
+  joinedAt: string;
+  emailVerified: boolean;
+  kycVerified: boolean;
+  funded: boolean;
+  subscribed: boolean;
+  /** Retido pela administração para análise. */
+  inReview: boolean;
+  commissionMinor: number | null;
+}
+export interface ReferralSeriesPoint {
+  date: string;
+  /** Valores acumulados até esse dia. */
+  registered: number;
+  funded: number;
+  subscribed: number;
+}
+export interface ReferralOverviewDto {
+  enabled: boolean;
+  code: string;
+  /** Caminho de registo com o código, ex.: /register?ref=ABCD2345. */
+  path: string;
+  currency: string;
+  totals: { registered: number; emailVerified: number; kycVerified: number; funded: number; subscribed: number; qualified: number; inReview: number };
+  earnings: { paidMinor: number; pendingMinor: number; perInviteMinor: number };
+  unlock: { required: number; funded: number; unlocked: boolean };
+  level: { current: ReferralLevelDto | null; next: ReferralLevelDto | null; funded: number };
+  levels: ReferralLevelDto[];
+  series: ReferralSeriesPoint[];
+  invites: ReferralInviteDto[];
+}
+export interface ReferralSettingsDto {
+  enabled: boolean;
+  commissionMinor: number;
+  minFundedToUnlock: number;
+  minDepositMinor: number;
+  maxSameIp: number;
+  levels: ReferralLevelDto[];
+}
+export interface AdminReferralDto {
+  id: string;
+  status: "ACTIVE" | "FLAGGED" | "REJECTED";
+  createdAt: string;
+  referrerId: string;
+  referrerEmail: string;
+  referredId: string;
+  referredEmail: string;
+}

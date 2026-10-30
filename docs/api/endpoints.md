@@ -50,3 +50,19 @@ Regras fixas: o livro (`ledger_entries`) é só de acréscimo (gatilho na base d
 | Pagamentos automáticos | integração com fornecedores (hoje: operação manual com confirmação da equipa) | 3 |
 | Contrapartida contabilística da plataforma | plano de contas | 8 |
 | Apps de administração (ecrãs) | aplicação `apps/admin` consome as rotas acima | — |
+
+## Convidar e ganhar
+
+Tudo é calculado no servidor; o frontend só mostra. O código do link é aleatório (nunca o id do utilizador).
+
+| Método | Rota | Quem | Descrição |
+| --- | --- | --- | --- |
+| POST | `/auth/register` | público | Campo opcional `ref` (código do link). Código inválido é ignorado. Associa o convite na mesma transacção do registo. |
+| GET | `/referrals/me` | utilizador | Código e caminho do link, funil (registados, email verificado, conta verificada, depositaram, com plano), ganhos, desbloqueio, nível, níveis, série de 30 dias e convidados (código público `KV-XXXXXXXX`). |
+| GET/PUT | `/admin/referrals/settings` | ADMIN | Comissão por convite qualificado, mínimo de convidados com depósito para desbloquear ganhos, depósito mínimo, limite de registos do mesmo IP, interruptor. |
+| PUT | `/admin/referrals/levels` | ADMIN | Níveis da comunidade (mínimo de convidados com depósito e bónus de rendimento em pontos base). |
+| GET | `/admin/referrals?status=FLAGGED` | ADMIN | Convites retidos para análise. |
+| POST | `/admin/referrals/:id/clear` · `/reject` | ADMIN | Libertar ou anular um convite retido. |
+| POST | `/admin/referrals/reconcile` | ADMIN | Reavalia todos os convidantes e paga comissões em falta (idempotente). |
+
+Convite qualificado: convite activo + email verificado + conta verificada (KYC) + depósito confirmado + plano activo. A comissão só é paga depois de o convidante desbloquear os ganhos, entra no livro como `REFERRAL_COMMISSION` (só de acréscimo) e há no máximo uma por convidado.

@@ -10,6 +10,7 @@ import { AgreementsService } from "./agreements.service.js";
 import { SupportService } from "./engagement.service.js";
 import { body, ctxOf, idOf, qInt, qStatus, qStr } from "./http.js";
 import { PaymentsService } from "./payments.service.js";
+import { ReferralsService } from "./referrals.service.js";
 import { PlansService } from "./plans.service.js";
 import { agreementSchema, messageSchema, methodSchema, noteSchema, planSchema, reasonSchema, userStatusSchema } from "./schemas.js";
 import { AdminOnlyGuard, StaffGuard } from "./staff.guard.js";
@@ -67,6 +68,7 @@ export class AdminController {
     private readonly plans: PlansService,
     private readonly agreements: AgreementsService,
     private readonly verification: VerificationService,
+    private readonly referrals: ReferralsService,
   ) {}
 
   @Patch("users/:id/status")
@@ -128,7 +130,9 @@ export class AdminController {
   @Post("deposits/:id/confirm")
   @HttpCode(200)
   async confirmDeposit(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<AdminDepositDto> {
-    return ok(await this.payments.adminDecideDeposit(ctxOf(req), idOf(id), "confirm", body(noteSchema, b).note ?? ""));
+    const out = await this.payments.adminDecideDeposit(ctxOf(req), idOf(id), "confirm", body(noteSchema, b).note ?? "");
+    await this.referrals.settleFor(out.userId);
+    return ok(out);
   }
   @Post("deposits/:id/reject")
   @HttpCode(200)
@@ -165,7 +169,9 @@ export class AdminController {
   @Post("subscriptions/:id/approve")
   @HttpCode(200)
   async approveSub(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<AdminSubscriptionDto> {
-    return ok(await this.plans.adminDecide(ctxOf(req), idOf(id), "approve", body(noteSchema, b).note ?? ""));
+    const out = await this.plans.adminDecide(ctxOf(req), idOf(id), "approve", body(noteSchema, b).note ?? "");
+    await this.referrals.settleFor(out.userId);
+    return ok(out);
   }
   @Post("subscriptions/:id/reject")
   @HttpCode(200)
@@ -208,7 +214,9 @@ export class AdminController {
   @Post("verifications/:id/approve")
   @HttpCode(200)
   async approve(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<AdminVerificationDto> {
-    return ok(await this.verification.adminDecide(ctxOf(req), idOf(id), "approve", ""));
+    const out = await this.verification.adminDecide(ctxOf(req), idOf(id), "approve", "");
+    await this.referrals.settleFor(out.userId);
+    return ok(out);
   }
   @Post("verifications/:id/reject")
   @HttpCode(200)

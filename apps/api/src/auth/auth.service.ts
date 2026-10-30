@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { API_ERROR_CODE } from "@kivora/shared";
 import type { SessionSummary } from "@kivora/shared";
@@ -71,6 +71,7 @@ export class AuthService {
         { documentType: "terms", documentVersion: LEGAL_DOCUMENT_VERSION_PENDING, acceptedAt },
         { documentType: "privacy", documentVersion: LEGAL_DOCUMENT_VERSION_PENDING, acceptedAt },
       ],
+      input.ref ? { code: input.ref, ipHash: ctx.ip ? createHash("sha256").update(`${process.env["REFERRAL_IP_SALT"] ?? "kivora-ref"}|${ctx.ip}`).digest("hex") : null } : undefined,
     );
     if (!user) {
       // Limitação conhecida: sem verificação de email (decisão 6) não é possível

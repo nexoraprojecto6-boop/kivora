@@ -48,6 +48,7 @@ export class PgAuthRepository implements AuthRepository {
     user: NewUser,
     passwordHash: string,
     consents: readonly NewConsent[],
+    referral?: { code: string; ipHash: string | null },
   ): Promise<UserRecord | null> {
     const client = await this.pool.connect();
     try {
@@ -71,6 +72,20 @@ export class PgAuthRepository implements AuthRepository {
           `INSERT INTO consent_records (user_id, document_type, document_version, accepted_at)
            VALUES ($1, $2::consent_document_type, $3, $4)`,
           [row.id, c.documentType.toUpperCase(), c.documentVersion, c.acceptedAt],
+        );
+      }
+      if (referral) {
+        // Mesma transacção do registo. Sem erro se o código não existir, o convidante não estiver activo ou o convite estiver desligado.
+        // Vários registos do mesmo IP no mesmo convidante ficam FLAGGED (retidos para análise).
+        await client.query(
+          `INSERT INTO referrals (referrer_id, referred_id, signup_ip_hash, status)
+           SELECT rc.user_id, $2, $3::text,
+                  CASE WHEN $3::text IS NOT NULL AND (SELECT count(*) FROM referrals x WHERE x.referrer_id = rc.user_id AND x.signup_ip_hash = $3::text) >= (SELECT max_same_ip FROM referral_settings)
+                       THEN 'FLAGGED' ELSE 'ACTIVE' END
+             FROM referral_codes rc JOIN users u ON u.id = rc.user_id
+            WHERE rc.code = $1 AND rc.user_id <> $2 AND u.status = 'ACTIVE' AND (SELECT enabled FROM referral_settings)
+           ON CONFLICT DO NOTHING`,
+          [referral.code, row.id, referral.ipHash],
         );
       }
       await client.query("COMMIT");

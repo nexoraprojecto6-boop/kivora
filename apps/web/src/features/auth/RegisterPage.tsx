@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerSchema } from "@kivora/validation";
 import { Alert } from "../../components/ui/Alert.js";
@@ -10,6 +10,7 @@ import { TextField } from "../../components/ui/TextField.js";
 import { AuthLayout } from "../../components/layout/AuthLayout.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { ApiError, authApi } from "../../services/api-client.js";
+import { clearRef, currentRef, rememberRef } from "./referral-ref.js";
 import { useCopy } from "../verify/copy.js";
 import { useAuth } from "./AuthContext.js";
 import { RedirectToDashboard } from "./RedirectToDashboard.js";
@@ -27,6 +28,7 @@ export function RegisterPage() {
   const c = useCopy();
   const navigate = useNavigate();
   const { status, register } = useAuth();
+  useEffect(() => rememberRef(window.location.search), []);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,6 +53,7 @@ export function RegisterPage() {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setFormError(null);
+    const ref = currentRef(window.location.search);
     const parsed = registerSchema.safeParse({
       fullName,
       email,
@@ -58,6 +61,7 @@ export function RegisterPage() {
       countryOfResidence: country,
       acceptTerms,
       acceptPrivacy,
+      ...(ref ? { ref } : {}),
     });
     if (!parsed.success) {
       setErrors(zodToErrorMap(parsed.error));
@@ -68,6 +72,7 @@ export function RegisterPage() {
     justRegistered.current = true;
     try {
       await register(parsed.data);
+      clearRef();
       // Envia já o código de confirmação; se falhar, o passo seguinte oferece "Enviar código".
       const sent = await authApi.sendEmailCode().then(() => true, () => false);
       navigate("/verify", { replace: true, state: { sent } });

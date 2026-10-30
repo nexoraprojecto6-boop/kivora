@@ -2,6 +2,7 @@ import { Body, Controller, HttpCode, Post, Req, UseGuards } from "@nestjs/common
 import type { ApiSuccessResponse } from "@kivora/shared";
 import { z } from "zod";
 import { AuthGuard, type AuthenticatedRequest } from "../auth/auth.guard.js";
+import { ReferralsService } from "./referrals.service.js";
 import { EmailVerificationService } from "./email-verification.service.js";
 import { body, requestIdOf, userIdOf } from "./http.js";
 
@@ -11,7 +12,7 @@ const codeSchema = z.strictObject({ code: z.string({ error: "required" }).trim()
 @Controller("auth/email")
 @UseGuards(AuthGuard)
 export class EmailController {
-  constructor(private readonly emails: EmailVerificationService) {}
+  constructor(private readonly emails: EmailVerificationService, private readonly referrals: ReferralsService) {}
 
   @Post("send")
   @HttpCode(200)
@@ -23,6 +24,7 @@ export class EmailController {
   @HttpCode(200)
   async verify(@Req() req: AuthenticatedRequest, @Body() b: unknown): Promise<ApiSuccessResponse<{ verified: true }>> {
     await this.emails.verify(userIdOf(req), body(codeSchema, b).code, requestIdOf(req));
+    await this.referrals.settleFor(userIdOf(req));
     return { data: { verified: true } };
   }
 }

@@ -68,7 +68,8 @@ export type LedgerKind =
   | "WITHDRAWAL_RELEASE"
   | "WITHDRAWAL_PAID"
   | "SUBSCRIPTION_RESERVE"
-  | "SUBSCRIPTION_RELEASE";
+  | "SUBSCRIPTION_RELEASE"
+  | "REFERRAL_COMMISSION";
 export interface Leg {
   bucket: "AVAILABLE" | "RESERVED";
   amount: number;
@@ -92,7 +93,7 @@ export async function getBalance(db: Db, userId: string): Promise<{ available: n
 
 export async function post(
   client: PoolClient,
-  e: { userId: string; currency: string; kind: LedgerKind; refType: "DEPOSIT" | "WITHDRAWAL" | "SUBSCRIPTION"; refId: string; actorId: string | null; legs: Leg[] },
+  e: { userId: string; currency: string; kind: LedgerKind; refType: "DEPOSIT" | "WITHDRAWAL" | "SUBSCRIPTION" | "REFERRAL"; refId: string; actorId: string | null; legs: Leg[] },
 ): Promise<void> {
   const groupId = randomUUID();
   for (const leg of e.legs) {

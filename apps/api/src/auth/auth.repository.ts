@@ -18,6 +18,8 @@ export interface AuthRepository {
     user: NewUser,
     passwordHash: string,
     consents: readonly NewConsent[],
+    /** Convite opcional: associado na mesma transacção; um código inexistente ou inválido é ignorado. */
+    referral?: { code: string; ipHash: string | null },
   ): Promise<UserRecord | null>;
   getPasswordHash(userId: string): Promise<string | null>;
   createSession(session: Omit<SessionRecord, "id" | "createdAt">): Promise<SessionRecord>;

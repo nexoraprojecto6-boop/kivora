@@ -9,6 +9,7 @@ import {
   type PaymentMethodDto,
   type PlanDto,
   type PublicUser,
+  type ReferralOverviewDto,
   type SessionSummary,
   type SubscriptionDto,
   type TicketDetailDto,
@@ -146,6 +147,8 @@ const idem = (key: string): Record<string, string> => ({ "Idempotency-Key": key 
 
 /** Módulos operacionais. Tudo vem do servidor; nada é calculado nem inventado aqui. */
 export const platformApi = {
+  /** Painel "Convidar e ganhar": tudo calculado no servidor. */
+  referrals: () => request<ReferralOverviewDto>("/referrals/me", "GET"),
   wallet: (opts: RequestOpts = {}) => request<WalletDto>("/wallet", "GET", undefined, {}, opts),
   transactions: (p: { kind?: string; q?: string; cursor?: string }, opts: RequestOpts = {}) =>
     request<{ items: TransactionDto[]; nextCursor: string | null }>(`/transactions${qs({ ...p, limit: "10" })}`, "GET", undefined, {}, opts),

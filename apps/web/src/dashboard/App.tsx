@@ -11,6 +11,7 @@ import {
   Clock3,
   FileText,
   Fingerprint,
+  Gift,
   Globe2,
   History,
   Home,
@@ -43,6 +44,7 @@ import {
 } from "./screens.js"
 import { VerifyRedirect } from "./verify-banner.js"
 import { DepositFlow } from "./deposit-flow.js"
+import { InvitePage } from "./invite.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -183,6 +185,7 @@ const menuItems = [
   ["deposits", ArrowDownToLine, "/deposit"],
   ["withdrawals", ArrowUpFromLine, "/withdraw"],
   ["history", History, "/history"],
+  ["invite", Gift, "/invite"],
   ["agreements", FileText, "/agreements"],
   ["verification", Fingerprint, "/verification"],
   ["notifications", Bell, "/notifications"],
@@ -812,6 +815,7 @@ const TITLE_KEYS: Record<string, string> = {
   deposit: "deposits",
   withdraw: "withdrawals",
   history: "history",
+  invite: "invite",
   agreements: "agreements",
   verification: "verification",
   notifications: "notifications",
@@ -863,6 +867,7 @@ export function DashboardRoutes() {
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/plans/:id" element={<PlanDetailPage />} />
       <Route path="/deposit" element={<DepositFlow />} />
+      <Route path="/invite" element={<InvitePage />} />
       <Route path="/withdraw" element={<WithdrawPage />} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/agreements" element={<AgreementsPage />} />

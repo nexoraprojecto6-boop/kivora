@@ -89,3 +89,27 @@ export const ticketSchema = z.strictObject({
 });
 export const messageSchema = z.strictObject({ message: text(1, 4000) });
 export const userStatusSchema = z.strictObject({ status: z.enum(["ACTIVE", "LIMITED", "SUSPENDED"]) });
+
+export const referralSettingsSchema = z.strictObject({
+  enabled: z.boolean(),
+  commissionMinor: z.number().int().min(0).max(1_000_000_000_000),
+  minFundedToUnlock: z.number().int().min(1).max(100_000),
+  minDepositMinor: z.number().int().min(0).max(1_000_000_000_000),
+  maxSameIp: z.number().int().min(1).max(100),
+});
+
+export const referralLevelsSchema = z
+  .strictObject({
+    levels: z
+      .array(z.strictObject({ level: z.number().int().min(1).max(20), name: text(2, 40), minFunded: z.number().int().min(1).max(100_000), yieldBonusBps: z.number().int().min(0).max(10_000) }))
+      .min(1)
+      .max(10),
+  })
+  .superRefine((v, ctx) => {
+    for (let i = 1; i < v.levels.length; i++) {
+      const a = v.levels[i - 1]!;
+      const b = v.levels[i]!;
+      // Níveis em ordem crescente: mais convidados nunca dão menos bónus.
+      if (b.level <= a.level || b.minFunded <= a.minFunded || b.yieldBonusBps < a.yieldBonusBps) ctx.addIssue({ code: "custom", path: ["levels", i], message: "invalidOrder" });
+    }
+  });

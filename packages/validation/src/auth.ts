@@ -50,6 +50,8 @@ export const registerSchema = z.object({
     .transform((v) => v.toUpperCase()),
   acceptTerms: z.literal(true, { error: "mustAccept" }),
   acceptPrivacy: z.literal(true, { error: "mustAccept" }),
+  /** Código de convite (opcional). Um código inválido é ignorado: nunca bloqueia o registo nem revela se existe. */
+  ref: z.string().trim().toUpperCase().regex(/^[A-HJ-NP-Z2-9]{8}$/).optional().catch(undefined),
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 

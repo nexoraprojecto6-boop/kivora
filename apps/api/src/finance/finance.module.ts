@@ -10,6 +10,8 @@ import { AgreementsService } from "./agreements.service.js";
 import { NotificationsService, SupportService } from "./engagement.service.js";
 import { FINANCE_CONFIG, FinanceGate, PG_POOL, loadFinanceConfig, type FinanceConfig } from "./finance.config.js";
 import { PaymentsService } from "./payments.service.js";
+import { ReferralsAdminController, ReferralsController } from "./referrals.controllers.js";
+import { ReferralsService } from "./referrals.service.js";
 import { PlansService } from "./plans.service.js";
 import { AdminOnlyGuard, StaffGuard } from "./staff.guard.js";
 import { AccountController, PaymentsController, PlansController } from "./user.controllers.js";
@@ -22,12 +24,12 @@ export class FinanceModule {
     return {
       module: FinanceModule,
       imports: [AuthModule],
-      controllers: [EmailController, PaymentsController, PlansController, AccountController, StaffController, AdminController],
+      controllers: [EmailController, PaymentsController, PlansController, AccountController, ReferralsController, StaffController, AdminController, ReferralsAdminController],
       providers: [
         { provide: PG_POOL, useValue: pool },
         { provide: FINANCE_CONFIG, useValue: config },
         Mailer, EmailVerificationService, FinanceGate, StaffGuard, AdminOnlyGuard,
-        PaymentsService, PlansService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService,
+        PaymentsService, PlansService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService, ReferralsService,
       ],
     };
   }
