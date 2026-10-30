@@ -109,6 +109,18 @@ export class AdminController {
   }
 
   /* Depósitos */
+  @Get("deposits/:id/proof")
+  async depositProof(@Param("id") id: string, @Res() res: Response): Promise<void> {
+    const f = await this.payments.adminProof(idOf(id));
+    res.set({
+      "Content-Type": f.mime,
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "sandbox; default-src 'none'",
+      "Content-Disposition": "inline",
+    });
+    res.end(f.content);
+  }
   @Get("deposits")
   async deposits(@Query() q: Record<string, unknown>): R<AdminDepositDto[]> {
     return ok(await this.payments.adminDeposits(qStatus(q["status"])));

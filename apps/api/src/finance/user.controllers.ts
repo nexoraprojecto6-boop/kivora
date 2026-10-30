@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import {
-  type AgreementDto, type ApiSuccessResponse, type DepositDto, type NotificationDto, type PaymentMethodDto, type PlanDto, type SubscriptionDto,
+  type AgreementDto, type ApiSuccessResponse, type DepositDto, type NotificationDto, type PaymentAccountDto, type PaymentMethodDto, type PlanDto, type SubscriptionDto,
   type TicketDetailDto, type TicketDto, type TransactionDto, type VerificationDto, type WalletDto, type WithdrawalDto,
 } from "@kivora/shared";
 import { AuthGuard, type AuthenticatedRequest } from "../auth/auth.guard.js";
@@ -9,7 +9,7 @@ import { NotificationsService, SupportService } from "./engagement.service.js";
 import { body, idOf, idemOf, qInt, qStr, requestIdOf, userIdOf } from "./http.js";
 import { PaymentsService } from "./payments.service.js";
 import { PlansService } from "./plans.service.js";
-import { createDepositSchema, createWithdrawalSchema, messageSchema, subscribeSchema, ticketSchema, verificationSchema } from "./schemas.js";
+import { createDepositSchema, createWithdrawalSchema, messageSchema, paymentAccountSchema, proofSchema, subscribeSchema, ticketSchema, verificationSchema } from "./schemas.js";
 import { VerificationService } from "./verification.service.js";
 
 type R<T> = Promise<ApiSuccessResponse<T>>;
@@ -56,10 +56,31 @@ export class PaymentsController {
   async deposit(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<DepositDto> {
     return ok(await this.payments.getDeposit(userIdOf(req), idOf(id)));
   }
+  @Post("deposits/:id/proof")
+  @HttpCode(200)
+  async depositProof(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<DepositDto> {
+    return ok(await this.payments.submitProof(userIdOf(req), idOf(id), body(proofSchema, b), requestIdOf(req)));
+  }
   @Post("deposits/:id/cancel")
   @HttpCode(200)
   async cancelDeposit(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<DepositDto> {
     return ok(await this.payments.cancelDeposit(userIdOf(req), idOf(id), requestIdOf(req)));
+  }
+
+  @Get("payment-accounts")
+  async accounts(@Req() req: AuthenticatedRequest): R<PaymentAccountDto[]> {
+    return ok(await this.payments.listAccounts(userIdOf(req)));
+  }
+  @Post("payment-accounts")
+  @HttpCode(201)
+  async addAccount(@Req() req: AuthenticatedRequest, @Body() b: unknown): R<PaymentAccountDto> {
+    return ok(await this.payments.addAccount(userIdOf(req), body(paymentAccountSchema, b)));
+  }
+  @Delete("payment-accounts/:id")
+  @HttpCode(200)
+  async deleteAccount(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<{ deleted: true }> {
+    await this.payments.deleteAccount(userIdOf(req), idOf(id));
+    return ok({ deleted: true });
   }
 
   @Post("withdrawals")

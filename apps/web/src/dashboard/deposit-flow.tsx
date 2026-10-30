@@ -1,36 +1,80 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
-import {
-  ArrowLeft, Banknote, Bitcoin, Check, ChevronRight, Clock3, Copy, CreditCard, Hash, Landmark, Plus,
-  ReceiptText, ShieldCheck, Timer, Trash2, Upload, X, type LucideIcon,
-} from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react"
+import { ArrowLeft, Check, ChevronRight, Clock3, Copy, Plus, ReceiptText, ShieldCheck, Timer, Trash2, Upload, X } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import type { DepositDto, PaymentAccountDto, PaymentMethodDto, PaymentRail } from "@kivora/shared"
+import { prepareImage } from "../features/verify/image.js"
+import { ApiError, platformApi } from "../services/api-client.js"
 import { Header, Page } from "./App.js"
+import { BrandIcon, type BrandId } from "./bank-icons.js"
 import { CoinLoader } from "./coin-loader.js"
-import { depositActions, useDepositStore, type RailId, type SavedMethod } from "./deposit-store.js"
 import "./deposit-flow.css"
 
 /* ======================================================================================
- * Fluxo de depósito (TELAS). Ainda sem API: tudo o que está em `mockApi` é simulado e será
- * substituído por chamadas ao servidor. Os textos estão em português (Angola) num só sítio.
+ * Fluxo de depósito ligado à API.
+ *  - métodos e contas do parceiro: definidos pelo administrador (GET /payment-methods?kind=DEPOSIT)
+ *  - contas do cliente: GET/POST/DELETE /payment-accounts
+ *  - depósito: POST /deposits (devolve a conta do parceiro e o prazo de 1 hora)
+ *  - comprovativo: POST /deposits/:id/proof
+ * Há um loader em cada passo (mínimo MIN_LOADER_MS), do clique em «Depositar» até ao fim.
  * ====================================================================================== */
 
-const DEPOSIT_WINDOW_MS = 60 * 60 * 1000
-const MIN_AMOUNT = 1000
-const MAX_AMOUNT = 5_000_000
-const QUICK_AMOUNTS = [5000, 10000, 25000, 50000, 100000]
+const MIN_LOADER_MS = 900
+const QUICK_UNITS = [5000, 10000, 25000, 50000, 100000]
 
-const fmtKz = (n: number) => new Intl.NumberFormat("pt-AO", { style: "currency", currency: "AOA", maximumFractionDigits: 0 }).format(n)
-const digits = (v: string) => v.replace(/\D/g, "")
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+const digits = (v: string) => v.replace(/\D/g, "")
 
-/* ------------------------------ métodos e campos ------------------------------ */
-
-const RAILS: Record<RailId, { name: string; blurb: string; icon: LucideIcon }> = {
-  PAYPAY: { name: "PayPay AO", blurb: "Transferência por número de telefone", icon: Landmark },
-  KWIK: { name: "Kwik", blurb: "Transferência para IBAN", icon: Banknote },
-  EXPRESS: { name: "Multicaixa Express", blurb: "Pagamento pelo número Express", icon: CreditCard },
-  REFERENCIA: { name: "Referência Multicaixa", blurb: "Pagamento por entidade e referência", icon: Hash },
+export interface Money {
+  currency: string
+  fmt: (minor: number) => string
+  toMinor: (units: number) => number
 }
+
+export function makeMoney(currency: string): Money {
+  const fd = new Intl.NumberFormat("pt-AO", { style: "currency", currency }).resolvedOptions().maximumFractionDigits ?? 2
+  const nf = new Intl.NumberFormat("pt-AO", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: fd })
+  const factor = 10 ** fd
+  return { currency, fmt: (minor) => nf.format(minor / factor), toMinor: (units) => Math.round(units * factor) }
+}
+
+function errorText(e: unknown): string {
+  if (!(e instanceof ApiError)) return "Algo correu mal. Tente novamente."
+  const code = e.fieldErrors[0]?.code
+  if (code === "belowMinimum") return "O valor está abaixo do mínimo permitido."
+  if (code === "aboveMaximum") return "O valor está acima do máximo permitido."
+  if (code === "invalidFile" || code === "fileSize") return "Ficheiro inválido ou demasiado grande. Envie um print ou foto nítida."
+  if (code === "invalidTxId") return "ID da transacção inválido."
+  if (e.code === "NETWORK") return "Sem ligação. Verifique a internet e tente novamente."
+  if (e.code === "RATE_LIMITED") return "Demasiados pedidos. Aguarde um momento."
+  if (e.code === "FORBIDDEN") return "Não pode depositar de momento. Verifique se a sua conta está verificada."
+  if (e.code === "CONFLICT") return "Já existem demasiados pedidos em aberto. Conclua ou cancele um deles."
+  if (e.code === "INVALID_STATE_TRANSITION") return "Este depósito já não pode ser alterado."
+  return "Algo correu mal. Tente novamente."
+}
+
+/* ------------------------------ serviços e campos ------------------------------ */
+
+type AccountRail = PaymentAccountDto["rail"]
+
+const RAILS: Record<PaymentRail, { name: string; blurb: string; brand: BrandId; instructions: string }> = {
+  PAYPAY: {
+    name: "PayPay AO", blurb: "Transferência por número de telefone", brand: "paypay",
+    instructions: "Abra o PayPay AO, escolha Transferir, introduza o número acima e o valor exacto. Confirme o nome do titular antes de pagar.",
+  },
+  KWIK: {
+    name: "Kwik", blurb: "Transferência para IBAN", brand: "kwik",
+    instructions: "No Kwik, escolha Transferir para IBAN, introduza o IBAN acima e o valor exacto. Confirme o nome do titular antes de pagar.",
+  },
+  EXPRESS: {
+    name: "Multicaixa Express", blurb: "Pagamento pelo número Express", brand: "express",
+    instructions: "No Multicaixa Express, escolha Transferir, introduza o número acima e o valor exacto. Confirme o nome do titular antes de pagar.",
+  },
+  REFERENCIA: {
+    name: "Referência Multicaixa", blurb: "Pagamento por entidade e referência", brand: "referencia",
+    instructions: "No Multicaixa Express ou num ATM, escolha Pagamentos, depois Pagamento por referência, e introduza a entidade, a referência e o valor exacto.",
+  },
+}
+const RAIL_ORDER: PaymentRail[] = ["PAYPAY", "KWIK", "EXPRESS", "REFERENCIA"]
 
 interface FieldDef {
   key: "detail" | "holder"
@@ -48,17 +92,14 @@ const fullName: FieldDef = {
   normalize: (v) => v.replace(/\s+/g, " ").trim(),
   validate: (v) => (v.split(" ").filter((p) => p.length > 1).length >= 2 ? null : "Escreva o nome completo (nome e apelido)."),
 }
+const phone = (label: string, hint: string): FieldDef => ({
+  key: "detail", label, placeholder: "9XX XXX XXX", inputMode: "tel", hint,
+  normalize: (v) => { const d = digits(v); return d.startsWith("244") && d.length > 9 ? d.slice(3) : d },
+  validate: (v) => (/^9\d{8}$/.test(v) ? null : "Número inválido. Use 9 dígitos, começando por 9."),
+})
 
-const FORMS: Record<Exclude<RailId, "REFERENCIA">, FieldDef[]> = {
-  PAYPAY: [
-    {
-      key: "detail", label: "Número PayPay (telefone)", placeholder: "9XX XXX XXX", inputMode: "tel",
-      hint: "O número de telemóvel associado à sua conta PayPay.",
-      normalize: (v) => { const d = digits(v); return d.startsWith("244") && d.length > 9 ? d.slice(3) : d },
-      validate: (v) => (/^9\d{8}$/.test(v) ? null : "Número inválido. Use 9 dígitos, começando por 9."),
-    },
-    fullName,
-  ],
+const FORMS: Record<AccountRail, FieldDef[]> = {
+  PAYPAY: [phone("Número PayPay (telefone)", "O número de telemóvel associado à sua conta PayPay."), fullName],
   KWIK: [
     {
       key: "detail", label: "IBAN", placeholder: "AO06 0000 0000 0000 0000 0000 0", inputMode: "text",
@@ -69,12 +110,7 @@ const FORMS: Record<Exclude<RailId, "REFERENCIA">, FieldDef[]> = {
     fullName,
   ],
   EXPRESS: [
-    {
-      key: "detail", label: "Número do Multicaixa Express", placeholder: "9XX XXX XXX", inputMode: "tel",
-      hint: "O número registado no seu Multicaixa Express.",
-      normalize: (v) => { const d = digits(v); return d.startsWith("244") && d.length > 9 ? d.slice(3) : d },
-      validate: (v) => (/^\d{9}$/.test(v) ? null : "Número inválido. Use 9 dígitos."),
-    },
+    phone("Número do Multicaixa Express", "O número registado no seu Multicaixa Express."),
     {
       key: "holder", label: "Apelido", placeholder: "Ex.: Silva", inputMode: "text",
       hint: "O apelido do titular da conta Express.",
@@ -85,49 +121,8 @@ const FORMS: Record<Exclude<RailId, "REFERENCIA">, FieldDef[]> = {
 }
 
 const groupIban = (v: string) => v.replace(/(.{4})/g, "$1 ").trim()
-const groupPhone = (v: string) => v.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3")
-
-function showDetail(m: SavedMethod): string {
-  if (m.rail === "KWIK") return groupIban(m.detail)
-  if (m.rail === "PAYPAY" || m.rail === "EXPRESS") return groupPhone(m.detail)
-  return m.detail
-}
-
-/* ------------------------------ SIMULAÇÃO DO SERVIDOR ------------------------------ */
-
-interface Coords { lines: { label: string; value: string }[]; holder: string; instructions: string }
-
-const MOCK_REFERENCES = [
-  { id: "ref1", entity: "00000", reference: "000 000 001" },
-  { id: "ref2", entity: "00000", reference: "000 000 002" },
-  { id: "ref3", entity: "00000", reference: "000 000 003" },
-]
-
-function mockCoords(rail: RailId, amount: number): Coords {
-  const amountLine = { label: "Valor a transferir", value: fmtKz(amount) }
-  switch (rail) {
-    case "PAYPAY":
-      return { holder: "Conta do parceiro (exemplo)", lines: [{ label: "Número PayPay", value: "900 000 000" }, amountLine],
-        instructions: "Abra o PayPay AO, escolha Transferir, introduza o número acima e o valor exacto. Confirme o nome do parceiro antes de pagar." }
-    case "KWIK":
-      return { holder: "Conta do parceiro (exemplo)", lines: [{ label: "IBAN", value: "AO06 0000 0000 0000 0000 0000 0" }, amountLine],
-        instructions: "No Kwik, escolha Transferir para IBAN, introduza o IBAN acima e o valor exacto. Confirme o nome do titular antes de pagar." }
-    case "EXPRESS":
-      return { holder: "Conta do parceiro (exemplo)", lines: [{ label: "Número Express", value: "900 000 000" }, amountLine],
-        instructions: "No Multicaixa Express, escolha Transferir, introduza o número acima e o valor exacto. Confirme o nome antes de pagar." }
-    case "REFERENCIA":
-      return { holder: "Pagamento por referência", lines: [{ label: "Entidade", value: "00000" }, { label: "Referência", value: "000 000 001" }, amountLine],
-        instructions: "Num ATM ou no Multicaixa Express, escolha Pagamentos, depois Pagamento por referência, e introduza a entidade, a referência e o valor exacto." }
-  }
-}
-
-const mockApi = {
-  /** O servidor escolhe os métodos disponíveis no momento. */
-  async availableRails(): Promise<RailId[]> { await wait(2800); return ["PAYPAY", "KWIK", "EXPRESS", "REFERENCIA"] },
-  async saveMethod(m: Omit<SavedMethod, "id">): Promise<SavedMethod> { await wait(2200); return depositActions.addMethod(m) },
-  async prepareDeposit(rail: RailId, amount: number): Promise<Coords> { await wait(2400); return mockCoords(rail, amount) },
-  async submitProof(): Promise<void> { await wait(2400) },
-}
+const groupPhone = (v: string) => (/^\d{9}$/.test(v) ? v.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3") : v)
+const showDetail = (a: PaymentAccountDto) => (a.rail === "KWIK" ? groupIban(a.detail) : groupPhone(a.detail))
 
 /* ------------------------------ peças reutilizáveis ------------------------------ */
 
@@ -135,12 +130,14 @@ type ModalTone = "success" | "error" | "warning"
 
 export function DpModal({ tone, title, children, action, onClose }: { tone: ModalTone; title: string; children: ReactNode; action: string; onClose: () => void }) {
   const btn = useRef<HTMLButtonElement>(null)
+  const close = useRef(onClose)
+  close.current = onClose
   useEffect(() => {
     btn.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close.current() }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [onClose])
+  }, [])
   const Icon = tone === "success" ? Check : tone === "error" ? X : Clock3
   return (
     <div className="dp-overlay" role="presentation">
@@ -170,25 +167,26 @@ function StepHead({ step, title, sub }: { step: number; title: string; sub: stri
   )
 }
 
+function Option({ brand, name, blurb, onClick, disabled, soon }: { brand: BrandId; name: string; blurb: string; onClick?: () => void; disabled?: boolean; soon?: boolean }) {
+  return (
+    <button type="button" className="dp-option" disabled={disabled} onClick={onClick}>
+      <BrandIcon id={brand} />
+      <span className="dp-option__text"><b>{name}</b><small>{blurb}</small></span>
+      {soon ? <em className="dp-soon">Em breve</em> : <ChevronRight size={18} />}
+    </button>
+  )
+}
+
 /* ------------------------------ passo 1: método ------------------------------ */
 
 function MethodStep({ onBank }: { onBank: () => void }) {
-  const items: { id: string; name: string; blurb: string; icon: LucideIcon; ready: boolean }[] = [
-    { id: "bank", name: "Banco de Angola", blurb: "PayPay AO, Kwik, Multicaixa Express e Referência", icon: Landmark, ready: true },
-    { id: "crypto", name: "Criptomoeda", blurb: "Bitcoin, USDT e outras", icon: Bitcoin, ready: false },
-    { id: "card", name: "Cartão", blurb: "Visa e Mastercard", icon: CreditCard, ready: false },
-  ]
   return (
     <>
       <StepHead step={1} title="Como quer depositar?" sub="Escolha o método de pagamento." />
       <div className="dp-list">
-        {items.map((it) => (
-          <button key={it.id} type="button" className="dp-option" disabled={!it.ready} onClick={it.ready ? onBank : undefined}>
-            <span className="dp-option__icon"><it.icon size={20} /></span>
-            <span className="dp-option__text"><b>{it.name}</b><small>{it.blurb}</small></span>
-            {it.ready ? <ChevronRight size={18} /> : <em className="dp-soon">Em breve</em>}
-          </button>
-        ))}
+        <Option brand="angola" name="Banco de Angola" blurb="PayPay AO, Kwik, Multicaixa Express e Referência" onClick={onBank} />
+        <Option brand="crypto" name="Criptomoeda" blurb="Bitcoin, USDT e outras" disabled soon />
+        <Option brand="card" name="Cartão" blurb="Visa e Mastercard" disabled soon />
       </div>
     </>
   )
@@ -196,22 +194,14 @@ function MethodStep({ onBank }: { onBank: () => void }) {
 
 /* ------------------------------ passo 2: serviço ------------------------------ */
 
-function RailStep({ rails, onPick, onBack }: { rails: RailId[]; onPick: (r: RailId) => void; onBack: () => void }) {
+function RailStep({ rails, onPick, onBack }: { rails: PaymentRail[]; onPick: (r: PaymentRail) => void; onBack: () => void }) {
   return (
     <>
       <BackLink onClick={onBack} />
       <StepHead step={2} title="Métodos disponíveis" sub="Estes são os serviços disponíveis neste momento." />
+      {rails.length === 0 ? <p className="dp-muted">De momento não há métodos de depósito disponíveis. Tente mais tarde.</p> : null}
       <div className="dp-list">
-        {rails.map((id) => {
-          const r = RAILS[id]
-          return (
-            <button key={id} type="button" className="dp-option" onClick={() => onPick(id)}>
-              <span className="dp-option__icon"><r.icon size={20} /></span>
-              <span className="dp-option__text"><b>{r.name}</b><small>{r.blurb}</small></span>
-              <ChevronRight size={18} />
-            </button>
-          )
-        })}
+        {rails.map((id) => <Option key={id} brand={RAILS[id].brand} name={RAILS[id].name} blurb={RAILS[id].blurb} onClick={() => onPick(id)} />)}
       </div>
     </>
   )
@@ -219,7 +209,7 @@ function RailStep({ rails, onPick, onBack }: { rails: RailId[]; onPick: (r: Rail
 
 /* ------------------------------ passo 3: a sua conta ------------------------------ */
 
-function MethodForm({ rail, onSave, onCancel }: { rail: Exclude<RailId, "REFERENCIA">; onSave: (m: Omit<SavedMethod, "id">) => void; onCancel: (() => void) | null }) {
+function AccountForm({ rail, onSave, onCancel }: { rail: AccountRail; onSave: (v: { holder: string; detail: string }) => void; onCancel: (() => void) | null }) {
   const fields = FORMS[rail]
   const [values, setValues] = useState<Record<string, string>>({ detail: "", holder: "" })
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -235,7 +225,7 @@ function MethodForm({ rail, onSave, onCancel }: { rail: Exclude<RailId, "REFEREN
       if (msg) errs[f.key] = msg
     }
     setErrors(errs)
-    if (Object.keys(errs).length === 0) onSave({ rail, detail: clean["detail"] ?? "", holder: clean["holder"] ?? "" })
+    if (Object.keys(errs).length === 0) onSave({ holder: clean["holder"] ?? "", detail: clean["detail"] ?? "" })
   }
 
   return (
@@ -262,75 +252,63 @@ function MethodForm({ rail, onSave, onCancel }: { rail: Exclude<RailId, "REFEREN
   )
 }
 
-function AccountStep({ rail, methods, selectedId, onSelect, onSave, onContinue, onBack }: {
-  rail: RailId; methods: SavedMethod[]; selectedId: string | null; onSelect: (id: string) => void
-  onSave: (m: Omit<SavedMethod, "id">) => void; onContinue: () => void; onBack: () => void
+function AccountStep({ rail, accounts, selectedId, onSelect, onSave, onDelete, onContinue, onBack }: {
+  rail: AccountRail; accounts: PaymentAccountDto[]; selectedId: string | null; onSelect: (id: string) => void
+  onSave: (rail: AccountRail, v: { holder: string; detail: string }) => void; onDelete: (id: string) => void; onContinue: () => void; onBack: () => void
 }) {
-  const mine = methods.filter((m) => m.rail === rail)
+  const mine = accounts.filter((a) => a.rail === rail)
   const [adding, setAdding] = useState(mine.length === 0)
   const [confirmDel, setConfirmDel] = useState<string | null>(null)
-  const meta = RAILS[rail]
 
   return (
     <>
       <BackLink onClick={onBack} />
-      <StepHead step={3} title={meta.name} sub={rail === "REFERENCIA" ? "Escolha a referência de pagamento." : "Escolha a sua conta ou adicione uma nova."} />
-
-      {rail === "REFERENCIA" ? (
-        <div className="dp-list">
-          {MOCK_REFERENCES.map((r) => (
-            <button key={r.id} type="button" className="dp-option" onClick={() => onSave({ rail, holder: `Entidade ${r.entity}`, detail: r.reference })}>
-              <span className="dp-option__icon"><Hash size={20} /></span>
-              <span className="dp-option__text"><b>Entidade {r.entity}</b><small>Referência {r.reference}</small></span>
-              <ChevronRight size={18} />
-            </button>
-          ))}
-          <p className="dp-muted">Referências de exemplo. Serão geradas pelo servidor.</p>
-        </div>
-      ) : null}
-
+      <StepHead step={3} title={RAILS[rail].name} sub="Escolha a sua conta ou adicione uma nova." />
       {mine.length > 0 && !adding ? (
         <>
           <div className="dp-list" role="radiogroup" aria-label="Métodos guardados">
-            {mine.map((m) => (
-              <div key={m.id} className={`dp-saved${selectedId === m.id ? " dp-saved--on" : ""}`}>
-                <button type="button" role="radio" aria-checked={selectedId === m.id} className="dp-saved__main" onClick={() => onSelect(m.id)}>
-                  <span className="dp-radio" aria-hidden="true">{selectedId === m.id ? <Check size={12} strokeWidth={4} /> : null}</span>
-                  <span className="dp-option__text"><b>{m.holder}</b><small>{showDetail(m)}</small></span>
+            {mine.map((a) => (
+              <div key={a.id} className={`dp-saved${selectedId === a.id ? " dp-saved--on" : ""}`}>
+                <button type="button" role="radio" aria-checked={selectedId === a.id} className="dp-saved__main" onClick={() => onSelect(a.id)}>
+                  <span className="dp-radio" aria-hidden="true">{selectedId === a.id ? <Check size={12} strokeWidth={4} /> : null}</span>
+                  <span className="dp-option__text"><b>{a.holder}</b><small>{showDetail(a)}</small></span>
                 </button>
-                {confirmDel === m.id ? (
+                {confirmDel === a.id ? (
                   <span className="dp-confirm">
-                    <button type="button" onClick={() => { depositActions.removeMethod(m.id); setConfirmDel(null) }}>Excluir</button>
+                    <button type="button" onClick={() => { setConfirmDel(null); onDelete(a.id) }}>Excluir</button>
                     <button type="button" onClick={() => setConfirmDel(null)}>Não</button>
                   </span>
                 ) : (
-                  <button type="button" className="dp-icon-btn" aria-label={`Excluir ${m.holder}`} onClick={() => setConfirmDel(m.id)}><Trash2 size={16} /></button>
+                  <button type="button" className="dp-icon-btn" aria-label={`Excluir ${a.holder}`} onClick={() => setConfirmDel(a.id)}><Trash2 size={16} /></button>
                 )}
               </div>
             ))}
           </div>
-          {rail !== "REFERENCIA" ? <button type="button" className="dp-secondary" onClick={() => setAdding(true)}><Plus size={15} /> Adicionar outro</button> : null}
+          <button type="button" className="dp-secondary" onClick={() => setAdding(true)}><Plus size={15} /> Adicionar outro</button>
           <button type="button" className="dp-primary" disabled={!selectedId} onClick={onContinue}>Continuar</button>
         </>
-      ) : null}
-
-      {rail !== "REFERENCIA" && (adding || mine.length === 0) ? (
-        <MethodForm rail={rail} onSave={onSave} onCancel={mine.length > 0 ? () => setAdding(false) : null} />
-      ) : null}
+      ) : (
+        <AccountForm rail={rail} onSave={(v) => onSave(rail, v)} onCancel={mine.length > 0 ? () => setAdding(false) : null} />
+      )}
     </>
   )
 }
 
 /* ------------------------------ passo 4: valor ------------------------------ */
 
-function AmountStep({ initial, onContinue, onBack }: { initial: number; onContinue: (n: number) => void; onBack: () => void }) {
-  const [text, setText] = useState(initial > 0 ? String(initial) : "")
+function AmountStep({ money, method, initialUnits, onContinue, onBack }: {
+  money: Money; method: PaymentMethodDto; initialUnits: number; onContinue: (units: number) => void; onBack: () => void
+}) {
+  const [text, setText] = useState(initialUnits > 0 ? String(initialUnits) : "")
   const [error, setError] = useState("")
   const value = Number(digits(text)) || 0
+  const minMinor = method.minMinor
+  const maxMinor = method.maxMinor
 
   function go() {
-    if (value < MIN_AMOUNT) return setError(`O valor mínimo é ${fmtKz(MIN_AMOUNT)}.`)
-    if (value > MAX_AMOUNT) return setError(`O valor máximo é ${fmtKz(MAX_AMOUNT)}.`)
+    const minor = money.toMinor(value)
+    if (minMinor !== null && minor < minMinor) return setError(`O valor mínimo é ${money.fmt(minMinor)}.`)
+    if (maxMinor !== null && minor > maxMinor) return setError(`O valor máximo é ${money.fmt(maxMinor)}.`)
     onContinue(value)
   }
 
@@ -339,7 +317,7 @@ function AmountStep({ initial, onContinue, onBack }: { initial: number; onContin
       <BackLink onClick={onBack} />
       <StepHead step={4} title="Qual é o valor total?" sub="Indique quanto vai depositar." />
       <label className="dp-amount">
-        <span>Valor em Kz</span>
+        <span>Valor ({money.currency})</span>
         <input
           inputMode="numeric"
           placeholder="0"
@@ -348,10 +326,14 @@ function AmountStep({ initial, onContinue, onBack }: { initial: number; onContin
           onChange={(e) => { setText(e.target.value); setError("") }}
         />
       </label>
-      {error ? <p className="dp-error" role="alert">{error}</p> : <p className="dp-muted">Mínimo {fmtKz(MIN_AMOUNT)}.</p>}
+      {error ? <p className="dp-error" role="alert">{error}</p> : (
+        <p className="dp-muted">
+          {minMinor !== null ? `Mínimo ${money.fmt(minMinor)}. ` : ""}{maxMinor !== null ? `Máximo ${money.fmt(maxMinor)}.` : ""}
+        </p>
+      )}
       <div className="dp-chips">
-        {QUICK_AMOUNTS.map((q) => (
-          <button key={q} type="button" className={value === q ? "on" : ""} onClick={() => { setText(String(q)); setError("") }}>{fmtKz(q)}</button>
+        {QUICK_UNITS.map((q) => (
+          <button key={q} type="button" className={value === q ? "on" : ""} onClick={() => { setText(String(q)); setError("") }}>{money.fmt(money.toMinor(q))}</button>
         ))}
       </div>
       <button type="button" className="dp-primary" disabled={value === 0} onClick={go}>Continuar</button>
@@ -380,15 +362,38 @@ function CopyButton({ value }: { value: string }) {
   return <button type="button" className="dp-copy" onClick={() => void copy()} aria-label="Copiar">{done ? <Check size={14} /> : <Copy size={14} />}{done ? "Copiado" : "Copiar"}</button>
 }
 
-function PayStep({ coords, deadline, onSubmit, onExpire, onCancel }: {
-  coords: Coords; deadline: number; onSubmit: (file: File, txId: string) => void; onExpire: () => void; onCancel: () => void
+function coordsOf(d: DepositDto, money: Money): { holder: string; lines: { label: string; value: string; copy: boolean }[]; instructions: string } {
+  const p = d.payTo
+  const rail = d.rail
+  const lines: { label: string; value: string; copy: boolean }[] = []
+  if (rail === "REFERENCIA") {
+    lines.push({ label: "Entidade", value: p.entity, copy: true }, { label: "Referência", value: p.reference, copy: true })
+  } else if (rail === "KWIK") {
+    lines.push({ label: "IBAN", value: groupIban(p.number.replace(/\s/g, "")), copy: true })
+  } else if (rail === "EXPRESS") {
+    lines.push({ label: "Número Express", value: groupPhone(p.number), copy: true })
+  } else if (rail === "PAYPAY") {
+    lines.push({ label: "Número PayPay", value: groupPhone(p.number), copy: true })
+  } else if (p.number) {
+    lines.push({ label: "Conta", value: p.number, copy: true })
+  }
+  lines.push({ label: "Valor a transferir", value: money.fmt(d.amountMinor), copy: false })
+  const instructions = d.instructions.trim() !== "" ? d.instructions.trim() : rail ? RAILS[rail].instructions : "Faça o pagamento com o valor exacto indicado."
+  return { holder: p.holder, lines, instructions }
+}
+
+function PayStep({ deposit, money, deadline, onSubmit, onExpire, onCancel }: {
+  deposit: DepositDto; money: Money; deadline: number; onSubmit: (file: File, txId: string) => void; onExpire: () => void; onCancel: () => void
 }) {
+  const coords = useMemo(() => coordsOf(deposit, money), [deposit, money])
   const [left, setLeft] = useState(() => Math.max(0, deadline - Date.now()))
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [txId, setTxId] = useState("")
   const [error, setError] = useState("")
   const expired = useRef(false)
+  const expireRef = useRef(onExpire)
+  expireRef.current = onExpire
 
   useEffect(() => {
     const id = window.setInterval(() => setLeft(Math.max(0, deadline - Date.now())), 1000)
@@ -396,8 +401,8 @@ function PayStep({ coords, deadline, onSubmit, onExpire, onCancel }: {
   }, [deadline])
 
   useEffect(() => {
-    if (left === 0 && !expired.current) { expired.current = true; onExpire() }
-  }, [left, onExpire])
+    if (left === 0 && !expired.current) { expired.current = true; expireRef.current() }
+  }, [left])
 
   useEffect(() => {
     if (!file || !file.type.startsWith("image/")) return setPreview(null)
@@ -410,15 +415,16 @@ function PayStep({ coords, deadline, onSubmit, onExpire, onCancel }: {
     setError("")
     if (!f) return setFile(null)
     if (!(f.type.startsWith("image/") || f.type === "application/pdf")) return setError("Envie uma imagem (print ou foto) ou um PDF.")
-    if (f.size > 8 * 1024 * 1024) return setError("O ficheiro é demasiado grande (máximo 8 MB).")
+    if (f.type === "application/pdf" && f.size > 1_400_000) return setError("O PDF é demasiado grande. Envie um print do comprovativo.")
+    if (f.size > 25 * 1024 * 1024) return setError("O ficheiro é demasiado grande.")
     setFile(f)
   }
 
-  const idOk = /^[A-Za-z0-9\-_/.]{4,40}$/.test(txId.trim())
+  const idOk = /^[A-Za-z0-9\-_/.]{4,60}$/.test(txId.trim())
 
   function submit() {
     if (!file) return setError("Envie o comprovativo do pagamento.")
-    if (!idOk) return setError("Escreva o ID da transacção que aparece no comprovativo.")
+    if (!idOk) return setError("Escreva o ID da transacção (4 a 60 letras, números ou - _ / .).")
     onSubmit(file, txId.trim())
   }
 
@@ -433,13 +439,14 @@ function PayStep({ coords, deadline, onSubmit, onExpire, onCancel }: {
       <StepHead step={5} title="Faça a transferência" sub="Pague exactamente o valor indicado para esta conta parceira." />
 
       <section className="dp-card dp-coords" aria-label="Coordenadas de pagamento">
-        <small className="dp-coords__holder"><ShieldCheck size={14} /> {coords.holder}</small>
+        {coords.holder ? <small className="dp-coords__holder"><ShieldCheck size={14} /> {coords.holder}</small> : null}
         {coords.lines.map((l) => (
           <div key={l.label} className="dp-coords__row">
             <span><small>{l.label}</small><b>{l.value}</b></span>
-            {l.label !== "Valor a transferir" ? <CopyButton value={l.value} /> : null}
+            {l.copy ? <CopyButton value={l.value} /> : null}
           </div>
         ))}
+        <small className="dp-muted">Pedido {deposit.reference}</small>
       </section>
 
       <p className="dp-instructions">{coords.instructions} Depois envie aqui um comprovativo <b>claro e nítido</b> (print ou foto).</p>
@@ -464,71 +471,156 @@ function PayStep({ coords, deadline, onSubmit, onExpire, onCancel }: {
   )
 }
 
+/* ------------------------------ ficheiros ------------------------------ */
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "")
+    reader.onerror = () => reject(new Error("read"))
+    reader.readAsDataURL(file)
+  })
+}
+
+async function proofPayload(file: File): Promise<{ mime: string; dataBase64: string }> {
+  if (file.type === "application/pdf") return { mime: "application/pdf", dataBase64: await fileToBase64(file) }
+  return prepareImage(file)
+}
+
 /* ------------------------------ fluxo completo ------------------------------ */
 
 type Step = "method" | "rails" | "accounts" | "amount" | "pay"
 
 export function DepositFlow() {
   const navigate = useNavigate()
-  const { methods } = useDepositStore()
   const [step, setStep] = useState<Step>("method")
-  const [loader, setLoader] = useState<{ title: string; sub: string } | null>(null)
+  const [loader, setLoader] = useState<{ title: string; sub: string } | null>({ title: "A carregar", sub: "A preparar o seu depósito" })
   const [error, setError] = useState("")
-  const [rails, setRails] = useState<RailId[]>([])
-  const [rail, setRail] = useState<RailId | null>(null)
-  const [methodId, setMethodId] = useState<string | null>(null)
-  const [amount, setAmount] = useState(0)
-  const [coords, setCoords] = useState<Coords | null>(null)
+  const [methods, setMethods] = useState<PaymentMethodDto[]>([])
+  const [money, setMoney] = useState<Money>(() => makeMoney("AOA"))
+  const [rail, setRail] = useState<PaymentRail | null>(null)
+  const [accounts, setAccounts] = useState<PaymentAccountDto[]>([])
+  const [accountId, setAccountId] = useState<string | null>(null)
+  const [units, setUnits] = useState(0)
+  const [deposit, setDeposit] = useState<DepositDto | null>(null)
   const [deadline, setDeadline] = useState(0)
   const [modal, setModal] = useState<"success" | "expired" | null>(null)
   const alive = useRef(true)
+  const idemRef = useRef<{ sig: string; key: string } | null>(null)
+  /** Quantos loaders estão activos; o ecrã só aparece quando todos terminam. */
+  const active = useRef(0)
+
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
 
-  async function run<T>(title: string, sub: string, work: () => Promise<T>): Promise<T | null> {
+  /** Mostra o loader (no mínimo MIN_LOADER_MS) enquanto o trabalho decorre. */
+  const run = useCallback(async function run<T>(title: string, sub: string, work: () => Promise<T>): Promise<T | null> {
     setError("")
     setLoader({ title, sub })
+    active.current += 1
     try {
-      return await work()
-    } catch {
-      if (alive.current) setError("Não foi possível concluir. Tente novamente.")
+      const [out] = await Promise.all([work(), wait(MIN_LOADER_MS)])
+      return out
+    } catch (e) {
+      if (alive.current) setError(errorText(e))
       return null
     } finally {
-      if (alive.current) setLoader(null)
+      active.current -= 1
+      if (alive.current && active.current === 0) setLoader(null)
     }
-  }
+  }, [])
 
-  async function chooseBank() {
-    const r = await run("A processar", "A verificar os métodos disponíveis neste momento", mockApi.availableRails)
-    if (r) { setRails(r); setStep("rails") }
-  }
+  /** Mudança de passo com loader. O passo muda por baixo do loader, sem piscar. */
+  const nav = useCallback((next: Step, title = "A processar", sub = "Um momento") => {
+    void run(title, sub, async () => { setStep(next) })
+  }, [run])
 
-  function chooseRail(r: RailId) {
+  useEffect(() => {
+    void run("A carregar", "A preparar o seu depósito", async () => {
+      const [m, w] = await Promise.all([platformApi.methods("DEPOSIT"), platformApi.wallet()])
+      if (!alive.current) return
+      setMethods(m)
+      setMoney(makeMoney(w.currency))
+    })
+  }, [run])
+
+  const rails = useMemo(() => RAIL_ORDER.filter((r) => methods.some((m) => m.rail === r)), [methods])
+  /** O servidor ordena os métodos por ordem de apresentação; usa-se o primeiro disponível do serviço. */
+  const method = useMemo(() => (rail ? methods.find((m) => m.rail === rail) ?? null : null), [methods, rail])
+  const accountRail: AccountRail | null = rail && rail !== "REFERENCIA" ? rail : null
+
+  function chooseRail(r: PaymentRail) {
     setRail(r)
-    setMethodId(methods.find((m) => m.rail === r)?.id ?? null)
-    setStep("accounts")
+    setAccountId(null)
+    if (r === "REFERENCIA") return nav("amount", "A processar", "A preparar o valor")
+    void run("A carregar as suas contas", "Os métodos que já guardou", async () => {
+      const list = await platformApi.paymentAccounts()
+      if (!alive.current) return
+      setAccounts(list)
+      setAccountId(list.find((a) => a.rail === r)?.id ?? null)
+      setStep("accounts")
+    })
   }
 
-  async function saveMethod(m: Omit<SavedMethod, "id">) {
-    const saved = await run("A guardar o seu método", "Para os próximos depósitos e levantamentos", () => mockApi.saveMethod(m))
-    if (saved) setMethodId(saved.id)
+  function saveAccount(r: AccountRail, v: { holder: string; detail: string }) {
+    void run("A guardar o seu método", "Para os próximos depósitos e levantamentos", async () => {
+      const saved = await platformApi.addPaymentAccount({ rail: r, ...v })
+      if (!alive.current) return
+      setAccounts((prev) => [...prev.filter((a) => a.id !== saved.id), saved])
+      setAccountId(saved.id)
+    })
   }
 
-  async function chooseAmount(n: number) {
-    if (!rail) return
-    setAmount(n)
-    const c = await run("A preparar o depósito", "A reservar as coordenadas de pagamento", () => mockApi.prepareDeposit(rail, n))
-    if (c) { setCoords(c); setDeadline(Date.now() + DEPOSIT_WINDOW_MS); setStep("pay") }
+  function deleteAccount(id: string) {
+    void run("A excluir", "A remover o método guardado", async () => {
+      await platformApi.removePaymentAccount(id)
+      if (!alive.current) return
+      setAccounts((prev) => prev.filter((a) => a.id !== id))
+      setAccountId((cur) => (cur === id ? null : cur))
+    })
   }
 
-  async function sendProof() {
-    if (!rail) return
-    const ok = await run("A enviar o comprovativo", "Não feche esta página", async () => { await mockApi.submitProof(); return true })
-    if (ok) { depositActions.createDeposit(rail, amount); setModal("success") }
+  function createDeposit(u: number) {
+    if (!method || !rail) return
+    setUnits(u)
+    const acc = accounts.find((a) => a.id === accountId)
+    const note = acc ? `${RAILS[acc.rail].name} · ${acc.detail} · ${acc.holder}`.slice(0, 300) : ""
+    const amountMinor = money.toMinor(u)
+    const sig = `${method.id}|${amountMinor}|${note}`
+    if (idemRef.current?.sig !== sig) idemRef.current = { sig, key: globalThis.crypto.randomUUID() }
+    const key = idemRef.current.key
+    void run("A preparar o depósito", "A reservar as coordenadas de pagamento", async () => {
+      const d = await platformApi.createDeposit({ methodId: method.id, amountMinor, ...(note ? { note } : {}) }, key)
+      if (!alive.current) return
+      setDeposit(d)
+      setDeadline(Date.now() + Math.max(0, Date.parse(d.expiresAt) - Date.parse(d.createdAt)))
+      setStep("pay")
+    })
   }
 
-  const leave = () => navigate("/")
-  const expire = useMemo(() => () => setModal("expired"), [])
-  const selected = methods.find((m) => m.id === methodId) ?? null
+  function sendProof(file: File, txId: string) {
+    if (!deposit) return
+    void run("A enviar o comprovativo", "Não feche esta página", async () => {
+      const payload = await proofPayload(file)
+      await platformApi.depositProof(deposit.id, { txId, ...payload })
+      if (alive.current) setModal("success")
+    })
+  }
+
+  function cancelDeposit() {
+    const id = deposit?.id
+    void run("A cancelar", "Um momento", async () => {
+      if (id) await platformApi.cancel("DEPOSIT", id).catch(() => undefined)
+      if (alive.current) navigate("/")
+    })
+  }
+
+  const leave = useCallback(() => navigate("/"), [navigate])
+  const expire = useCallback(() => {
+    if (deposit) void platformApi.cancel("DEPOSIT", deposit.id).catch(() => undefined)
+    setModal("expired")
+  }, [deposit])
+
+  const selectedLabel = deposit ? money.fmt(deposit.amountMinor) : ""
 
   return (
     <Page>
@@ -536,24 +628,28 @@ export function DepositFlow() {
       <div className="dp-wrap">
         {error ? <p className="dp-error dp-error--box" role="alert">{error}</p> : null}
         {loader ? <CoinLoader title={loader.title} subtitle={loader.sub} /> : null}
-        {!loader && step === "method" ? <MethodStep onBank={() => void chooseBank()} /> : null}
-        {!loader && step === "rails" ? <RailStep rails={rails} onPick={chooseRail} onBack={() => setStep("method")} /> : null}
-        {!loader && step === "accounts" && rail ? (
+        {!loader && step === "method" ? <MethodStep onBank={() => nav("rails", "A processar", "A verificar os métodos disponíveis")} /> : null}
+        {!loader && step === "rails" ? <RailStep rails={rails} onPick={chooseRail} onBack={() => nav("method")} /> : null}
+        {!loader && step === "accounts" && accountRail ? (
           <AccountStep
-            key={`${rail}-${methods.filter((m) => m.rail === rail).length}`}
-            rail={rail} methods={methods} selectedId={methodId} onSelect={setMethodId}
-            onSave={(m) => void saveMethod(m)} onContinue={() => { if (selected) setStep("amount") }} onBack={() => setStep("rails")}
+            key={`${accountRail}-${accounts.filter((a) => a.rail === accountRail).length}`}
+            rail={accountRail} accounts={accounts} selectedId={accountId} onSelect={setAccountId}
+            onSave={saveAccount} onDelete={deleteAccount}
+            onContinue={() => { if (accountId) nav("amount", "A processar", "A preparar o valor") }}
+            onBack={() => nav("rails")}
           />
         ) : null}
-        {!loader && step === "amount" ? <AmountStep initial={amount} onContinue={(n) => void chooseAmount(n)} onBack={() => setStep("accounts")} /> : null}
-        {!loader && step === "pay" && coords ? (
-          <PayStep coords={coords} deadline={deadline} onSubmit={() => void sendProof()} onExpire={expire} onCancel={leave} />
+        {!loader && step === "amount" && method ? (
+          <AmountStep money={money} method={method} initialUnits={units} onContinue={createDeposit} onBack={() => nav(accountRail ? "accounts" : "rails")} />
+        ) : null}
+        {!loader && step === "pay" && deposit ? (
+          <PayStep deposit={deposit} money={money} deadline={deadline} onSubmit={sendProof} onExpire={expire} onCancel={cancelDeposit} />
         ) : null}
       </div>
 
       {modal === "success" ? (
         <DpModal tone="success" title="Confirmação feita com sucesso" action="Voltar ao início" onClose={leave}>
-          <p>Recebemos o seu comprovativo de {fmtKz(amount)}. O depósito está em análise e será creditado após a aprovação.</p>
+          <p>Recebemos o seu comprovativo de {selectedLabel}. O depósito está em análise e será creditado após a aprovação.</p>
         </DpModal>
       ) : null}
       {modal === "expired" ? (
@@ -567,39 +663,75 @@ export function DepositFlow() {
 
 /* ------------------------------ painel: saldo pendente e avisos ------------------------------ */
 
-/** Mostra «Pendente / Em análise» no painel e o aviso quando o depósito é aprovado ou recusado. */
+const SEEN_KEY = "kivora.deposit.seen"
+const NOTICE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
+
+function readSeen(): string[] {
+  try {
+    const raw = window.localStorage.getItem(SEEN_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string").slice(-50) : []
+  } catch {
+    return []
+  }
+}
+function writeSeen(ids: string[]) {
+  try { window.localStorage.setItem(SEEN_KEY, JSON.stringify(ids.slice(-50))) } catch { /* sem armazenamento */ }
+}
+
+/** «Pendente / Em análise» no painel e o aviso quando o administrador aprova ou recusa um depósito. */
 export function DepositHomeStatus() {
-  const { deposit } = useDepositStore()
-  if (!deposit) return null
-  const rail = RAILS[deposit.rail].name
+  const [items, setItems] = useState<DepositDto[]>([])
+  const [seen, setSeen] = useState<string[]>(readSeen)
+  const [currency, setCurrency] = useState("AOA")
+
+  const load = useCallback(() => {
+    platformApi.deposits().then(setItems).catch(() => undefined)
+    platformApi.wallet().then((w) => setCurrency(w.currency)).catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    load()
+    const onVisible = () => { if (document.visibilityState === "visible") load() }
+    document.addEventListener("visibilitychange", onVisible)
+    const timer = window.setInterval(load, 30_000)
+    return () => { document.removeEventListener("visibilitychange", onVisible); window.clearInterval(timer) }
+  }, [load])
+
+  const money = useMemo(() => makeMoney(currency), [currency])
+  const pending = items.filter((d) => d.status === "PENDING" && d.proofSubmitted)
+  const total = pending.reduce((sum, d) => sum + d.amountMinor, 0)
+  const notice = items.find(
+    (d) => (d.status === "REJECTED" || d.status === "CONFIRMED") && !seen.includes(d.id) && d.decidedAt !== null && Date.now() - Date.parse(d.decidedAt) < NOTICE_WINDOW_MS,
+  )
+
+  function dismiss(id: string) {
+    const next = [...seen, id]
+    setSeen(next)
+    writeSeen(next)
+  }
 
   return (
     <>
-      {deposit.status === "PENDING" ? (
+      {pending.length > 0 ? (
         <section className="dp-pending" aria-label="Depósito em análise">
           <span className="dp-pending__icon"><Clock3 size={18} /></span>
           <span className="dp-pending__text">
-            <small>Saldo pendente · {rail}</small>
-            <b>{fmtKz(deposit.amount)}</b>
+            <small>Saldo pendente · {pending.length === 1 ? "1 depósito" : `${pending.length} depósitos`}</small>
+            <b>{money.fmt(total)}</b>
           </span>
           <em>Em análise</em>
-          {import.meta.env.DEV ? (
-            <span className="dp-demo">
-              <button type="button" onClick={() => depositActions.decide("APPROVED")}>Simular aprovar</button>
-              <button type="button" onClick={() => depositActions.decide("REJECTED")}>Simular recusar</button>
-            </span>
-          ) : null}
         </section>
       ) : null}
 
-      {deposit.status === "REJECTED" ? (
-        <DpModal tone="error" title="Depósito recusado" action="Entendi" onClose={depositActions.dismissNotice}>
-          <p>O seu depósito de {fmtKz(deposit.amount)} foi recusado. Se já fez a transferência, contacte o suporte com o comprovativo.</p>
+      {notice?.status === "REJECTED" ? (
+        <DpModal tone="error" title="Depósito recusado" action="Entendi" onClose={() => dismiss(notice.id)}>
+          <p>O seu depósito de {money.fmt(notice.amountMinor)} foi recusado.{notice.decisionNote ? ` Motivo: ${notice.decisionNote}.` : ""} Se já fez a transferência, contacte o suporte com o comprovativo.</p>
         </DpModal>
       ) : null}
-      {deposit.status === "APPROVED" ? (
-        <DpModal tone="success" title="Depósito aprovado" action="Ok" onClose={depositActions.dismissNotice}>
-          <p>O seu depósito de {fmtKz(deposit.amount)} foi aprovado.</p>
+      {notice?.status === "CONFIRMED" ? (
+        <DpModal tone="success" title="Depósito aprovado" action="Ok" onClose={() => dismiss(notice.id)}>
+          <p>O seu depósito de {money.fmt(notice.amountMinor)} foi aprovado e o saldo já foi creditado.</p>
         </DpModal>
       ) : null}
     </>

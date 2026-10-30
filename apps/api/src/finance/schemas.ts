@@ -13,8 +13,24 @@ export const subscribeSchema = z.strictObject({ amountMinor: money });
 export const noteSchema = z.strictObject({ note: text(0, 500).optional() });
 export const reasonSchema = z.strictObject({ note: text(3, 500) });
 
+export const proofSchema = z.strictObject({
+  txId: z.string().trim().regex(/^[A-Za-z0-9\-_/.]{4,60}$/, { error: "invalidTxId" }),
+  mime: z.enum(["image/jpeg", "image/png", "application/pdf"]),
+  dataBase64: z.string().min(100).max(2_800_000),
+});
+export const paymentAccountSchema = z.strictObject({
+  rail: z.enum(["PAYPAY", "KWIK", "EXPRESS"]),
+  holder: text(2, 120),
+  detail: text(3, 60),
+});
+
 export const methodSchema = z.strictObject({
   kind: z.enum(["DEPOSIT", "WITHDRAWAL"]),
+  rail: z.enum(["PAYPAY", "KWIK", "EXPRESS", "REFERENCIA"]).nullable(),
+  accountHolder: text(0, 120),
+  accountNumber: text(0, 60),
+  entity: text(0, 20),
+  reference: text(0, 40),
   name: text(2, 80),
   instructions: text(0, 2000),
   minMinor: optMoney,
@@ -23,6 +39,14 @@ export const methodSchema = z.strictObject({
   feeNote: text(0, 300),
   enabled: z.boolean(),
   sortOrder: z.number().int().min(-1000).max(1000),
+}).superRefine((v, ctx) => {
+  if (v.kind !== "DEPOSIT" || v.rail === null) return;
+  if (v.rail === "REFERENCIA") {
+    if (v.entity === "") ctx.addIssue({ code: "custom", path: ["entity"], message: "required" });
+    if (v.reference === "") ctx.addIssue({ code: "custom", path: ["reference"], message: "required" });
+  } else if (v.accountNumber === "") {
+    ctx.addIssue({ code: "custom", path: ["accountNumber"], message: "required" });
+  }
 });
 
 export const planSchema = z.strictObject({

@@ -5,6 +5,7 @@ import {
   type ApiFieldError,
   type DepositDto,
   type NotificationDto,
+  type PaymentAccountDto,
   type PaymentMethodDto,
   type PlanDto,
   type PublicUser,
@@ -132,6 +133,13 @@ export const platformApi = {
   methods: (kind: "DEPOSIT" | "WITHDRAWAL") => request<PaymentMethodDto[]>(`/payment-methods${qs({ kind })}`, "GET"),
   createDeposit: (input: { methodId: string; amountMinor: number; note?: string }, key: string) =>
     request<DepositDto>("/deposits", "POST", input, idem(key)),
+  deposits: () => request<DepositDto[]>("/deposits", "GET"),
+  depositProof: (id: string, input: { txId: string; mime: string; dataBase64: string }) =>
+    request<DepositDto>(`/deposits/${encodeURIComponent(id)}/proof`, "POST", input),
+  paymentAccounts: () => request<PaymentAccountDto[]>("/payment-accounts", "GET"),
+  addPaymentAccount: (input: { rail: PaymentAccountDto["rail"]; holder: string; detail: string }) =>
+    request<PaymentAccountDto>("/payment-accounts", "POST", input),
+  removePaymentAccount: (id: string) => request<{ deleted: true }>(`/payment-accounts/${encodeURIComponent(id)}`, "DELETE"),
   createWithdrawal: (input: { methodId: string; amountMinor: number; destination: string }, key: string) =>
     request<WithdrawalDto>("/withdrawals", "POST", input, idem(key)),
   cancel: (kind: "DEPOSIT" | "WITHDRAWAL" | "SUBSCRIPTION", id: string) =>

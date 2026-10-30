@@ -1,0 +1,10 @@
+Coloque aqui os logótipos oficiais (PNG, quadrados, de preferência 256x256, fundo transparente ou branco):
+
+  paypay.png       PayPay AO
+  kwik.png         Kwik
+  express.png      Multicaixa Express
+  referencia.png   Referência Multicaixa
+  crypto.png       (opcional) Criptomoeda
+  card.png         (opcional) Cartão
+
+A bandeira de Angola já vem desenhada no código. Se algum ficheiro faltar, aparece um ícone simples no lugar.

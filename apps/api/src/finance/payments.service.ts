@@ -4,6 +4,7 @@ import {
   type AdminDepositDto,
   type AdminWithdrawalDto,
   type DepositDto,
+  type PaymentAccountDto,
   type PaymentMethodDto,
   type TransactionDto,
   type KycStatus,
@@ -17,10 +18,16 @@ import {
   audit, getBalance, lockUser, newReference, notify, one, post, releaseLegs, reserveLegs, sql, tx, type Ctx,
 } from "./sql.js";
 
-const METHOD_COLS = `m.id, m.kind, m.name, m.instructions, m.min_minor::float8 AS "minMinor", m.max_minor::float8 AS "maxMinor",
+const METHOD_BASE = `m.id, m.kind, m.rail, m.name, m.instructions, m.min_minor::float8 AS "minMinor", m.max_minor::float8 AS "maxMinor",
   m.fee_minor::float8 AS "feeMinor", m.fee_note AS "feeNote", m.enabled, m.sort_order AS "sortOrder"`;
+/** Lista do administrador: inclui os dados da conta da plataforma. */
+const METHOD_COLS = `${METHOD_BASE}, m.account_holder AS "accountHolder", m.account_number AS "accountNumber", m.entity, m.reference`;
+/** Lista pública: os dados da conta só chegam ao cliente ao criar o depósito. */
+const METHOD_PUBLIC = `${METHOD_BASE}, ''::text AS "accountHolder", ''::text AS "accountNumber", ''::text AS entity, ''::text AS reference`;
 const DEP_COLS = `d.id, d.reference, d.amount_minor::float8 AS "amountMinor", d.currency, d.status, d.user_note AS "userNote",
-  d.decision_note AS "decisionNote", d.created_at AS "createdAt", d.decided_at AS "decidedAt", m.id AS "methodId", m.name AS "methodName", m.instructions`;
+  d.decision_note AS "decisionNote", d.created_at AS "createdAt", d.decided_at AS "decidedAt", m.id AS "methodId", m.name AS "methodName", m.instructions,
+  m.rail, d.expires_at AS "expiresAt", d.tx_id AS "txId", (d.proof_submitted_at IS NOT NULL) AS "proofSubmitted",
+  jsonb_build_object('holder', m.account_holder, 'number', m.account_number, 'entity', m.entity, 'reference', m.reference) AS "payTo"`;
 const WD_COLS = `w.id, w.reference, w.amount_minor::float8 AS "amountMinor", w.currency, w.status, w.destination,
   w.decision_note AS "decisionNote", w.created_at AS "createdAt", w.decided_at AS "decidedAt", m.id AS "methodId", m.name AS "methodName"`;
 const WITH_USER = `, u.id AS "userId", u.email AS "userEmail", u.full_name AS "userName"`;
@@ -31,6 +38,14 @@ export function checkRange(amount: number, min: number | null, max: number | nul
 }
 
 const notFound = (): ApiException => new ApiException(API_ERROR_CODE.NOT_FOUND);
+const invalid = (field: string, code: string): ApiException => new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field, code }] });
+const MAX_PROOF_BYTES = 2_000_000;
+
+function matchesMime(buf: Buffer, mime: string): boolean {
+  if (mime === "image/jpeg") return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  if (mime === "image/png") return buf[0] === 0x89 && buf.subarray(1, 4).toString("ascii") === "PNG";
+  return buf.subarray(0, 5).toString("ascii") === "%PDF-";
+}
 
 @Injectable()
 export class PaymentsService {
@@ -63,7 +78,7 @@ export class PaymentsService {
   methods(kind: "DEPOSIT" | "WITHDRAWAL" | null): Promise<PaymentMethodDto[]> {
     return sql<PaymentMethodDto>(
       this.pool,
-      `SELECT ${METHOD_COLS} FROM payment_methods m WHERE m.enabled AND ($1::text IS NULL OR m.kind = $1) ORDER BY m.sort_order, m.name`,
+      `SELECT ${METHOD_PUBLIC} FROM payment_methods m WHERE m.enabled AND ($1::text IS NULL OR m.kind = $1) ORDER BY m.sort_order, m.name`,
       [kind],
     );
   }
@@ -92,12 +107,22 @@ export class PaymentsService {
 
   /* ---------- Depósitos (cliente) ---------- */
 
+  /** Cancela os depósitos sem comprovativo cujo prazo de 1 hora terminou. */
+  private async expireStale(): Promise<void> {
+    await sql(
+      this.pool,
+      `UPDATE deposits SET status = 'CANCELLED', decision_note = 'Tempo esgotado', updated_at = now()
+        WHERE status = 'PENDING' AND proof_submitted_at IS NULL AND expires_at < now()`,
+    );
+  }
+
   private async depositById(id: string, userId: string | null): Promise<DepositDto | undefined> {
     return one<DepositDto>(this.pool, `SELECT ${DEP_COLS} FROM deposits d JOIN payment_methods m ON m.id = d.method_id WHERE d.id = $1 AND ($2::uuid IS NULL OR d.user_id = $2)`, [id, userId]);
   }
 
   async createDeposit(userId: string, input: { methodId: string; amountMinor: number; note?: string | undefined }, idem: string | null, requestId: string): Promise<DepositDto> {
     await this.gate.check(userId);
+    await this.expireStale();
     const m = await one<{ minMinor: number | null; maxMinor: number | null }>(
       this.pool,
       `SELECT min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor" FROM payment_methods WHERE id = $1 AND kind = 'DEPOSIT' AND enabled`,
@@ -133,11 +158,13 @@ export class PaymentsService {
     return created;
   }
 
-  listDeposits(userId: string): Promise<DepositDto[]> {
+  async listDeposits(userId: string): Promise<DepositDto[]> {
+    await this.expireStale();
     return sql<DepositDto>(this.pool, `SELECT ${DEP_COLS} FROM deposits d JOIN payment_methods m ON m.id = d.method_id WHERE d.user_id = $1 ORDER BY d.created_at DESC LIMIT 100`, [userId]);
   }
 
   async getDeposit(userId: string, id: string): Promise<DepositDto> {
+    await this.expireStale();
     const d = await this.depositById(id, userId);
     if (!d) throw notFound();
     return d;
@@ -151,6 +178,66 @@ export class PaymentsService {
     }
     await audit(this.pool, { action: "deposit.cancel", actorId: userId, requestId, metadata: { depositId: id } });
     return this.getDeposit(userId, id);
+  }
+
+  /** Comprovativo (print, foto ou PDF) e ID da transacção. Só uma vez, dentro do prazo. */
+  async submitProof(userId: string, id: string, input: { txId: string; mime: string; dataBase64: string }, requestId: string): Promise<DepositDto> {
+    await this.expireStale();
+    const d = await one<{ status: string; proof: boolean }>(
+      this.pool,
+      "SELECT status, (proof_submitted_at IS NOT NULL) AS proof FROM deposits WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+    if (!d) throw notFound();
+    if (d.status !== "PENDING") throw new ApiException(API_ERROR_CODE.INVALID_STATE_TRANSITION);
+    if (d.proof) throw new ApiException(API_ERROR_CODE.CONFLICT);
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(input.dataBase64)) throw invalid("file", "invalidFile");
+    const content = Buffer.from(input.dataBase64, "base64");
+    if (content.length < 100 || content.length > MAX_PROOF_BYTES) throw invalid("file", "fileSize");
+    if (!matchesMime(content, input.mime)) throw invalid("file", "invalidFile");
+    await tx(this.pool, async (c) => {
+      const upd = await sql<{ id: string }>(
+        c,
+        `UPDATE deposits SET tx_id = $2, proof_submitted_at = now(), updated_at = now()
+          WHERE id = $1 AND status = 'PENDING' AND proof_submitted_at IS NULL RETURNING id`,
+        [id, input.txId],
+      );
+      if (!upd[0]) throw new ApiException(API_ERROR_CODE.CONFLICT);
+      await sql(c, "INSERT INTO deposit_proofs (deposit_id, mime, size_bytes, content) VALUES ($1, $2, $3, $4)", [id, input.mime, content.length, content]);
+      await audit(c, { action: "deposit.proof", actorId: userId, requestId, metadata: { depositId: id } });
+    });
+    return this.getDeposit(userId, id);
+  }
+
+  async adminProof(id: string): Promise<{ mime: string; content: Buffer }> {
+    const f = await one<{ mime: string; content: Buffer }>(this.pool, "SELECT mime, content FROM deposit_proofs WHERE deposit_id = $1", [id]);
+    if (!f) throw notFound();
+    return f;
+  }
+
+  /* ---------- Contas do cliente (PayPay, Kwik, Express) ---------- */
+
+  listAccounts(userId: string): Promise<PaymentAccountDto[]> {
+    return sql<PaymentAccountDto>(this.pool, `SELECT id, rail, holder, detail, created_at AS "createdAt" FROM user_payment_accounts WHERE user_id = $1 ORDER BY created_at`, [userId]);
+  }
+
+  async addAccount(userId: string, input: { rail: PaymentAccountDto["rail"]; holder: string; detail: string }): Promise<PaymentAccountDto> {
+    const n = await one<{ n: number }>(this.pool, "SELECT count(*)::int AS n FROM user_payment_accounts WHERE user_id = $1", [userId]);
+    if ((n?.n ?? 0) >= 12) throw new ApiException(API_ERROR_CODE.CONFLICT);
+    const row = await one<PaymentAccountDto>(
+      this.pool,
+      `INSERT INTO user_payment_accounts (user_id, rail, holder, detail) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id, rail, detail) DO UPDATE SET holder = EXCLUDED.holder
+       RETURNING id, rail, holder, detail, created_at AS "createdAt"`,
+      [userId, input.rail, input.holder, input.detail],
+    );
+    if (!row) throw new ApiException(API_ERROR_CODE.INTERNAL_ERROR);
+    return row;
+  }
+
+  async deleteAccount(userId: string, id: string): Promise<void> {
+    const rows = await sql<{ id: string }>(this.pool, "DELETE FROM user_payment_accounts WHERE id = $1 AND user_id = $2 RETURNING id", [id, userId]);
+    if (!rows[0]) throw notFound();
   }
 
   /* ---------- Levantamentos (cliente) ---------- */
@@ -240,16 +327,16 @@ export class PaymentsService {
     if (v.minMinor !== null && v.maxMinor !== null && v.minMinor > v.maxMinor) {
       throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "maxMinor", code: "belowMinimum" }] });
     }
-    const p = [v.kind, v.name, v.instructions, v.minMinor, v.maxMinor, v.feeMinor, v.feeNote, v.enabled, v.sortOrder];
+    const p = [v.kind, v.name, v.instructions, v.minMinor, v.maxMinor, v.feeMinor, v.feeNote, v.enabled, v.sortOrder, v.rail, v.accountHolder, v.accountNumber, v.entity, v.reference];
     const row = id
       ? await one<{ id: string }>(
           this.pool,
-          `UPDATE payment_methods SET kind=$2, name=$3, instructions=$4, min_minor=$5, max_minor=$6, fee_minor=$7, fee_note=$8, enabled=$9, sort_order=$10, updated_at=now() WHERE id=$1 RETURNING id`,
+          `UPDATE payment_methods SET kind=$2, name=$3, instructions=$4, min_minor=$5, max_minor=$6, fee_minor=$7, fee_note=$8, enabled=$9, sort_order=$10, rail=$11, account_holder=$12, account_number=$13, entity=$14, reference=$15, updated_at=now() WHERE id=$1 RETURNING id`,
           [id, ...p],
         )
       : await one<{ id: string }>(
           this.pool,
-          `INSERT INTO payment_methods (kind, name, instructions, min_minor, max_minor, fee_minor, fee_note, enabled, sort_order) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+          `INSERT INTO payment_methods (kind, name, instructions, min_minor, max_minor, fee_minor, fee_note, enabled, sort_order, rail, account_holder, account_number, entity, reference) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
           p,
         );
     if (!row) throw notFound();
@@ -261,11 +348,14 @@ export class PaymentsService {
 
   /* ---------- Administração: depósitos ---------- */
 
-  adminDeposits(status: string | null, id: string | null = null): Promise<AdminDepositDto[]> {
+  async adminDeposits(status: string | null, id: string | null = null): Promise<AdminDepositDto[]> {
+    await this.expireStale();
+    // Pendentes só aparecem depois de o cliente enviar o comprovativo.
     return sql<AdminDepositDto>(
       this.pool,
       `SELECT ${DEP_COLS}${WITH_USER} FROM deposits d JOIN payment_methods m ON m.id = d.method_id JOIN users u ON u.id = d.user_id
-        WHERE ($1::text IS NULL OR d.status = $1) AND ($2::uuid IS NULL OR d.id = $2) ORDER BY d.created_at DESC LIMIT 200`,
+        WHERE ($1::text IS NULL OR d.status = $1) AND ($2::uuid IS NULL OR d.id = $2)
+          AND (d.status <> 'PENDING' OR d.proof_submitted_at IS NOT NULL) ORDER BY d.created_at DESC LIMIT 200`,
       [status, id],
     );
   }

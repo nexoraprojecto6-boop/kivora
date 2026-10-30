@@ -18,7 +18,9 @@
 .dp-option:not(:disabled):hover { border-color: var(--primary); transform: translateY(-1px); }
 .dp-option:focus-visible, .dp-primary:focus-visible, .dp-secondary:focus-visible, .dp-saved__main:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .dp-option:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
-.dp-option__icon { display: grid; flex: 0 0 auto; width: 42px; height: 42px; place-items: center; border-radius: 12px; color: var(--primary); background: var(--surface-soft); }
+.dp-brand { display: grid; flex: 0 0 auto; place-items: center; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; color: var(--primary); background: #fff; }
+.dp-brand img { width: 100%; height: 100%; padding: 5px; object-fit: contain; }
+.dp-brand--flag { background: var(--surface-soft); }
 .dp-option__text { display: grid; flex: 1; min-width: 0; gap: 2px; }
 .dp-option__text b { font-size: 13px; }
 .dp-option__text small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; }

@@ -25,9 +25,18 @@ export interface WalletDto {
   verificationStatus: KycStatus | "NONE";
 }
 
+export type PaymentRail = "PAYPAY" | "KWIK" | "EXPRESS" | "REFERENCIA";
+
 export interface PaymentMethodDto {
   id: string;
   kind: "DEPOSIT" | "WITHDRAWAL";
+  /** Serviço (PayPay, Kwik, Express, Referência). null = método antigo, sem serviço. */
+  rail: PaymentRail | null;
+  /** Dados da conta da plataforma. Só o administrador os vê na lista; o cliente recebe-os ao criar o depósito. */
+  accountHolder: string;
+  accountNumber: string;
+  entity: string;
+  reference: string;
   name: string;
   instructions: string;
   minMinor: number | null;
@@ -51,6 +60,21 @@ export interface DepositDto {
   methodId: string;
   methodName: string;
   instructions: string;
+  rail: PaymentRail | null;
+  /** Para onde o cliente deve pagar. */
+  payTo: { holder: string; number: string; entity: string; reference: string };
+  /** Fim do prazo para enviar o comprovativo (1 hora). */
+  expiresAt: string;
+  txId: string;
+  proofSubmitted: boolean;
+}
+
+export interface PaymentAccountDto {
+  id: string;
+  rail: Exclude<PaymentRail, "REFERENCIA">;
+  holder: string;
+  detail: string;
+  createdAt: string;
 }
 
 export interface WithdrawalDto {

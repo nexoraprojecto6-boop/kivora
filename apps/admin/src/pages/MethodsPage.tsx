@@ -11,6 +11,8 @@ import { formatMoney, fromMinor, toMinor } from "../lib/format.js";
 import { errorText } from "../lib/labels.js";
 import { useAsync } from "../lib/useAsync.js";
 
+const RAIL_LABEL: Record<string, string> = { PAYPAY: "PayPay AO", KWIK: "Kwik", EXPRESS: "Multicaixa Express", REFERENCIA: "Referência Multicaixa" };
+
 export function MethodsPage() {
   const q = useAsync(() => adminApi.methods(), []);
   const [editing, setEditing] = useState<PaymentMethodDto | "new" | null>(null);
@@ -30,13 +32,14 @@ export function MethodsPage() {
             <div className="table-wrap">
               <table className="table">
                 <thead>
-                  <tr><th>Nome</th><th>Tipo</th><th className="right">Mínimo</th><th className="right">Máximo</th><th className="right">Taxa</th><th>Estado</th><th /></tr>
+                  <tr><th>Nome</th><th>Tipo</th><th>Serviço</th><th className="right">Mínimo</th><th className="right">Máximo</th><th className="right">Taxa</th><th>Estado</th><th /></tr>
                 </thead>
                 <tbody>
                   {rows.map((m) => (
                     <tr key={m.id}>
                       <td><span className="cell-main">{m.name}<small>{m.instructions.slice(0, 70)}{m.instructions.length > 70 ? "…" : ""}</small></span></td>
                       <td>{m.kind === "DEPOSIT" ? "Depósito" : "Levantamento"}</td>
+                      <td>{m.rail ? RAIL_LABEL[m.rail] : "—"}</td>
                       <td className="right nowrap">{formatMoney(m.minMinor)}</td>
                       <td className="right nowrap">{formatMoney(m.maxMinor)}</td>
                       <td className="right nowrap">{formatMoney(m.feeMinor)}</td>
@@ -68,6 +71,11 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
     feeNote: method?.feeNote ?? "",
     enabled: method?.enabled ?? true,
     sortOrder: String(method?.sortOrder ?? 0),
+    rail: (method?.rail ?? "") as "" | NonNullable<PaymentMethodDto["rail"]>,
+    accountHolder: method?.accountHolder ?? "",
+    accountNumber: method?.accountNumber ?? "",
+    entity: method?.entity ?? "",
+    reference: method?.reference ?? "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +91,18 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
     if (min === undefined || max === undefined || fee === undefined) return setError("Há um valor inválido (mínimo, máximo ou taxa).");
     if (min !== null && max !== null && min > max) return setError("O mínimo não pode ser superior ao máximo.");
     if (!Number.isInteger(sort) || sort < -1000 || sort > 1000) return setError("Ordem inválida (entre -1000 e 1000).");
+    const isDeposit = f.kind === "DEPOSIT";
+    const rail = isDeposit && f.rail !== "" ? f.rail : null;
+    if (isDeposit && rail === "REFERENCIA" && (f.entity.trim() === "" || f.reference.trim() === "")) return setError("Indique a entidade e a referência.");
+    if (isDeposit && (rail === "PAYPAY" || rail === "KWIK" || rail === "EXPRESS") && f.accountNumber.trim() === "") return setError("Indique o número ou o IBAN da conta.");
     const input: MethodInput = {
       kind: f.kind, name: f.name.trim(), instructions: f.instructions.trim(), minMinor: min, maxMinor: max,
       feeMinor: fee, feeNote: f.feeNote.trim(), enabled: f.enabled, sortOrder: sort,
+      rail,
+      accountHolder: rail ? f.accountHolder.trim() : "",
+      accountNumber: rail && rail !== "REFERENCIA" ? f.accountNumber.trim() : "",
+      entity: rail === "REFERENCIA" ? f.entity.trim() : "",
+      reference: rail === "REFERENCIA" ? f.reference.trim() : "",
     };
     setBusy(true);
     setError(null);
@@ -120,6 +137,39 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
             <option value="WITHDRAWAL">Levantamento (KIVORA paga ao cliente)</option>
           </select>
         </label>
+        {f.kind === "DEPOSIT" && (
+          <>
+            <label className="field full">
+              <span className="field__label">Serviço (o cliente escolhe um destes ao depositar)</span>
+              <select className="input" value={f.rail} onChange={(e) => set("rail", e.target.value as typeof f.rail)}>
+                <option value="">Sem serviço (método antigo)</option>
+                <option value="PAYPAY">PayPay AO</option>
+                <option value="KWIK">Kwik</option>
+                <option value="EXPRESS">Multicaixa Express</option>
+                <option value="REFERENCIA">Referência Multicaixa</option>
+              </select>
+            </label>
+            {(f.rail === "PAYPAY" || f.rail === "KWIK" || f.rail === "EXPRESS") && (
+              <>
+                <label className="field">
+                  <span className="field__label">{f.rail === "KWIK" ? "IBAN da plataforma" : f.rail === "PAYPAY" ? "Número PayPay (telefone)" : "Número Express"}</span>
+                  <input className="input" maxLength={60} value={f.accountNumber} onChange={(e) => set("accountNumber", e.target.value)} />
+                </label>
+                <label className="field">
+                  <span className="field__label">Nome do titular</span>
+                  <input className="input" maxLength={120} value={f.accountHolder} onChange={(e) => set("accountHolder", e.target.value)} />
+                </label>
+              </>
+            )}
+            {f.rail === "REFERENCIA" && (
+              <>
+                <label className="field"><span className="field__label">Entidade</span><input className="input" maxLength={20} inputMode="numeric" value={f.entity} onChange={(e) => set("entity", e.target.value)} /></label>
+                <label className="field"><span className="field__label">Referência</span><input className="input" maxLength={40} value={f.reference} onChange={(e) => set("reference", e.target.value)} /></label>
+                <label className="field full"><span className="field__label">Titular / descrição (opcional)</span><input className="input" maxLength={120} value={f.accountHolder} onChange={(e) => set("accountHolder", e.target.value)} /></label>
+              </>
+            )}
+          </>
+        )}
         <label className="field"><span className="field__label">Nome</span><input className="input" maxLength={80} value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="Ex.: Transferência BAI" /></label>
         <label className="field full">
           <span className="field__label">Instruções para o cliente</span>
