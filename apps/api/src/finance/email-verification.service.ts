@@ -39,17 +39,18 @@ export class EmailVerificationService {
     if (prev && prev.wait > 0) throw new ApiException(API_ERROR_CODE.RATE_LIMITED, { retryAfterSeconds: prev.wait });
 
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    // Envia primeiro: se o email falhar, nada fica guardado e não começa o intervalo de 60 s.
+    await this.mailer.send(
+      user.email,
+      "Kivora — código de verificação",
+      `Olá ${user.fullName},\n\nO seu código de verificação é: ${code}\n\nÉ válido durante ${TTL_MINUTES} minutos. Se não pediu este código, ignore esta mensagem.\n\nEquipa Kivora`,
+    );
     await sql(
       this.pool,
       `INSERT INTO email_verifications (user_id, code_hash, expires_at, attempts, sent_at)
        VALUES ($1, $2, now() + make_interval(mins => $3), 0, now())
        ON CONFLICT (user_id) DO UPDATE SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, attempts = 0, sent_at = now()`,
       [userId, hashCode(userId, code).toString("hex"), TTL_MINUTES],
-    );
-    await this.mailer.send(
-      user.email,
-      "Kivora — código de verificação",
-      `Olá ${user.fullName},\n\nO seu código de verificação é: ${code}\n\nÉ válido durante ${TTL_MINUTES} minutos. Se não pediu este código, ignore esta mensagem.\n\nEquipa Kivora`,
     );
     await audit(this.pool, { action: "auth.email_code_sent", actorId: userId, requestId, metadata: {} });
     return { alreadyVerified: false };
