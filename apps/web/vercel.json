@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "npx --yes pnpm@12.14.0 install --frozen-lockfile",
+  "installCommand": "npx --yes pnpm@12.14.0 install --no-frozen-lockfile",
   "buildCommand": "npx --yes pnpm@12.14.0 --filter \"@kivora/web...\" build",
   "outputDirectory": "dist",
   "rewrites": [
@@ -44,7 +44,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' wss://kivora-api-ngf1.onrender.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }
