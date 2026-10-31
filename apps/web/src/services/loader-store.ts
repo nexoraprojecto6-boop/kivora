@@ -9,6 +9,17 @@ export interface LoaderState { visible: boolean; title: string | null; sub: stri
 const MIN_VISIBLE_MS = 500
 const HIDDEN: LoaderState = { visible: false, title: null, sub: null }
 
+let quiet = 0
+/** Pedidos iniciados dentro de `fn` (de forma síncrona) não mostram o loader: usado nas actualizações em tempo real. */
+export function runQuiet<T>(fn: () => T): T {
+  quiet += 1
+  try {
+    return fn()
+  } finally {
+    quiet -= 1
+  }
+}
+
 const entries = new Map<number, LoaderLabel>()
 const listeners = new Set<() => void>()
 let nextId = 1
@@ -41,6 +52,7 @@ function sync() {
 
 /** Mostra o loader até a função devolvida ser chamada. */
 export function beginLoading(label: LoaderLabel = {}): () => void {
+  if (quiet > 0) return () => undefined
   const id = nextId++
   entries.set(id, label)
   sync()

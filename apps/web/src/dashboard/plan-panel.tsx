@@ -6,7 +6,7 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { platformApi } from "../services/api-client.js"
 import { withLoader } from "../services/loader-store.js"
 import { Header, Page } from "./App.js"
-import { Gate, Load, Sub, canOperate, makeMoney, newKey, useErr, useLoad } from "./screens.js"
+import { Gate, Load, Sub, canOperate, makeMoney, newKey, useErr, useLoad, useWallet } from "./screens.js"
 import { PlanCover } from "./plan-cover.js"
 import { EXTRA_TEXT } from "./plan-text.js"
 import { CommissionChart, MarketChart } from "./trade-chart.js"
@@ -150,9 +150,9 @@ export function PlanDetailPage() {
   const navigate = useNavigate()
   const { tx, language } = useTxt()
   const err = useErr()
-  const wallet = useLoad(() => platformApi.wallet(), [])
+  const wallet = useWallet()
   const plan = useLoad(() => platformApi.plan(id), [id])
-  const subs = useLoad(() => platformApi.subscriptions({ silent: true }), [])
+  const subs = useLoad(() => platformApi.subscriptions({ silent: true }), [], ["subscriptions"])
   const [amount, setAmount] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
@@ -247,7 +247,7 @@ export function PlanDetailPage() {
 export function MyPlans({ plans = [] }: { plans?: PlanDto[] }) {
   const navigate = useNavigate()
   const { tx, language } = useTxt()
-  const subs = useLoad(() => platformApi.subscriptions({ silent: true }), [])
+  const subs = useLoad(() => platformApi.subscriptions({ silent: true }), [], ["subscriptions"])
   const list = (subs.data ?? []).filter((s) => s.status === "ACTIVE" || s.status === "PENDING" || s.status === "COMPLETED")
   if (list.length === 0) return null
   return (

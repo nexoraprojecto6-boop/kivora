@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { BadgeCheck, Check, CheckCircle2, Copy, Crown, Gift, Lock, MessageCircle, Share2, ShieldCheck, Sparkles, TrendingUp, UserPlus, Users, Wallet } from "lucide-react"
 import type { ReferralInviteDto, ReferralLevelDto, ReferralOverviewDto, ReferralSeriesPoint } from "@kivora/shared"
 import { useI18n } from "../i18n/I18nProvider.js"
 import { ApiError, platformApi } from "../services/api-client.js"
+import { onScope } from "../services/realtime.js"
 import { Header, Page } from "./App.js"
 import { makeMoney } from "./deposit-flow.js"
 import "./invite.css"
@@ -167,10 +168,14 @@ export function InvitePage() {
   const [tick, setTick] = useState(0)
   const [copied, setCopied] = useState(false)
 
+  const quiet = useRef(false)
+  useEffect(() => onScope("referrals", () => { quiet.current = true; setTick((n) => n + 1) }), [])
   useEffect(() => {
     let live = true
+    const silent = quiet.current
+    quiet.current = false
     setFailed(false)
-    platformApi.referrals().then((d) => { if (live) setData(d) }, (e: unknown) => { if (live) { setFailed(true); if (!(e instanceof ApiError)) setData(null) } })
+    platformApi.referrals({ silent }).then((d) => { if (live) setData(d) }, (e: unknown) => { if (live) { setFailed(true); if (!(e instanceof ApiError)) setData(null) } })
     return () => { live = false }
   }, [tick])
 

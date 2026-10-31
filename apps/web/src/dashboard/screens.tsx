@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type ReactNode } from "react"
 import {
   ArrowDownToLine, ArrowRight, ArrowUpFromLine, Bell, Check, ChevronDown, ChevronRight, CircleHelp, Clock3, FileText, Fingerprint,
   Gem, Landmark, Layers, PieChart, Receipt, Search, ShieldCheck, Sparkles, Upload, WalletCards,
@@ -8,6 +8,8 @@ import { useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../features/auth/AuthContext.js"
 import { useI18n } from "../i18n/I18nProvider.js"
 import { ApiError, platformApi } from "../services/api-client.js"
+import { runQuiet } from "../services/loader-store.js"
+import { getWalletSnapshot, onScope, subscribeWallet, type Scope } from "../services/realtime.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
 import { MyPlans } from "./plan-panel.js"
@@ -19,20 +21,41 @@ import { DepositHomeStatus } from "./deposit-flow.js"
 
 export interface Loaded<T> { data: T | null; error: unknown; loading: boolean; reload: () => void }
 
-export function useLoad<T>(fn: () => Promise<T>, deps: readonly unknown[]): Loaded<T> {
+/**
+ * Carrega dados do servidor. Com `scopes`, volta a pedir os dados em silêncio (sem loader) quando o servidor avisa,
+ * por WebSocket, que essa lista mudou.
+ */
+export function useLoad<T>(fn: () => Promise<T>, deps: readonly unknown[], scopes: readonly Scope[] = []): Loaded<T> {
   const [state, setState] = useState<{ data: T | null; error: unknown; loading: boolean }>({ data: null, error: null, loading: true })
   const [tick, setTick] = useState(0)
+  const quiet = useRef(false)
   useEffect(() => {
     let live = true
-    setState((s) => ({ ...s, loading: true, error: null }))
-    fn().then(
+    const silent = quiet.current
+    quiet.current = false
+    if (!silent) setState((s) => ({ ...s, loading: true, error: null }))
+    const p = silent ? runQuiet(fn) : fn()
+    p.then(
       (data) => live && setState({ data, error: null, loading: false }),
-      (error: unknown) => live && setState({ data: null, error, loading: false }),
+      (error: unknown) => { if (live && !silent) setState({ data: null, error, loading: false }) },
     )
     return () => { live = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick])
+  const key = scopes.join(",")
+  useEffect(() => {
+    if (!key) return
+    const offs = key.split(",").map((s) => onScope(s as Scope, () => { quiet.current = true; setTick((n) => n + 1) }))
+    return () => offs.forEach((off) => off())
+  }, [key])
   return { ...state, reload: useCallback(() => setTick((n) => n + 1), []) }
+}
+
+/** Saldo: valor inicial do servidor e, depois, o saldo que o servidor empurra por WebSocket (sempre calculado lá). */
+export function useWallet(): Loaded<WalletDto> {
+  const q = useLoad(() => platformApi.wallet(), [], ["wallet"])
+  const live = useSyncExternalStore(subscribeWallet, getWalletSnapshot, getWalletSnapshot)
+  return live ? { ...q, data: live, loading: false, error: null } : q
 }
 
 export function useS() {
@@ -201,7 +224,7 @@ export function HomeLive() {
   const navigate = useNavigate()
   const s = useS()
   const { t } = useI18n()
-  const wallet = useLoad(() => platformApi.wallet(), [])
+  const wallet = useWallet()
   const plans = useLoad(() => platformApi.plans(), [])
   return (
     <>
@@ -233,8 +256,8 @@ export function HomeLive() {
 export function WalletPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const wallet = useLoad(() => platformApi.wallet(), [])
-  const txs = useLoad(() => platformApi.transactions({}), [])
+  const wallet = useWallet()
+  const txs = useLoad(() => platformApi.transactions({}), [], ["history", "wallet"])
   const s = useS()
   return (
     <Page>
@@ -266,7 +289,7 @@ export function PlansPage() {
   const { t } = useI18n()
   const s = useS()
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "COMING_SOON">("ALL")
-  const wallet = useLoad(() => platformApi.wallet(), [])
+  const wallet = useWallet()
   const plans = useLoad(() => platformApi.plans(), [])
   return (
     <Page className="plans-page">
@@ -302,7 +325,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
   const s = useS()
   const err = useErr()
   const navigate = useNavigate()
-  const wallet = useLoad(() => platformApi.wallet(), [])
+  const wallet = useWallet()
   const methods = useLoad(() => platformApi.methods(mode), [mode])
   const [step, setStep] = useState(1)
   const [amount, setAmount] = useState("")
@@ -433,7 +456,7 @@ export function HistoryPage() {
   const { t } = useI18n()
   const s = useS()
   const err = useErr()
-  const wallet = useLoad(() => platformApi.wallet(), [])
+  const wallet = useWallet()
   const [kind, setKind] = useState("")
   const [q, setQ] = useState("")
   const [items, setItems] = useState<TransactionDto[]>([])
@@ -565,7 +588,7 @@ export function VerificationPage() {
   const { t } = useI18n()
   const s = useS()
   const err = useErr()
-  const q = useLoad(() => platformApi.verification(), [])
+  const q = useLoad(() => platformApi.verification(), [], ["verification"])
   const [docType, setDocType] = useState<VerificationDocType | "">("")
   const [country, setCountry] = useState("AO")
   const [files, setFiles] = useState<Partial<Record<VerificationFileKind, File>>>({})
@@ -645,8 +668,8 @@ export function NotificationsPage() {
   const s = useS()
   const d = useDate()
   const { language } = useI18n()
-  const wallet = useLoad(() => platformApi.wallet(), [])
-  const q = useLoad(() => platformApi.notifications(), [])
+  const wallet = useWallet()
+  const q = useLoad(() => platformApi.notifications(), [], ["notifications"])
   const [tab, setTab] = useState<"all" | "unread">("all")
   const mark = async (id: string) => { await platformApi.readNotification(id).catch(() => undefined); q.reload() }
   const markAll = async () => { await platformApi.readAllNotifications().catch(() => undefined); q.reload() }
@@ -696,7 +719,7 @@ export function SupportPage() {
   const s = useS()
   const err = useErr()
   const d = useDate()
-  const q = useLoad(() => platformApi.tickets(), [])
+  const q = useLoad(() => platformApi.tickets(), [], ["support"])
   const [search, setSearch] = useState("")
   const [faqOpen, setFaqOpen] = useState("")
   const [category, setCategory] = useState("ACCOUNT")

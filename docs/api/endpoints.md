@@ -66,3 +66,16 @@ Tudo é calculado no servidor; o frontend só mostra. O código do link é aleat
 | POST | `/admin/referrals/reconcile` | ADMIN | Reavalia todos os convidantes e paga comissões em falta (idempotente). |
 
 Convite qualificado: convite activo + email verificado + conta verificada (KYC) + depósito confirmado + plano activo. A comissão só é paga depois de o convidante desbloquear os ganhos, entra no livro como `REFERRAL_COMMISSION` (só de acréscimo) e há no máximo uma por convidado.
+
+## Tempo real (WebSocket)
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| POST | `/v1/realtime/ticket` | Com a sessão: devolve um bilhete de uso único (30 s) para ligar o WebSocket. |
+| GET (upgrade) | `/v1/ws` | WebSocket. A primeira mensagem tem de ser `{"t":"auth","ticket":"..."}` (5 s). Só o servidor envia dados. O `Origin` tem de estar em `CORS_ALLOWED_ORIGINS`. |
+
+Segurança: o cookie e o token da sessão nunca vão no WebSocket; o bilhete não vai no endereço (vai na primeira mensagem), é aleatório, guardado só como hash, ligado à sessão e consumido ao autenticar. Máximo de 5 ligações por utilizador, mensagens do cliente limitadas a 512 bytes e 20 por 10 s (só `{"t":"ping"}`), pings de 25 s, sessão revista de minuto a minuto e fecho imediato (código 4401) no logout ou suspensão.
+
+Mensagens do servidor: `hello`, `wallet` (saldo já calculado), `notification` (tipo e listas afectadas), `refresh` (`scope`), `resync` (depois de uma falha: refrescar tudo), `staff` (fila de trabalho, só equipa), `pong`.
+
+Os eventos nascem na base de dados (migração 0007, triggers com `pg_notify`, entregues só depois do COMMIT), por isso funcionam com várias instâncias. Variáveis: `REALTIME_DATABASE_URL` (ligação directa à base de dados para `LISTEN`; obrigatória se a `DATABASE_URL` passar por um pooler em modo transacção) e, na web, `VITE_WS_URL` (ex.: `wss://api.exemplo.com/v1/ws`; a Vercel não reencaminha WebSockets).
