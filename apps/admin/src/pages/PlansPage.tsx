@@ -2,6 +2,7 @@ import { BarChart3, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Badge } from "../components/ui/Badge.js";
 import { DataState, Empty } from "../components/ui/DataState.js";
+import { DeleteDialog } from "../components/ui/DeleteDialog.js";
 import { Modal } from "../components/ui/Modal.js";
 import { PageHeader } from "../components/ui/PageHeader.js";
 import { useToast } from "../components/ui/Toast.js";
@@ -47,6 +48,8 @@ const MARKET_PRESETS: { symbol: string; label: string }[] = [
 export function PlansPage() {
   const q = useAsync(() => adminApi.plans(), []);
   const [editing, setEditing] = useState<AdminPlan | "new" | null>(null);
+  const [deleting, setDeleting] = useState<AdminPlan | null>(null);
+  const toast = useToast();
   const [statsPlan, setStatsPlan] = useState<AdminPlan | null>(null);
 
   return (
@@ -94,6 +97,7 @@ export function PlansPage() {
                       <div className="btn-row" style={{ marginTop: "auto" }}>
                         <button className="btn btn--ghost btn--sm" type="button" onClick={() => setEditing(p)}><Pencil size={14} /> Editar</button>
                         <button className="btn btn--accent btn--sm" type="button" onClick={() => setStatsPlan(p)}><BarChart3 size={14} /> Estatísticas</button>
+                        <button className="btn btn--ghost btn--sm" type="button" aria-label={`Apagar ${p.name}`} onClick={() => setDeleting(p)}><Trash2 size={14} /> Apagar</button>
                       </div>
                     </div>
                   </article>
@@ -103,6 +107,15 @@ export function PlansPage() {
           )
         }
       </DataState>
+      {deleting && (
+        <DeleteDialog
+          title="Apagar plano"
+          name={deleting.name}
+          inUseText="Este plano já tem subscrições de clientes, por isso não pode ser apagado (o dinheiro e o histórico dos clientes dependem dele). Edite-o e ponha o estado em «Fechado» ou «Rascunho» para deixar de aparecer."
+          onConfirm={async () => { await adminApi.deletePlan(deleting.id); toast.success("Plano apagado."); q.reload(); }}
+          onClose={() => setDeleting(null)}
+        />
+      )}
       {editing && <PlanEditor plan={editing === "new" ? null : editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); q.reload(); }} />}
       {statsPlan && <PlanStatsDialog plan={statsPlan} onClose={() => setStatsPlan(null)} />}
     </>

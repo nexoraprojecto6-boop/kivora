@@ -1,8 +1,9 @@
 import type { PaymentMethodDto } from "@kivora/shared";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "../components/ui/Badge.js";
 import { DataState, Empty } from "../components/ui/DataState.js";
+import { DeleteDialog } from "../components/ui/DeleteDialog.js";
 import { Modal } from "../components/ui/Modal.js";
 import { PageHeader } from "../components/ui/PageHeader.js";
 import { useToast } from "../components/ui/Toast.js";
@@ -20,6 +21,8 @@ const NETWORK_SUGGESTIONS = ["TRON (TRC20)", "BNB Smart Chain (BEP20)", "Ethereu
 export function MethodsPage() {
   const q = useAsync(() => adminApi.methods(), []);
   const [editing, setEditing] = useState<PaymentMethodDto | "new" | null>(null);
+  const [deleting, setDeleting] = useState<PaymentMethodDto | null>(null);
+  const toast = useToast();
 
   return (
     <>
@@ -48,7 +51,7 @@ export function MethodsPage() {
                       <td className="right nowrap">{formatMoney(m.maxMinor)}</td>
                       <td className="right nowrap">{formatMoney(m.feeMinor)}</td>
                       <td><Badge text={m.enabled ? "Activo" : "Desactivado"} tone={m.enabled ? "success" : "neutral"} /></td>
-                      <td className="right"><button className="btn btn--ghost btn--sm" type="button" onClick={() => setEditing(m)}><Pencil size={14} /> Editar</button></td>
+                      <td className="right"><div className="btn-row" style={{ justifyContent: "flex-end" }}><button className="btn btn--ghost btn--sm" type="button" onClick={() => setEditing(m)}><Pencil size={14} /> Editar</button><button className="btn btn--ghost btn--sm" type="button" aria-label={`Apagar ${m.name}`} onClick={() => setDeleting(m)}><Trash2 size={14} /> Apagar</button></div></td>
                     </tr>
                   ))}
                 </tbody>
@@ -57,6 +60,15 @@ export function MethodsPage() {
           )
         }
       </DataState>
+      {deleting && (
+        <DeleteDialog
+          title="Apagar método de pagamento"
+          name={deleting.name}
+          inUseText="Este método já foi usado em depósitos ou levantamentos, por isso não pode ser apagado (o histórico precisa dele). Edite-o e desligue «Método activo» para o esconder dos clientes."
+          onConfirm={async () => { await adminApi.deleteMethod(deleting.id); toast.success("Método apagado."); q.reload(); }}
+          onClose={() => setDeleting(null)}
+        />
+      )}
       {editing && <MethodEditor method={editing === "new" ? null : editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); q.reload(); }} />}
     </>
   );

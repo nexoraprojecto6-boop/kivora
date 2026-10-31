@@ -156,6 +156,7 @@ export const adminApi = {
   plans: () => request<AdminPlan[]>("/admin/plans", "GET"),
   createPlan: (input: PlanInput) => request<AdminPlan>("/admin/plans", "POST", input),
   updatePlan: (id: string, input: PlanInput) => request<AdminPlan>(`/admin/plans/${enc(id)}`, "PUT", input),
+  deletePlan: (id: string) => request<{ deleted: true }>(`/admin/plans/${enc(id)}`, "DELETE"),
   planStats: (id: string) => request<AdminPlanStatsDto>(`/admin/plans/${enc(id)}/stats`, "GET"),
   uploadPlanImage: (id: string, image: { mime: "image/jpeg" | "image/png" | "image/webp"; dataBase64: string }) =>
     request<AdminPlan>(`/admin/plans/${enc(id)}/image`, "POST", image),
@@ -175,6 +176,7 @@ export const adminApi = {
   methods: () => request<PaymentMethodDto[]>("/admin/payment-methods", "GET"),
   createMethod: (input: MethodInput) => request<PaymentMethodDto>("/admin/payment-methods", "POST", input),
   updateMethod: (id: string, input: MethodInput) => request<PaymentMethodDto>(`/admin/payment-methods/${enc(id)}`, "PUT", input),
+  deleteMethod: (id: string) => request<{ deleted: true }>(`/admin/payment-methods/${enc(id)}`, "DELETE"),
 
   /* Suporte */
   tickets: (status?: string) => request<AdminTicketDto[]>(`/admin/support/tickets${qs({ status })}`, "GET"),

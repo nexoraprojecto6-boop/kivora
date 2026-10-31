@@ -346,6 +346,29 @@ export class PaymentsService {
     return saved;
   }
 
+  /**
+   * Apaga um método de pagamento. Só é possível se nunca foi usado: os depósitos e levantamentos guardam o método
+   * e o histórico não pode perder esse dado. Se já foi usado, o administrador deve desativá-lo.
+   */
+  async adminDeleteMethod(id: string, ctx: Ctx): Promise<void> {
+    const m = await one<{ name: string; used: number }>(
+      this.pool,
+      `SELECT m.name, ((SELECT count(*) FROM deposits d WHERE d.method_id = m.id) + (SELECT count(*) FROM withdrawals w WHERE w.method_id = m.id))::int AS used
+         FROM payment_methods m WHERE m.id = $1`,
+      [id],
+    );
+    if (!m) throw notFound();
+    const inUse = (): ApiException => new ApiException(API_ERROR_CODE.CONFLICT, { fieldErrors: [{ field: "id", code: "inUse" }] });
+    if (m.used > 0) throw inUse();
+    try {
+      await sql(this.pool, "DELETE FROM payment_methods WHERE id = $1", [id]);
+    } catch (e) {
+      if ((e as { code?: string }).code === "23503") throw inUse(); // alguém criou um depósito entretanto
+      throw e;
+    }
+    await audit(this.pool, { action: "admin.method.delete", actorId: ctx.actorId, requestId: ctx.requestId, metadata: { methodId: id, name: m.name } });
+  }
+
   /* ---------- Administração: depósitos ---------- */
 
   async adminDeposits(status: string | null, id: string | null = null): Promise<AdminDepositDto[]> {

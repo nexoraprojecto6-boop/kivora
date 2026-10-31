@@ -97,6 +97,12 @@ export class AdminController {
     return ok(await this.payments.adminSaveMethod(idOf(id), body(methodSchema, b), ctxOf(req)));
   }
 
+  @Delete("payment-methods/:id")
+  async deleteMethod(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<{ deleted: true }> {
+    await this.payments.adminDeleteMethod(idOf(id), ctxOf(req));
+    return ok({ deleted: true });
+  }
+
   /* Planos */
   @Get("plans")
   async listPlans(): R<PlanDto[]> {
@@ -110,6 +116,11 @@ export class AdminController {
   @Put("plans/:id")
   async updatePlan(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<PlanDto> {
     return ok(await this.plans.adminSavePlan(idOf(id), body(planSchema, b), ctxOf(req)));
+  }
+  @Delete("plans/:id")
+  async deletePlan(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<{ deleted: true }> {
+    await this.plans.adminDeletePlan(idOf(id), ctxOf(req));
+    return ok({ deleted: true });
   }
   @Post("plans/:id/image")
   @HttpCode(200)

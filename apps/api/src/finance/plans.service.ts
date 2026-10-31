@@ -172,6 +172,28 @@ export class PlansService {
     return saved;
   }
 
+  /**
+   * Apaga um plano. Só é possível se nunca teve subscrições: as subscrições (e o dinheiro reservado ou rendido)
+   * pertencem aos clientes e não podem ficar sem plano. Se já teve, o administrador deve fechá-lo ou pô-lo em rascunho.
+   */
+  async adminDeletePlan(id: string, ctx: Ctx): Promise<void> {
+    const p = await one<{ name: string; used: number }>(
+      this.pool,
+      `SELECT p.name, (SELECT count(*) FROM plan_subscriptions s WHERE s.plan_id = p.id)::int AS used FROM plans p WHERE p.id = $1`,
+      [id],
+    );
+    if (!p) throw notFound();
+    const inUse = (): ApiException => new ApiException(API_ERROR_CODE.CONFLICT, { fieldErrors: [{ field: "id", code: "inUse" }] });
+    if (p.used > 0) throw inUse();
+    try {
+      await sql(this.pool, "DELETE FROM plans WHERE id = $1", [id]);
+    } catch (e) {
+      if ((e as { code?: string }).code === "23503") throw inUse(); // alguém subscreveu entretanto
+      throw e;
+    }
+    await audit(this.pool, { action: "admin.plan.delete", actorId: ctx.actorId, requestId: ctx.requestId, metadata: { planId: id, name: p.name } });
+  }
+
   /* ---------- Imagem do plano ---------- */
 
   async image(id: string): Promise<{ mime: string; content: Buffer }> {

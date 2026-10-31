@@ -50,9 +50,11 @@ describe("página de login", () => {
     const user = userEvent.setup();
     renderApp("/login");
     expect(await screen.findByRole("heading", { name: "Iniciar sessão" })).toBeInTheDocument();
-    const select = screen.getByLabelText("Selecionar idioma");
-    expect(within(select).getAllByRole("option").map((o) => o.textContent)).toEqual(["Português", "English", "Français", "Español"]);
-    await user.selectOptions(select, "en");
+    // O selector é um botão com a bandeira do idioma atual; ao abrir mostra a lista de idiomas.
+    await user.click(screen.getByRole("button", { name: /Selecionar idioma/ }));
+    const menu = screen.getByRole("menu");
+    expect(within(menu).getAllByRole("menuitemradio").map((o) => o.textContent)).toEqual(["Português", "English", "Français", "Español"]);
+    await user.click(within(menu).getByRole("menuitemradio", { name: "English" }));
     expect(screen.getByRole("heading", { name: "Log in" })).toBeInTheDocument();
     expect(document.documentElement.lang).toBe("en");
     expect(window.localStorage.getItem("kivora.language")).toBe("en");
