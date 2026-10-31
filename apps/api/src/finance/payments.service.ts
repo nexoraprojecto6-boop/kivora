@@ -18,7 +18,7 @@ import {
   audit, getBalance, lockUser, newReference, notify, one, post, releaseLegs, reserveLegs, sql, tx, type Ctx,
 } from "./sql.js";
 
-const METHOD_BASE = `m.id, m.kind, m.rail, m.name, m.instructions, m.min_minor::float8 AS "minMinor", m.max_minor::float8 AS "maxMinor",
+const METHOD_BASE = `m.id, m.kind, m.rail, m.coin, m.network, m.name, m.instructions, m.min_minor::float8 AS "minMinor", m.max_minor::float8 AS "maxMinor",
   m.fee_minor::float8 AS "feeMinor", m.fee_note AS "feeNote", m.enabled, m.sort_order AS "sortOrder"`;
 /** Lista do administrador: inclui os dados da conta da plataforma. */
 const METHOD_COLS = `${METHOD_BASE}, m.account_holder AS "accountHolder", m.account_number AS "accountNumber", m.entity, m.reference`;
@@ -27,7 +27,7 @@ const METHOD_PUBLIC = `${METHOD_BASE}, ''::text AS "accountHolder", ''::text AS 
 const DEP_COLS = `d.id, d.reference, d.amount_minor::float8 AS "amountMinor", d.currency, d.status, d.user_note AS "userNote",
   d.decision_note AS "decisionNote", d.created_at AS "createdAt", d.decided_at AS "decidedAt", m.id AS "methodId", m.name AS "methodName", m.instructions,
   m.rail, d.expires_at AS "expiresAt", d.tx_id AS "txId", (d.proof_submitted_at IS NOT NULL) AS "proofSubmitted",
-  jsonb_build_object('holder', m.account_holder, 'number', m.account_number, 'entity', m.entity, 'reference', m.reference) AS "payTo"`;
+  jsonb_build_object('holder', m.account_holder, 'number', m.account_number, 'entity', m.entity, 'reference', m.reference, 'coin', m.coin, 'network', m.network) AS "payTo"`;
 const WD_COLS = `w.id, w.reference, w.amount_minor::float8 AS "amountMinor", w.currency, w.status, w.destination,
   w.decision_note AS "decisionNote", w.created_at AS "createdAt", w.decided_at AS "decidedAt", m.id AS "methodId", m.name AS "methodName"`;
 const WITH_USER = `, u.id AS "userId", u.email AS "userEmail", u.full_name AS "userName"`;
@@ -327,16 +327,16 @@ export class PaymentsService {
     if (v.minMinor !== null && v.maxMinor !== null && v.minMinor > v.maxMinor) {
       throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "maxMinor", code: "belowMinimum" }] });
     }
-    const p = [v.kind, v.name, v.instructions, v.minMinor, v.maxMinor, v.feeMinor, v.feeNote, v.enabled, v.sortOrder, v.rail, v.accountHolder, v.accountNumber, v.entity, v.reference];
+    const p = [v.kind, v.name, v.instructions, v.minMinor, v.maxMinor, v.feeMinor, v.feeNote, v.enabled, v.sortOrder, v.rail, v.accountHolder, v.accountNumber, v.entity, v.reference, v.coin, v.network];
     const row = id
       ? await one<{ id: string }>(
           this.pool,
-          `UPDATE payment_methods SET kind=$2, name=$3, instructions=$4, min_minor=$5, max_minor=$6, fee_minor=$7, fee_note=$8, enabled=$9, sort_order=$10, rail=$11, account_holder=$12, account_number=$13, entity=$14, reference=$15, updated_at=now() WHERE id=$1 RETURNING id`,
+          `UPDATE payment_methods SET kind=$2, name=$3, instructions=$4, min_minor=$5, max_minor=$6, fee_minor=$7, fee_note=$8, enabled=$9, sort_order=$10, rail=$11, account_holder=$12, account_number=$13, entity=$14, reference=$15, coin=$16, network=$17, updated_at=now() WHERE id=$1 RETURNING id`,
           [id, ...p],
         )
       : await one<{ id: string }>(
           this.pool,
-          `INSERT INTO payment_methods (kind, name, instructions, min_minor, max_minor, fee_minor, fee_note, enabled, sort_order, rail, account_holder, account_number, entity, reference) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id`,
+          `INSERT INTO payment_methods (kind, name, instructions, min_minor, max_minor, fee_minor, fee_note, enabled, sort_order, rail, account_holder, account_number, entity, reference, coin, network) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING id`,
           p,
         );
     if (!row) throw notFound();

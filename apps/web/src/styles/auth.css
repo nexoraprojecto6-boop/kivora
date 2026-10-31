@@ -82,3 +82,6 @@
 @media (prefers-reduced-motion: reduce) {
   .au-card .field__input { transition: none; }
 }
+
+/* Boas-vindas: o seletor de idioma (bandeira) alinha com os botões do cabeçalho */
+.wl-actions { align-items: center; }

@@ -86,7 +86,14 @@ function DepositReview({ deposit: d, onClose, onDone }: { deposit: AdminDepositD
           <dt>Cliente</dt><dd>{d.userName}<br /><span className="muted">{d.userEmail}</span></dd>
           <dt>Valor declarado</dt><dd><strong>{formatMoney(d.amountMinor, d.currency)}</strong></dd>
           <dt>Método</dt><dd>{d.methodName}</dd>
-          {d.txId && (<><dt>ID da transacção</dt><dd className="mono">{d.txId}</dd></>)}
+          {d.rail === "CRYPTO" && (
+            <>
+              <dt>Moeda / rede</dt><dd><strong>{d.payTo.coin}</strong> · {d.payTo.network}</dd>
+              <dt>Endereço da KIVORA</dt><dd className="mono" style={{ wordBreak: "break-all" }}>{d.payTo.number}</dd>
+              {d.payTo.reference && (<><dt>Memo / tag</dt><dd className="mono">{d.payTo.reference}</dd></>)}
+            </>
+          )}
+          {d.txId && (<><dt>{d.rail === "CRYPTO" ? "Hash da transacção (TxID)" : "ID da transacção"}</dt><dd className="mono" style={{ wordBreak: "break-all" }}>{d.txId}</dd></>)}
           <dt>Criado em</dt><dd>{formatDateTime(d.createdAt)}</dd>
           <dt>Estado</dt><dd><Badge status={d.status} /></dd>
           {d.userNote && (<><dt>Nota do cliente</dt><dd>{d.userNote}</dd></>)}
@@ -96,7 +103,9 @@ function DepositReview({ deposit: d, onClose, onDone }: { deposit: AdminDepositD
         <BlobViewer label="Comprovativo" load={() => adminApi.depositProof(d.id)} deps={[d.id]} emptyText="O cliente ainda não anexou comprovativo." />
       </div>
       <div className="alert alert--info">
-        Confira no extracto do banco: valor, data, referência e titular. Só confirme quando o dinheiro estiver na conta da KIVORA.
+        {d.rail === "CRYPTO"
+          ? "Confira o hash numa explorer da rede indicada: moeda, rede, endereço de destino e valor recebido. Só confirme quando os fundos estiverem na carteira da KIVORA."
+          : "Confira no extracto do banco: valor, data, referência e titular. Só confirme quando o dinheiro estiver na conta da KIVORA."}
       </div>
 
       {action === "confirm" && (

@@ -14,7 +14,7 @@ export const noteSchema = z.strictObject({ note: text(0, 500).optional() });
 export const reasonSchema = z.strictObject({ note: text(3, 500) });
 
 export const proofSchema = z.strictObject({
-  txId: z.string().trim().regex(/^[A-Za-z0-9\-_/.]{4,60}$/, { error: "invalidTxId" }),
+  txId: z.string().trim().regex(/^[A-Za-z0-9\-_/.]{4,120}$/, { error: "invalidTxId" }),
   mime: z.enum(["image/jpeg", "image/png", "application/pdf"]),
   dataBase64: z.string().min(100).max(2_800_000),
 });
@@ -26,11 +26,14 @@ export const paymentAccountSchema = z.strictObject({
 
 export const methodSchema = z.strictObject({
   kind: z.enum(["DEPOSIT", "WITHDRAWAL"]),
-  rail: z.enum(["PAYPAY", "KWIK", "EXPRESS", "REFERENCIA"]).nullable(),
+  rail: z.enum(["PAYPAY", "KWIK", "EXPRESS", "REFERENCIA", "CRYPTO"]).nullable(),
   accountHolder: text(0, 120),
-  accountNumber: text(0, 60),
+  accountNumber: text(0, 120),
   entity: text(0, 20),
   reference: text(0, 40),
+  /** CRYPTO: moeda (USDT…) e rede (TRON TRC20…). */
+  coin: z.string().trim().toUpperCase().max(12),
+  network: text(0, 60),
   name: text(2, 80),
   instructions: text(0, 2000),
   minMinor: optMoney,
@@ -41,6 +44,12 @@ export const methodSchema = z.strictObject({
   sortOrder: z.number().int().min(-1000).max(1000),
 }).superRefine((v, ctx) => {
   if (v.kind !== "DEPOSIT" || v.rail === null) return;
+  if (v.rail === "CRYPTO") {
+    if (!/^[A-Z0-9]{2,12}$/.test(v.coin)) ctx.addIssue({ code: "custom", path: ["coin"], message: "required" });
+    if (v.network === "") ctx.addIssue({ code: "custom", path: ["network"], message: "required" });
+    if (v.accountNumber === "") ctx.addIssue({ code: "custom", path: ["accountNumber"], message: "required" });
+    return;
+  }
   if (v.rail === "REFERENCIA") {
     if (v.entity === "") ctx.addIssue({ code: "custom", path: ["entity"], message: "required" });
     if (v.reference === "") ctx.addIssue({ code: "custom", path: ["reference"], message: "required" });

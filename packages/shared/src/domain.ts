@@ -26,7 +26,7 @@ export interface WalletDto {
   verificationStatus: KycStatus | "NONE";
 }
 
-export type PaymentRail = "PAYPAY" | "KWIK" | "EXPRESS" | "REFERENCIA";
+export type PaymentRail = "PAYPAY" | "KWIK" | "EXPRESS" | "REFERENCIA" | "CRYPTO";
 
 export interface PaymentMethodDto {
   id: string;
@@ -38,6 +38,9 @@ export interface PaymentMethodDto {
   accountNumber: string;
   entity: string;
   reference: string;
+  /** Só CRYPTO: símbolo da moeda (USDT, TRX, SOL, BNB…) e rede (TRON TRC20, BNB Smart Chain BEP20…). Vazio nos outros. */
+  coin: string;
+  network: string;
   name: string;
   instructions: string;
   minMinor: number | null;
@@ -63,7 +66,7 @@ export interface DepositDto {
   instructions: string;
   rail: PaymentRail | null;
   /** Para onde o cliente deve pagar. */
-  payTo: { holder: string; number: string; entity: string; reference: string };
+  payTo: { holder: string; number: string; entity: string; reference: string; coin: string; network: string };
   /** Fim do prazo para enviar o comprovativo (1 hora). */
   expiresAt: string;
   txId: string;
@@ -72,7 +75,7 @@ export interface DepositDto {
 
 export interface PaymentAccountDto {
   id: string;
-  rail: Exclude<PaymentRail, "REFERENCIA">;
+  rail: Exclude<PaymentRail, "REFERENCIA" | "CRYPTO">;
   holder: string;
   detail: string;
   createdAt: string;

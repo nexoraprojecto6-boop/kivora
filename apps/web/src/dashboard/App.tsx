@@ -46,6 +46,8 @@ import { VerifyRedirect } from "./verify-banner.js"
 import { DepositFlow } from "./deposit-flow.js"
 import { InvitePage } from "./invite.js"
 import { VerifyPendingModal } from "./verify-pending-modal.js"
+import { LanguageSelect } from "../components/layout/LanguageSelect.js"
+import { Flag } from "../components/layout/flags.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -167,6 +169,7 @@ export function Header({ title, back = false }: { title?: string; back?: boolean
           <Logo height={32} />
         )}
         <div className="header-actions">
+          <LanguageSelect />
           <IconButton label={t("dash.aria.notifications")} onClick={() => navigate("/notifications")}>
             <Bell size={20} />
           </IconButton>
@@ -479,7 +482,7 @@ function SettingsPage() {
                 }}
               >
                 <span className="method-icon">
-                  <Languages size={19} />
+                  <Flag code={l.code} size={24} />
                 </span>
                 <span>
                   <strong>{l.name}</strong>

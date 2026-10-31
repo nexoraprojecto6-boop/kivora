@@ -67,6 +67,7 @@ export function WelcomePage() {
       <header className="wl-header">
         <Link to="/" aria-label={t("common.app.name")}><Logo height={34} /></Link>
         <nav className="wl-actions" aria-label={t("common.app.name")}>
+          <LanguageSelect />
           {status === "authenticated" ? (
             <a className="wl-btn wl-btn--solid" href={DASHBOARD_URL}>{w("openAccount")}</a>
           ) : (

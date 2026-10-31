@@ -11,7 +11,11 @@ import { formatMoney, fromMinor, toMinor } from "../lib/format.js";
 import { errorText } from "../lib/labels.js";
 import { useAsync } from "../lib/useAsync.js";
 
-const RAIL_LABEL: Record<string, string> = { PAYPAY: "PayPay AO", KWIK: "Kwik", EXPRESS: "Multicaixa Express", REFERENCIA: "Referência Multicaixa" };
+const RAIL_LABEL: Record<string, string> = { PAYPAY: "PayPay AO", KWIK: "Kwik", EXPRESS: "Multicaixa Express", REFERENCIA: "Referência Multicaixa", CRYPTO: "Criptomoeda" };
+
+/** Sugestões (o administrador pode escrever outras). */
+const COIN_SUGGESTIONS = ["USDT", "USDC", "TRX", "SOL", "BNB", "BTC", "ETH", "LTC", "XRP", "DOGE", "MATIC", "AVAX", "ADA", "DOT", "LINK", "DAI", "TON"];
+const NETWORK_SUGGESTIONS = ["TRON (TRC20)", "BNB Smart Chain (BEP20)", "Ethereum (ERC20)", "Solana", "Bitcoin", "Polygon", "Arbitrum One", "Avalanche C-Chain", "TON", "Litecoin", "XRP Ledger", "Dogecoin"];
 
 export function MethodsPage() {
   const q = useAsync(() => adminApi.methods(), []);
@@ -39,7 +43,7 @@ export function MethodsPage() {
                     <tr key={m.id}>
                       <td><span className="cell-main">{m.name}<small>{m.instructions.slice(0, 70)}{m.instructions.length > 70 ? "…" : ""}</small></span></td>
                       <td>{m.kind === "DEPOSIT" ? "Depósito" : "Levantamento"}</td>
-                      <td>{m.rail ? RAIL_LABEL[m.rail] : "—"}</td>
+                      <td>{m.rail === "CRYPTO" ? `${m.coin} · ${m.network}` : m.rail ? RAIL_LABEL[m.rail] : "—"}</td>
                       <td className="right nowrap">{formatMoney(m.minMinor)}</td>
                       <td className="right nowrap">{formatMoney(m.maxMinor)}</td>
                       <td className="right nowrap">{formatMoney(m.feeMinor)}</td>
@@ -76,6 +80,8 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
     accountNumber: method?.accountNumber ?? "",
     entity: method?.entity ?? "",
     reference: method?.reference ?? "",
+    coin: method?.coin ?? "",
+    network: method?.network ?? "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +93,7 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
     const feeText = f.fee.trim().replace(",", ".");
     const fee = feeText === "" ? null : Number(feeText) === 0 ? 0 : money(f.fee);
     const sort = Number(f.sortOrder);
-    if (f.name.trim().length < 2) return setError("Indique o nome (mínimo 2 caracteres).");
+    if (f.name.trim().length < 2 && !(f.kind === "DEPOSIT" && f.rail === "CRYPTO")) return setError("Indique o nome (mínimo 2 caracteres).");
     if (min === undefined || max === undefined || fee === undefined) return setError("Há um valor inválido (mínimo, máximo ou taxa).");
     if (min !== null && max !== null && min > max) return setError("O mínimo não pode ser superior ao máximo.");
     if (!Number.isInteger(sort) || sort < -1000 || sort > 1000) return setError("Ordem inválida (entre -1000 e 1000).");
@@ -95,14 +101,22 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
     const rail = isDeposit && f.rail !== "" ? f.rail : null;
     if (isDeposit && rail === "REFERENCIA" && (f.entity.trim() === "" || f.reference.trim() === "")) return setError("Indique a entidade e a referência.");
     if (isDeposit && (rail === "PAYPAY" || rail === "KWIK" || rail === "EXPRESS") && f.accountNumber.trim() === "") return setError("Indique o número ou o IBAN da conta.");
+    const coin = f.coin.trim().toUpperCase();
+    const network = f.network.trim();
+    if (isDeposit && rail === "CRYPTO") {
+      if (!/^[A-Z0-9]{2,12}$/.test(coin)) return setError("Indique a moeda (ex.: USDT, TRX, SOL, BNB).");
+      if (network === "") return setError("Indique a rede (ex.: TRON (TRC20), Solana).");
+      if (f.accountNumber.trim() === "") return setError("Indique o endereço da carteira que recebe os depósitos.");
+    }
+    const name = f.name.trim() !== "" ? f.name.trim() : rail === "CRYPTO" ? `${coin} (${network})`.slice(0, 80) : "";
     const input: MethodInput = {
-      kind: f.kind, name: f.name.trim(), instructions: f.instructions.trim(), minMinor: min, maxMinor: max,
+      kind: f.kind, name, coin: rail === "CRYPTO" ? coin : "", network: rail === "CRYPTO" ? network : "", instructions: f.instructions.trim(), minMinor: min, maxMinor: max,
       feeMinor: fee, feeNote: f.feeNote.trim(), enabled: f.enabled, sortOrder: sort,
       rail,
       accountHolder: rail ? f.accountHolder.trim() : "",
       accountNumber: rail && rail !== "REFERENCIA" ? f.accountNumber.trim() : "",
       entity: rail === "REFERENCIA" ? f.entity.trim() : "",
-      reference: rail === "REFERENCIA" ? f.reference.trim() : "",
+      reference: rail === "REFERENCIA" || rail === "CRYPTO" ? f.reference.trim() : "",
     };
     setBusy(true);
     setError(null);
@@ -147,6 +161,7 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
                 <option value="KWIK">Kwik</option>
                 <option value="EXPRESS">Multicaixa Express</option>
                 <option value="REFERENCIA">Referência Multicaixa</option>
+                <option value="CRYPTO">Criptomoeda (moeda + rede + endereço)</option>
               </select>
             </label>
             {(f.rail === "PAYPAY" || f.rail === "KWIK" || f.rail === "EXPRESS") && (
@@ -161,6 +176,29 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
                 </label>
               </>
             )}
+            {f.rail === "CRYPTO" && (
+              <>
+                <label className="field">
+                  <span className="field__label">Moeda (o cliente deposita esta moeda)</span>
+                  <input className="input" list="crypto-coins" maxLength={12} value={f.coin} onChange={(e) => set("coin", e.target.value.toUpperCase())} placeholder="Ex.: USDT" />
+                  <datalist id="crypto-coins">{COIN_SUGGESTIONS.map((c) => <option key={c} value={c} />)}</datalist>
+                </label>
+                <label className="field">
+                  <span className="field__label">Rede</span>
+                  <input className="input" list="crypto-networks" maxLength={60} value={f.network} onChange={(e) => set("network", e.target.value)} placeholder="Ex.: TRON (TRC20)" />
+                  <datalist id="crypto-networks">{NETWORK_SUGGESTIONS.map((n) => <option key={n} value={n} />)}</datalist>
+                </label>
+                <label className="field full">
+                  <span className="field__label">Endereço da carteira da plataforma</span>
+                  <input className="input mono" maxLength={120} value={f.accountNumber} onChange={(e) => set("accountNumber", e.target.value)} />
+                  <span className="field__hint">Confirme duas vezes: um endereço errado faz perder os fundos dos clientes.</span>
+                </label>
+                <label className="field full">
+                  <span className="field__label">Memo / tag (só se a rede exigir, ex.: TON, XRP)</span>
+                  <input className="input mono" maxLength={40} value={f.reference} onChange={(e) => set("reference", e.target.value)} />
+                </label>
+              </>
+            )}
             {f.rail === "REFERENCIA" && (
               <>
                 <label className="field"><span className="field__label">Entidade</span><input className="input" maxLength={20} inputMode="numeric" value={f.entity} onChange={(e) => set("entity", e.target.value)} /></label>
@@ -170,7 +208,7 @@ function MethodEditor({ method, onClose, onSaved }: { method: PaymentMethodDto |
             )}
           </>
         )}
-        <label className="field"><span className="field__label">Nome</span><input className="input" maxLength={80} value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="Ex.: Transferência BAI" /></label>
+        <label className="field"><span className="field__label">Nome</span><input className="input" maxLength={80} value={f.name} onChange={(e) => set("name", e.target.value)} placeholder={f.rail === "CRYPTO" ? "Opcional (por omissão: moeda + rede)" : "Ex.: Transferência BAI"} /></label>
         <label className="field full">
           <span className="field__label">Instruções para o cliente</span>
           <textarea className="input" rows={5} maxLength={2000} value={f.instructions} onChange={(e) => set("instructions", e.target.value)} placeholder="IBAN, titular, referência a indicar, prazo…" />

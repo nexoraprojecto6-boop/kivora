@@ -7,6 +7,7 @@ import { ApiError, platformApi } from "../services/api-client.js"
 import { Header, Page } from "./App.js"
 import { BrandIcon, type BrandId } from "./bank-icons.js"
 import { beginLoading } from "../services/loader-store.js"
+import { CryptoInfoStep, CryptoStep } from "./crypto-deposit.js"
 import "./deposit-flow.css"
 
 /* ======================================================================================
@@ -68,6 +69,10 @@ const RAILS: Record<PaymentRail, { name: string; blurb: string; brand: BrandId; 
   EXPRESS: {
     name: "Multicaixa Express", blurb: "Pagamento pelo número Express", brand: "express",
     instructions: "No Multicaixa Express, escolha Transferir, introduza o número acima e o valor exacto. Confirme o nome do titular antes de pagar.",
+  },
+  CRYPTO: {
+    name: "Criptomoeda", blurb: "USDT, TRX, Solana, BNB e outras", brand: "crypto",
+    instructions: "Envie a moeda indicada, pela rede indicada, para o endereço acima. Confirme a rede antes de enviar.",
   },
   REFERENCIA: {
     name: "Referência Multicaixa", blurb: "Pagamento por entidade e referência", brand: "referencia",
@@ -179,13 +184,13 @@ function Option({ brand, name, blurb, onClick, disabled, soon }: { brand: BrandI
 
 /* ------------------------------ passo 1: método ------------------------------ */
 
-function MethodStep({ onBank }: { onBank: () => void }) {
+function MethodStep({ onBank, onCrypto, cryptoCount }: { onBank: () => void; onCrypto: () => void; cryptoCount: number }) {
   return (
     <>
       <StepHead step={1} title="Como quer depositar?" sub="Escolha o método de pagamento." />
       <div className="dp-list">
         <Option brand="angola" name="Banco de Angola" blurb="PayPay AO, Kwik, Multicaixa Express e Referência" onClick={onBank} />
-        <Option brand="crypto" name="Criptomoeda" blurb="Bitcoin, USDT e outras" disabled soon />
+        <Option brand="crypto" name="Criptomoeda" blurb="USDT, TRX, Solana, BNB e outras" onClick={onCrypto} disabled={cryptoCount === 0} soon={cryptoCount === 0} />
         <Option brand="card" name="Cartão" blurb="Visa e Mastercard" disabled soon />
       </div>
     </>
@@ -366,7 +371,10 @@ function coordsOf(d: DepositDto, money: Money): { holder: string; lines: { label
   const p = d.payTo
   const rail = d.rail
   const lines: { label: string; value: string; copy: boolean }[] = []
-  if (rail === "REFERENCIA") {
+  if (rail === "CRYPTO") {
+    lines.push({ label: "Moeda", value: p.coin, copy: false }, { label: "Rede", value: p.network, copy: false }, { label: "Endereço da carteira", value: p.number, copy: true })
+    if (p.reference) lines.push({ label: "Memo / Tag", value: p.reference, copy: true })
+  } else if (rail === "REFERENCIA") {
     lines.push({ label: "Entidade", value: p.entity, copy: true }, { label: "Referência", value: p.reference, copy: true })
   } else if (rail === "KWIK") {
     lines.push({ label: "IBAN", value: groupIban(p.number.replace(/\s/g, "")), copy: true })
@@ -377,8 +385,8 @@ function coordsOf(d: DepositDto, money: Money): { holder: string; lines: { label
   } else if (p.number) {
     lines.push({ label: "Conta", value: p.number, copy: true })
   }
-  lines.push({ label: "Valor a transferir", value: money.fmt(d.amountMinor), copy: false })
-  const instructions = d.instructions.trim() !== "" ? d.instructions.trim() : rail ? RAILS[rail].instructions : "Faça o pagamento com o valor exacto indicado."
+  lines.push({ label: rail === "CRYPTO" ? "Valor a creditar" : "Valor a transferir", value: money.fmt(d.amountMinor), copy: false })
+  const instructions = d.instructions.trim() !== "" ? d.instructions.trim() : rail === "CRYPTO" ? `Envie o equivalente em ${p.coin} ao valor a creditar, apenas pela rede ${p.network}, para o endereço acima. Outra moeda ou rede pode fazer perder os fundos. Depois envie o hash (TxID) e um print da transacção.` : rail ? RAILS[rail].instructions : "Faça o pagamento com o valor exacto indicado."
   return { holder: p.holder, lines, instructions }
 }
 
@@ -420,11 +428,11 @@ function PayStep({ deposit, money, deadline, onSubmit, onExpire, onCancel }: {
     setFile(f)
   }
 
-  const idOk = /^[A-Za-z0-9\-_/.]{4,60}$/.test(txId.trim())
+  const idOk = /^[A-Za-z0-9\-_/.]{4,120}$/.test(txId.trim())
 
   function submit() {
     if (!file) return setError("Envie o comprovativo do pagamento.")
-    if (!idOk) return setError("Escreva o ID da transacção (4 a 60 letras, números ou - _ / .).")
+    if (!idOk) return setError(deposit.rail === "CRYPTO" ? "Escreva o hash da transacção (TxID)." : "Escreva o ID da transacção (4 a 120 letras, números ou - _ / .).")
     onSubmit(file, txId.trim())
   }
 
@@ -436,7 +444,7 @@ function PayStep({ deposit, money, deadline, onSubmit, onExpire, onCancel }: {
           <Timer size={14} /> {mmss(left)}
         </span>
       </div>
-      <StepHead step={5} title="Faça a transferência" sub="Pague exactamente o valor indicado para esta conta parceira." />
+      <StepHead step={5} title="Faça a transferência" sub={deposit.rail === "CRYPTO" ? "Envie para a carteira da plataforma, na rede indicada." : "Pague exactamente o valor indicado para esta conta parceira."} />
 
       <section className="dp-card dp-coords" aria-label="Coordenadas de pagamento">
         {coords.holder ? <small className="dp-coords__holder"><ShieldCheck size={14} /> {coords.holder}</small> : null}
@@ -460,9 +468,9 @@ function PayStep({ deposit, money, deadline, onSubmit, onExpire, onCancel }: {
           <input type="file" accept="image/*,application/pdf" onChange={(e) => pick(e.target.files?.[0])} />
         </label>
         <label className="dp-field">
-          <span>ID da transacção</span>
-          <input value={txId} placeholder="Ex.: 20241030123456" autoComplete="off" onChange={(e) => { setTxId(e.target.value); setError("") }} />
-          <small>O código que aparece no comprovativo do pagamento.</small>
+          <span>{deposit.rail === "CRYPTO" ? "Hash da transacção (TxID)" : "ID da transacção"}</span>
+          <input value={txId} placeholder={deposit.rail === "CRYPTO" ? "Cole o hash da transacção" : "Ex.: 20241030123456"} autoComplete="off" onChange={(e) => { setTxId(e.target.value); setError("") }} />
+          <small>{deposit.rail === "CRYPTO" ? "Aparece na sua carteira ou exchange depois de enviar." : "O código que aparece no comprovativo do pagamento."}</small>
         </label>
         {error ? <p className="dp-error" role="alert">{error}</p> : null}
         <button type="button" className="dp-primary" disabled={!file || !idOk} onClick={submit}>Confirmar depósito</button>
@@ -489,7 +497,7 @@ async function proofPayload(file: File): Promise<{ mime: string; dataBase64: str
 
 /* ------------------------------ fluxo completo ------------------------------ */
 
-type Step = "method" | "rails" | "accounts" | "amount" | "pay"
+type Step = "method" | "rails" | "accounts" | "crypto" | "cryptoInfo" | "amount" | "pay"
 
 export function DepositFlow() {
   const navigate = useNavigate()
@@ -499,6 +507,7 @@ export function DepositFlow() {
   const [methods, setMethods] = useState<PaymentMethodDto[]>([])
   const [money, setMoney] = useState<Money>(() => makeMoney("AOA"))
   const [rail, setRail] = useState<PaymentRail | null>(null)
+  const [cryptoId, setCryptoId] = useState<string | null>(null)
   const [accounts, setAccounts] = useState<PaymentAccountDto[]>([])
   const [accountId, setAccountId] = useState<string | null>(null)
   const [units, setUnits] = useState(0)
@@ -547,8 +556,12 @@ export function DepositFlow() {
 
   const rails = useMemo(() => RAIL_ORDER.filter((r) => methods.some((m) => m.rail === r)), [methods])
   /** O servidor ordena os métodos por ordem de apresentação; usa-se o primeiro disponível do serviço. */
-  const method = useMemo(() => (rail ? methods.find((m) => m.rail === rail) ?? null : null), [methods, rail])
-  const accountRail: AccountRail | null = rail && rail !== "REFERENCIA" ? rail : null
+  const cryptoMethods = useMemo(() => methods.filter((m) => m.rail === "CRYPTO"), [methods])
+  const method = useMemo(
+    () => (rail === "CRYPTO" ? methods.find((m) => m.id === cryptoId && m.rail === "CRYPTO") ?? null : rail ? methods.find((m) => m.rail === rail) ?? null : null),
+    [methods, rail, cryptoId],
+  )
+  const accountRail: AccountRail | null = rail && rail !== "REFERENCIA" && rail !== "CRYPTO" ? rail : null
 
   function chooseRail(r: PaymentRail) {
     setRail(r)
@@ -585,7 +598,7 @@ export function DepositFlow() {
     if (!method || !rail) return
     setUnits(u)
     const acc = accounts.find((a) => a.id === accountId)
-    const note = acc ? `${RAILS[acc.rail].name} · ${acc.detail} · ${acc.holder}`.slice(0, 300) : ""
+    const note = rail === "CRYPTO" ? `${method.coin} · ${method.network}`.slice(0, 300) : acc ? `${RAILS[acc.rail].name} · ${acc.detail} · ${acc.holder}`.slice(0, 300) : ""
     const amountMinor = money.toMinor(u)
     const sig = `${method.id}|${amountMinor}|${note}`
     if (idemRef.current?.sig !== sig) idemRef.current = { sig, key: globalThis.crypto.randomUUID() }
@@ -629,7 +642,19 @@ export function DepositFlow() {
       <Header title="Depósito" back />
       <div className="dp-wrap">
         {error ? <p className="dp-error dp-error--box" role="alert">{error}</p> : null}
-        {!loader && step === "method" ? <MethodStep onBank={() => nav("rails", "A processar", "A verificar os métodos disponíveis")} /> : null}
+        {!loader && step === "method" ? (
+          <MethodStep
+            onBank={() => nav("rails", "A processar", "A verificar os métodos disponíveis")}
+            onCrypto={() => { setRail("CRYPTO"); setCryptoId(null); nav("crypto", "A processar", "A verificar as moedas disponíveis") }}
+            cryptoCount={cryptoMethods.length}
+          />
+        ) : null}
+        {!loader && step === "crypto" ? (
+          <CryptoStep methods={cryptoMethods} onPick={(m) => { setCryptoId(m.id); nav("cryptoInfo", "A processar", "A preparar a rede") }} onBack={() => nav("method")} />
+        ) : null}
+        {!loader && step === "cryptoInfo" && method ? (
+          <CryptoInfoStep method={method} fmt={(n) => money.fmt(n)} onContinue={() => nav("amount", "A processar", "A preparar o valor")} onBack={() => nav("crypto")} />
+        ) : null}
         {!loader && step === "rails" ? <RailStep rails={rails} onPick={chooseRail} onBack={() => nav("method")} /> : null}
         {!loader && step === "accounts" && accountRail ? (
           <AccountStep
@@ -641,7 +666,7 @@ export function DepositFlow() {
           />
         ) : null}
         {!loader && step === "amount" && method ? (
-          <AmountStep money={money} method={method} initialUnits={units} onContinue={createDeposit} onBack={() => nav(accountRail ? "accounts" : "rails")} />
+          <AmountStep money={money} method={method} initialUnits={units} onContinue={createDeposit} onBack={() => nav(rail === "CRYPTO" ? "cryptoInfo" : accountRail ? "accounts" : "rails")} />
         ) : null}
         {!loader && step === "pay" && deposit ? (
           <PayStep deposit={deposit} money={money} deadline={deadline} onSubmit={sendProof} onExpire={expire} onCancel={cancelDeposit} />
