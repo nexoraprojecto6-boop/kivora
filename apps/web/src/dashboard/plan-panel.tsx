@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ArrowRight, Check, CircleHelp, Clock3, Gem, Gift, Layers, Lock, PieChart, Sparkles, TrendingDown, TrendingUp, Wallet } from "lucide-react"
-import type { EarningsSeriesDto, MarketPointDto, PlanDto, SeriesBucket, SubscriptionDto, SubscriptionLiveDto, SubscriptionPanelDto, WalletDto } from "@kivora/shared"
+import { ArrowRight, Check, CircleHelp, Clock3, Gift, Layers, Lock, PieChart, Sparkles, TrendingUp, Wallet } from "lucide-react"
+import type { MarketPointDto, PlanDto, SubscriptionDto, SubscriptionLiveDto, SubscriptionPanelDto, WalletDto } from "@kivora/shared"
 import { useNavigate, useParams } from "react-router-dom"
 import { useI18n } from "../i18n/I18nProvider.js"
-import { assetUrl, platformApi } from "../services/api-client.js"
+import { platformApi } from "../services/api-client.js"
 import { withLoader } from "../services/loader-store.js"
+import { Header, Page } from "./App.js"
 import { Gate, Load, Sub, canOperate, makeMoney, newKey, useErr, useLoad } from "./screens.js"
+import { PlanCover } from "./plan-cover.js"
+import { EXTRA_TEXT } from "./plan-text.js"
+import { CommissionChart, MarketChart } from "./trade-chart.js"
+import { TrendArrow, dirOf, useDirection, type Dir } from "./trend.js"
 import "./plan-panel.css"
+import "./plans-pro.css"
 
 /*
  * Plano: página de detalhe (antes de investir) e painel do plano (depois).
@@ -88,8 +94,8 @@ const TEXT: Record<string, Txt> = {
 
 function useTxt() {
   const { language } = useI18n()
-  const dict = TEXT[language] ?? TEXT["pt"]!
-  const fallback = TEXT["pt"]!
+  const dict = { ...(EXTRA_TEXT[language] ?? EXTRA_TEXT["pt"]!), ...(TEXT[language] ?? TEXT["pt"]!) }
+  const fallback = { ...EXTRA_TEXT["pt"]!, ...TEXT["pt"]! }
   return {
     language,
     tx: (key: string, params: Record<string, string | number> = {}): string =>
@@ -108,7 +114,8 @@ function useFine(currency: string, language: string) {
     const base = new Intl.NumberFormat(loc, { style: "currency", currency })
     const factor = 10 ** (base.resolvedOptions().maximumFractionDigits ?? 2)
     const fine = new Intl.NumberFormat(loc, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 4 })
-    return { fmt: (minor: number) => base.format(minor / factor), fine: (minor: number) => fine.format(minor / factor) }
+    const plain = new Intl.NumberFormat(loc, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+    return { fmt: (minor: number) => base.format(minor / factor), fine: (minor: number) => fine.format(minor / factor), num: (minor: number) => plain.format(minor / factor) }
   }, [currency, language])
 }
 
@@ -131,8 +138,7 @@ function useTick(ms = 1000): number {
 }
 
 function PlanArt({ plan }: { plan: Pick<PlanDto, "imageUrl" | "name"> }) {
-  if (plan.imageUrl) return <img className="pp-art" src={assetUrl(plan.imageUrl)} alt="" />
-  return <div className="pp-art pp-art--fallback" aria-hidden="true"><Gem size={56} /></div>
+  return <PlanCover imageUrl={plan.imageUrl} variant="hero" />
 }
 
 const STATUS_TONE: Record<string, string> = { ACTIVE: "ok", COMPLETED: "ok", OPEN: "ok", PENDING: "wait", COMING_SOON: "wait", REJECTED: "bad", CANCELLED: "bad", CLOSED: "bad" }
@@ -153,7 +159,7 @@ export function PlanDetailPage() {
   const key = useRef(newKey())
 
   return (
-    <Sub title={plan.data?.name ?? ""}>
+    <Sub title={plan.data?.name ?? ""} className="pd-page">
       <Load q={wallet}>{(w) => <Load q={plan}>{(p) => body(w, p)}</Load>}</Load>
     </Sub>
   )
@@ -238,7 +244,7 @@ export function PlanDetailPage() {
 
 /* ============================== os meus planos (lista) ============================== */
 
-export function MyPlans() {
+export function MyPlans({ plans = [] }: { plans?: PlanDto[] }) {
   const navigate = useNavigate()
   const { tx, language } = useTxt()
   const subs = useLoad(() => platformApi.subscriptions({ silent: true }), [])
@@ -247,16 +253,22 @@ export function MyPlans() {
   return (
     <section className="pp-card pp-mine">
       <h2><PieChart size={16} /> {tx("myPlans")}</h2>
-      {list.map((s) => <MyPlanRow key={s.id} s={s} language={language} onOpen={() => navigate(`/subscriptions/${s.id}`)} />)}
+      {list.map((s) => (
+        <MyPlanRow key={s.id} s={s} imageUrl={plans.find((p) => p.id === s.planId)?.imageUrl ?? null} language={language} onOpen={() => navigate(`/subscriptions/${s.id}`)} />
+      ))}
     </section>
   )
 }
-function MyPlanRow({ s, language, onOpen }: { s: SubscriptionDto; language: string; onOpen: () => void }) {
+function MyPlanRow({ s, imageUrl, language, onOpen }: { s: SubscriptionDto; imageUrl: string | null; language: string; onOpen: () => void }) {
   const { tx } = useTxt()
   const f = useFine(s.currency, language)
   return (
     <button type="button" className="pp-row" onClick={onOpen}>
-      <span><b>{s.planName}</b><small>{f.fmt(s.amountMinor)} · {tx(`status_${s.status}`)}</small></span><ArrowRight size={16} />
+      <span>
+        <PlanCover imageUrl={imageUrl} variant="thumb" />
+        <span><b>{s.planName}</b><small>{f.fmt(s.amountMinor)} · {tx(`status_${s.status}`)}</small></span>
+      </span>
+      <ArrowRight size={16} />
     </button>
   )
 }
@@ -268,13 +280,17 @@ export function PlanPanelPage() {
   const [tick, setTick] = useState(0)
   const panel = useLoad(() => platformApi.panel(id), [id, tick])
   return (
-    <Sub title={panel.data?.plan.name ?? ""}>
-      <Load q={panel}>{(d) => <PanelBody key={`${d.subscription.id}:${tick}`} data={d} reload={() => setTick((n) => n + 1)} />}</Load>
-    </Sub>
+    <Page className="form-page tp-page">
+      <Header title={panel.data?.plan.name ?? ""} back />
+      <div className="form-surface">
+        <Load q={panel}>{(d) => <PanelBody key={`${d.subscription.id}:${tick}`} data={d} reload={() => setTick((n) => n + 1)} />}</Load>
+      </div>
+    </Page>
   )
 }
 
-const MAX_POINTS = 240
+// Histórico guardado no ecrã (o servidor guarda 3 dias de pontos e entrega os mais recentes no 1.º pedido).
+const MAX_POINTS = 2000
 const POLL_MS = 5000
 
 function PanelBody({ data, reload }: { data: SubscriptionPanelDto; reload: () => void }) {
@@ -316,6 +332,16 @@ function PanelBody({ data, reload }: { data: SubscriptionPanelDto; reload: () =>
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible) }
   }, [poll])
 
+  const r = live.rate
+  const mc = live.market?.changePct ?? null
+  // Direcção de partida: taxa acima/abaixo da normal; se igual, o sinal da variação do mercado. Depois segue o último movimento.
+  const seed: Dir = (() => {
+    const d = dirOf(r.currentBps, r.baseBps)
+    return d !== "flat" ? d : mc === null ? "flat" : mc > 0 ? "up" : mc < 0 ? "down" : "flat"
+  })()
+  const rateDir = useDirection(r.effectiveBps, seed)
+  const paceDir = useDirection(live.earnings.perMinuteMinor, seed, 1e-9)
+
   const elapsed = (Date.now() - syncRef.current.at) / 1000
   const active = live.status === "ACTIVE"
   // Visual: avança ao ritmo que o servidor indicou entre dois pedidos. Nada disto é usado para levantar.
@@ -336,192 +362,132 @@ function PanelBody({ data, reload }: { data: SubscriptionPanelDto; reload: () =>
     }
   }
 
-  const r = live.rate
-  const gauge = r.maxBps > r.minBps ? Math.min(100, Math.max(0, ((r.currentBps - r.minBps) / (r.maxBps - r.minBps)) * 100)) : 100
+  const span1 = r.maxBps > r.minBps ? r.maxBps - r.minBps : 0
+  const gauge = span1 > 0 ? Math.min(100, Math.max(0, ((r.currentBps - r.minBps) / span1) * 100)) : 100
+  const trendLabel = (d: Dir) => (d === "up" ? tx("trendUp") : d === "down" ? tx("trendDown") : tx("trendFlat"))
+  const cls = (d: Dir) => (d === "up" ? "up" : d === "down" ? "dn" : "")
 
   return (
-    <div className="pp">
-      <PlanArt plan={plan} />
-      <div className="pp-title">
-        <h1>{plan.name}</h1>
-        <span className={`pp-chip ${STATUS_TONE[live.status] ?? ""}`}>{tx(`status_${live.status}`)}</span>
+    <div className="tp">
+      <div className="tp-hero">
+        <PlanCover imageUrl={plan.imageUrl} variant="hero" />
+        <div className="tp-hero-over">
+          <h1>{plan.name}</h1>
+          <span className={`tp-chip ${STATUS_TONE[live.status] ?? ""}`}>{tx(`status_${live.status}`)}</span>
+        </div>
       </div>
 
-      {live.status === "PENDING" && <div className="info-box" role="note"><Clock3 size={18} /><p>{tx("pendingNote")}</p></div>}
-      {live.status === "COMPLETED" && <div className="info-box" role="status"><Check size={18} /><p>{tx("completedNote")}</p></div>}
+      <div className="tp-body">
+        {live.status === "PENDING" && <div className="info-box" role="note"><Clock3 size={18} /><p>{tx("pendingNote")}</p></div>}
+        {live.status === "COMPLETED" && <div className="info-box" role="status"><Check size={18} /><p>{tx("completedNote")}</p></div>}
 
-      <div className="pp-grid">
-        <div><small>{tx("invested")}</small><strong>{f.fmt(sub.amountMinor)}</strong></div>
-        {active && remaining !== null && <div><small>{tx("remaining")}</small><strong>{span(remaining)}</strong>{sub.endsAt && <em>{tx("endsAt", { d: new Date(sub.endsAt).toLocaleDateString(language) })}</em>}</div>}
-        {live.status === "COMPLETED" && <div><small>{tx("remaining")}</small><strong>{tx("ended")}</strong></div>}
-      </div>
+        {/* leituras principais */}
+        <div className="tp-kpis">
+          <div className="tp-kpi"><small>{tx("invested")}</small><strong>{f.fmt(sub.amountMinor)}</strong></div>
+          <div className="tp-kpi">
+            <small>{tx("remaining")}</small>
+            <strong>{active && remaining !== null ? span(remaining) : live.status === "COMPLETED" ? tx("ended") : "—"}</strong>
+            {active && sub.endsAt && <em>{tx("endsAt", { d: new Date(sub.endsAt).toLocaleDateString(language) })}</em>}
+          </div>
+          <div className={`tp-kpi ${active ? cls(rateDir) : ""}`}>
+            <small>{tx("rate")}</small>
+            <strong>{pct(r.effectiveBps)}{active && <TrendArrow dir={rateDir} size={15} label={trendLabel(rateDir)} />}</strong>
+            <em>{tx("perDay")}</em>
+          </div>
+          <div className={`tp-kpi ${active ? cls(paceDir) : ""}`}>
+            <small>{tx("commissionNow")}</small>
+            <strong>{f.fine(live.earnings.perMinuteMinor)}{active && <TrendArrow dir={paceDir} size={15} label={trendLabel(paceDir)} />}</strong>
+            <em>{tx("perMinute")}</em>
+          </div>
+        </div>
 
-      {/* mercado em tempo real */}
-      <section className="pp-card">
-        <h2><TrendingUp size={16} /> {tx("live")}{live.market ? ` · ${live.market.label}` : ""}</h2>
-        {live.market ? (
-          <>
-            <div className="pp-quote">
-              <strong>{live.market.price === null ? "—" : live.market.price.toLocaleString(undefined, { maximumFractionDigits: 5 })}</strong>
-              {live.market.changePct !== null && (
-                <span className={live.market.changePct >= 0 ? "up" : "down"}>
-                  {live.market.changePct >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {live.market.changePct >= 0 ? "+" : ""}{live.market.changePct.toFixed(2)}%
-                </span>
-              )}
-              <i className={`pp-dot ${live.market.stale ? "off" : "on"}`} aria-hidden="true" />
+        {/* comissão total */}
+        <section className="tp-total" aria-label={tx("totalGenerated")}>
+          <small>{tx("totalGenerated")}</small>
+          <div className="tp-big">{f.fine(shown)}{active && <TrendArrow dir="up" size={22} label={tx("trendUp")} />}</div>
+          <div className="tp-mini">
+            <div><small>{tx("lastMinute")}</small><strong>{f.fine(live.earnings.lastMinuteMinor)}</strong></div>
+            <div><small>{tx("lastHour")}</small><strong>{f.fine(live.earnings.lastHourMinor)}</strong></div>
+            <div><small>{tx("lastDay")}</small><strong>{f.fine(live.earnings.lastDayMinor)}</strong></div>
+          </div>
+          {active && (
+            <div className="tp-mini">
+              <div><small>{tx("pace2")}</small><strong className="arrowed">{f.fine(live.earnings.perMinuteMinor)}<TrendArrow dir={paceDir} size={12} /></strong><em>{tx("perMinute")}</em></div>
+              <div><small>&nbsp;</small><strong className="arrowed">{f.fine(live.earnings.perHourMinor)}<TrendArrow dir={paceDir} size={12} /></strong><em>{tx("perHour")}</em></div>
+              <div><small>&nbsp;</small><strong className="arrowed">{f.fine(live.earnings.perDayMinor)}<TrendArrow dir={paceDir} size={12} /></strong><em>{tx("perDayL")}</em></div>
             </div>
-            <LiveChart points={points} up={(live.market.changePct ?? 0) >= 0} waiting={tx("waiting")} />
-            <p className="pp-note">{live.market.stale ? tx("rateStale") : tx("sourceNote")}</p>
-          </>
-        ) : (
-          <p className="pp-note">{tx("noMarket")}</p>
-        )}
-      </section>
-
-      {/* percentagem do plano */}
-      <section className="pp-card">
-        <h2><Sparkles size={16} /> {tx("rate")}</h2>
-        <div className="pp-bigrate"><strong>{pct(r.currentBps)}</strong><span>{tx("perDay")}</span></div>
-        {r.mode === "MARKET" && (
-          <>
-            <div className="pp-gauge" role="progressbar" aria-valuenow={Math.round(gauge)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${gauge}%` }} /></div>
-            <div className="pp-gauge-l"><span>{tx("dailyMin")} {pct(r.minBps)}</span><span>{tx("dailyMax")} {pct(r.maxBps)}</span></div>
-          </>
-        )}
-        {r.limit === "MAX" && <p className="pp-note ok">{tx("rateLimitMax")}</p>}
-        {r.limit === "MIN" && <p className="pp-note">{tx("rateLimitMin")}</p>}
-        {r.boostX100 > 100 && <p className="pp-note ok">{tx("rateEff")}: <b>{pct(r.effectiveBps)}</b> {tx("perDay")}</p>}
-      </section>
-
-      {/* bónus de convite */}
-      {plan.inviteBoostX100 > 100 && (
-        <section className="pp-card pp-boost">
-          <h2><Gift size={16} /> {tx("boost")}</h2>
-          <p className="pp-text">{data.boost.active ? tx("boostActive", { m: mult(data.boost.multiplierX100) }) : tx("boostInactive", { m: mult(plan.inviteBoostX100) })}</p>
-          <p className="pp-note">{tx("invitees", { n: data.boost.qualifiedInvitees })}</p>
-          {!data.boost.active && <button type="button" className="small-button" onClick={() => navigate("/invite")}>{tx("invite")}</button>}
+          )}
+          <div className="tp-mini tp-mini--2">
+            <div><small>{tx("claimed")}</small><strong>{f.fmt(live.earnings.claimedMinor)}</strong></div>
+            <div><small>{tx("claimable")}</small><strong>{f.fmt(live.earnings.claimableMinor)}</strong></div>
+          </div>
         </section>
-      )}
 
-      {/* comissão */}
-      <section className="pp-card">
-        <h2><Wallet size={16} /> {tx("generated")}</h2>
-        <div className="pp-total">{f.fine(shown)}</div>
-        <div className="pp-grid pp-grid--3">
-          <div><small>{tx("lastMinute")}</small><strong>{f.fine(live.earnings.lastMinuteMinor)}</strong></div>
-          <div><small>{tx("lastHour")}</small><strong>{f.fine(live.earnings.lastHourMinor)}</strong></div>
-          <div><small>{tx("lastDay")}</small><strong>{f.fine(live.earnings.lastDayMinor)}</strong></div>
+        {/* gráficos alinhados: mercado e comissão têm a mesma moldura */}
+        <div className="tp-charts">
+          <section className="tp-card">
+            <h2><TrendingUp size={16} /> {tx("live")}</h2>
+            {live.market ? (
+              <>
+                <MarketChart points={points} label={live.market.label} price={live.market.price} changePct={live.market.changePct} stale={live.market.stale} tx={tx} />
+                <p className="tp-note">{live.market.stale ? tx("rateStale") : tx("sourceNote")}</p>
+              </>
+            ) : (
+              <p className="tp-note">{tx("noMarket")}</p>
+            )}
+          </section>
+          {(active || live.status === "COMPLETED") && (
+            <section className="tp-card">
+              <h2><PieChart size={16} /> {tx("seriesTitle")}</h2>
+              <CommissionChart id={sub.id} active tx={tx} axisNum={f.num} fine={f.fine} />
+            </section>
+          )}
         </div>
+
+        {/* percentagem do plano */}
+        <section className="tp-card">
+          <h2><Sparkles size={16} /> {tx("rate")}</h2>
+          <div className="tp-rate"><strong>{pct(r.currentBps)}</strong><span>{tx("perDay")}</span>{active && <TrendArrow dir={rateDir} size={20} label={trendLabel(rateDir)} />}</div>
+          {r.mode === "MARKET" && (
+            <>
+              <div className="tp-gauge" role="progressbar" aria-valuenow={Math.round(gauge)} aria-valuemin={0} aria-valuemax={100}><i className="tp-needle" style={{ left: `${gauge}%` }} /></div>
+              <div className="tp-gauge-l"><span>{tx("dailyMin")} {pct(r.minBps)}</span><span>{tx("rateNormal")} {pct(r.baseBps)}</span><span>{tx("dailyMax")} {pct(r.maxBps)}</span></div>
+            </>
+          )}
+          {r.limit === "MAX" && <p className="tp-note ok">{tx("rateLimitMax")}</p>}
+          {r.limit === "MIN" && <p className="tp-note">{tx("rateLimitMin")}</p>}
+          {r.boostX100 > 100 && <p className="tp-note ok">{tx("rateEff")}: <b>{pct(r.effectiveBps)}</b> {tx("perDay")}</p>}
+        </section>
+
+        {/* bónus de convite */}
+        {plan.inviteBoostX100 > 100 && (
+          <section className="tp-card">
+            <h2><Gift size={16} /> {tx("boost")}</h2>
+            <p className="tp-note">{data.boost.active ? tx("boostActive", { m: mult(data.boost.multiplierX100) }) : tx("boostInactive", { m: mult(plan.inviteBoostX100) })}</p>
+            <p className="tp-note">{tx("invitees", { n: data.boost.qualifiedInvitees })}</p>
+            {!data.boost.active && <button type="button" className="small-button" onClick={() => navigate("/invite")}>{tx("invite")}</button>}
+          </section>
+        )}
+
+        {/* levantar para a carteira */}
         {active && (
-          <div className="pp-grid pp-grid--3">
-            <div><small>{tx("pace")}</small><strong>{f.fine(live.earnings.perMinuteMinor)}</strong><em>{tx("perMinute")}</em></div>
-            <div><small>&nbsp;</small><strong>{f.fine(live.earnings.perHourMinor)}</strong><em>{tx("perHour")}</em></div>
-            <div><small>&nbsp;</small><strong>{f.fine(live.earnings.perDayMinor)}</strong><em>{tx("perDayL")}</em></div>
-          </div>
+          <section className="tp-card">
+            <h2><Wallet size={16} /> {tx("payout")}</h2>
+            <p className="tp-note">{live.payout.intervalDays === 1 ? tx("payoutDaily") : tx("payoutBody", { n: live.payout.intervalDays })} {tx("destination")}.</p>
+            {msg && <div className={`info-box ${msg.ok ? "" : "bad"}`} role={msg.ok ? "status" : "alert"}>{msg.ok ? <Check size={18} /> : <CircleHelp size={18} />}<p>{msg.text}</p></div>}
+            <button type="button" className="primary-button" disabled={!live.payout.canClaim} onClick={() => void claim()}>{tx("claim")} · {f.fmt(live.earnings.claimableMinor)}</button>
+            {!live.payout.canClaim && untilClaim !== null && untilClaim > 0 && <p className="tp-note">{tx("nextClaim", { t: span(untilClaim) })}</p>}
+            {!live.payout.canClaim && (untilClaim === null || untilClaim <= 0) && live.earnings.claimableMinor < 1 && <p className="tp-note">{tx("nothing")}</p>}
+          </section>
         )}
-        <div className="pp-grid">
-          <div><small>{tx("claimed")}</small><strong>{f.fmt(live.earnings.claimedMinor)}</strong></div>
-          <div><small>{tx("claimable")}</small><strong>{f.fmt(live.earnings.claimableMinor)}</strong></div>
-        </div>
-      </section>
 
-      <EarningsSeries id={sub.id} active={active || live.status === "COMPLETED"} tx={tx} fine={f.fine} />
-
-      {/* levantar para a carteira */}
-      {active && (
-        <section className="pp-card">
-          <h2><Wallet size={16} /> {tx("payout")}</h2>
-          <p className="pp-note">{live.payout.intervalDays === 1 ? tx("payoutDaily") : tx("payoutBody", { n: live.payout.intervalDays })} {tx("destination")}.</p>
-          {msg && <div className={`info-box ${msg.ok ? "" : "bad"}`} role={msg.ok ? "status" : "alert"}>{msg.ok ? <Check size={18} /> : <CircleHelp size={18} />}<p>{msg.text}</p></div>}
-          <button type="button" className="primary-button" disabled={!live.payout.canClaim} onClick={() => void claim()}>{tx("claim")} · {f.fmt(live.earnings.claimableMinor)}</button>
-          {!live.payout.canClaim && untilClaim !== null && untilClaim > 0 && <p className="pp-note">{tx("nextClaim", { t: span(untilClaim) })}</p>}
-          {!live.payout.canClaim && (untilClaim === null || untilClaim <= 0) && live.earnings.claimableMinor < 1 && <p className="pp-note">{tx("nothing")}</p>}
+        <section className="tp-card">
+          <h2><Layers size={16} /> {tx("history")}</h2>
+          {data.payouts.length === 0 ? <p className="tp-note">{tx("noPayouts")}</p> : data.payouts.map((p) => (
+            <div key={p.id} className="pp-pay"><span>{new Date(p.createdAt).toLocaleString(language)}<small>{tx(p.kind === "CLAIM" ? "kindClaim" : "kindExpiry")}</small></span><b>+{f.fmt(p.amountMinor)}</b></div>
+          ))}
         </section>
-      )}
-
-      <section className="pp-card">
-        <h2><Layers size={16} /> {tx("history")}</h2>
-        {data.payouts.length === 0 ? <p className="pp-note">{tx("noPayouts")}</p> : data.payouts.map((p) => (
-          <div key={p.id} className="pp-pay"><span>{new Date(p.createdAt).toLocaleString(language)}<small>{tx(p.kind === "CLAIM" ? "kindClaim" : "kindExpiry")}</small></span><b>+{f.fmt(p.amountMinor)}</b></div>
-        ))}
-      </section>
-    </div>
-  )
-}
-
-/* ---------- gráfico do mercado (SVG, sem bibliotecas) ---------- */
-function LiveChart({ points, up, waiting }: { points: MarketPointDto[]; up: boolean; waiting: string }) {
-  const n = points.length
-  if (n < 2) return <div className="pp-chart pp-chart--empty">{waiting}</div>
-  const W = 320, H = 170, L = 6, R = 46, T = 10, B = 18
-  const prices = points.map((p) => p.price)
-  let lo = Math.min(...prices), hi = Math.max(...prices)
-  if (hi === lo) { hi += Math.abs(hi) * 0.0005 || 1; lo -= Math.abs(lo) * 0.0005 || 1 }
-  const pad = (hi - lo) * 0.12
-  lo -= pad; hi += pad
-  const x = (i: number) => L + (i * (W - L - R)) / (n - 1)
-  const y = (v: number) => T + (H - T - B) * (1 - (v - lo) / (hi - lo))
-  const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(p.price).toFixed(1)}`).join(" ")
-  const area = `${line} L${x(n - 1).toFixed(1)} ${H - B} L${x(0).toFixed(1)} ${H - B} Z`
-  const ticks = [hi - pad, (hi + lo) / 2, lo + pad]
-  const lastX = x(n - 1), lastY = y(points[n - 1]!.price)
-  const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  return (
-    <figure className={`pp-chart ${up ? "up" : "down"}`}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="market">
-        {ticks.map((t, i) => (
-          <g key={i}>
-            <line className="pp-grid-l" x1={L} x2={W - R} y1={y(t)} y2={y(t)} />
-            <text className="pp-axis" x={W - R + 4} y={y(t) + 3}>{t.toLocaleString(undefined, { maximumFractionDigits: 4 })}</text>
-          </g>
-        ))}
-        <path className="pp-area" d={area} />
-        <path className="pp-line" d={line} />
-        <circle className="pp-pulse" cx={lastX} cy={lastY} r="4" />
-        <circle className="pp-last" cx={lastX} cy={lastY} r="3" />
-        <text className="pp-axis" x={L} y={H - 4}>{time(points[0]!.t)}</text>
-        <text className="pp-axis" x={W - R} y={H - 4} textAnchor="end">{time(points[n - 1]!.t)}</text>
-      </svg>
-    </figure>
-  )
-}
-
-/* ---------- comissão gerada por minuto / hora / dia ---------- */
-function EarningsSeries({ id, active, tx, fine }: { id: string; active: boolean; tx: Tx; fine: (minor: number) => string }) {
-  const [bucket, setBucket] = useState<SeriesBucket>("hour")
-  const [data, setData] = useState<EarningsSeriesDto | null>(null)
-  useEffect(() => {
-    if (!active) return
-    let live = true
-    const load = () => { platformApi.earningsSeries(id, bucket).then((d) => { if (live) setData(d) }, () => undefined) }
-    load()
-    const t = setInterval(() => { if (!document.hidden) load() }, 30_000)
-    return () => { live = false; clearInterval(t) }
-  }, [id, bucket, active])
-  if (!active) return null
-  const pts = data?.points ?? []
-  const max = Math.max(1e-9, ...pts.map((p) => p.amountMinor))
-  const label = (iso: string) => {
-    const d = new Date(iso)
-    return bucket === "day" ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
-  return (
-    <section className="pp-card">
-      <h2><PieChart size={16} /> {tx("seriesTitle")}</h2>
-      <div className="segmented" role="tablist">
-        {(["minute", "hour", "day"] as const).map((k) => (
-          <button key={k} type="button" role="tab" aria-selected={bucket === k} className={bucket === k ? "active" : ""} onClick={() => setBucket(k)}>{tx(k)}</button>
-        ))}
       </div>
-      {pts.length === 0 ? <div className="pp-chart pp-chart--empty">{tx("waiting")}</div> : (
-        <figure className="pp-bars">
-          <div className="pp-bars-row" aria-hidden="true">
-            {pts.map((p) => <i key={p.t} title={`${label(p.t)} · ${fine(p.amountMinor)}`} style={{ height: `${Math.max(2, (p.amountMinor / max) * 100)}%` }} />)}
-          </div>
-          <div className="pp-bars-axis"><span>{label(pts[0]!.t)}</span><span>{fine(max)}</span><span>{label(pts[pts.length - 1]!.t)}</span></div>
-        </figure>
-      )}
-    </section>
+    </div>
   )
 }

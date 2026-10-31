@@ -11,6 +11,7 @@ import { ApiError, platformApi } from "../services/api-client.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
 import { MyPlans } from "./plan-panel.js"
+import { PlanCover } from "./plan-cover.js"
 import { VerifyBanner } from "./verify-banner.js"
 import { DepositHomeStatus } from "./deposit-flow.js"
 
@@ -93,9 +94,9 @@ function useDate() {
 const statusClass = (st: string) => (st === "CONFIRMED" || st === "PAID" || st === "ACTIVE" || st === "APPROVED" ? "confirmado" : st === "REJECTED" ? "rejeitado" : "")
 export const newKey = () => globalThis.crypto.randomUUID()
 
-export function Sub({ title, children }: { title: string; children: ReactNode }) {
+export function Sub({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <Page className="form-page">
+    <Page className={`form-page ${className}`.trim()}>
       <Header title={title} back />
       <div className="form-surface">{children}</div>
     </Page>
@@ -175,17 +176,6 @@ function TxRow({ tx, currency, open, onClick }: { tx: TransactionDto; currency: 
   return onClick ? <button className="transaction" aria-expanded={open} onClick={onClick}>{body}</button> : <div className="transaction">{body}</div>
 }
 
-function PlanVisual({ index, large = false }: { index: number; large?: boolean }) {
-  const tones = ["", "gold", "violet", "sky"]
-  const Icon = [Gem, Layers, Sparkles][index % 3] ?? Gem
-  return (
-    <div className={`plan-visual ${tones[index % 4] ?? ""} ${large ? "large" : ""}`} aria-hidden="true">
-      <span className="visual-orb" />
-      <Icon size={large ? 56 : 38} />
-    </div>
-  )
-}
-
 function PlanCard({ plan, index, currency, compact = false }: { plan: PlanDto; index: number; currency: string; compact?: boolean }) {
   const s = useS()
   const m = useMoney(currency)
@@ -193,7 +183,7 @@ function PlanCard({ plan, index, currency, compact = false }: { plan: PlanDto; i
   const go = () => navigate(`/plans/${plan.id}`)
   return (
     <div className={`plan-card ${compact ? "compact" : ""}`} role="link" tabIndex={0} onClick={go} onKeyDown={(e) => e.key === "Enter" && go()}>
-      <PlanVisual index={index} />
+      <PlanCover imageUrl={plan.imageUrl} index={index} />
       <div className="plan-info">
         <strong>{plan.name}</strong>
         {plan.termDays !== null && <small>{s("planTerm")}: {s("days", { n: String(plan.termDays) })}</small>}
@@ -279,20 +269,24 @@ export function PlansPage() {
   const wallet = useLoad(() => platformApi.wallet(), [])
   const plans = useLoad(() => platformApi.plans(), [])
   return (
-    <Page>
+    <Page className="plans-page">
       <Header title={t("dash.nav.plans")} back />
       <div className="segmented" role="tablist">
         {(["ALL", "OPEN", "COMING_SOON"] as const).map((k) => (
           <button key={k} role="tab" aria-selected={filter === k} className={filter === k ? "active" : ""} onClick={() => setFilter(k)}>{s(`filter.${k}`)}</button>
         ))}
       </div>
-      <MyPlans />
       <Load q={wallet}>{(w) => (
         <Load q={plans}>{(list) => {
           const shown = list.filter((p) => filter === "ALL" || p.status === filter)
-          return shown.length === 0
-            ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyPlans")}</p></div>
-            : <div className="plans-list">{shown.map((p) => <PlanCard key={p.id} plan={p} index={list.indexOf(p)} currency={w.currency} />)}</div>
+          return (
+            <>
+              <MyPlans plans={list} />
+              {shown.length === 0
+                ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyPlans")}</p></div>
+                : <div className="plans-list">{shown.map((p) => <PlanCard key={p.id} plan={p} index={list.indexOf(p)} currency={w.currency} />)}</div>}
+            </>
+          )
         }}</Load>
       )}</Load>
     </Page>

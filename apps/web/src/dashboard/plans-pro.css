@@ -1,0 +1,202 @@
+/*
+ * Planos — aspecto profissional (cantos retos, capas, painel escuro estilo trading, gráficos, setas a piscar).
+ * Ficheiro novo: o index.css original NÃO foi alterado. Todos os selectores levam o prefixo .page para vencerem
+ * as regras antigas independentemente da ordem de carga.
+ */
+
+/* ============================ 1) CANTOS RETOS nos planos ============================ */
+.page .plan-card,
+.page .plan-card.compact,
+.page .plan-card .plan-visual,
+.page .plan-card .small-button,
+.page .plan-visual.pc,
+.page .pp-card,
+.page .pp-row,
+.page .pp-chip,
+.page .pp .primary-button,
+.page .pp .small-button,
+.page .pp .field input,
+.page .pp .info-box,
+.page .pp-grid > div,
+.page .pp-rates > div,
+.page.plans-page .segmented,
+.page.plans-page .segmented button,
+.page.plans-page .segmented button.active,
+.page.plans-page .info-box { border-radius: 0; }
+
+.page .plan-card { box-shadow: none; }
+.page .plan-card:hover { transform: none; border-color: var(--primary); }
+.page .plan-card .small-button { box-shadow: none; padding: 9px 12px; }
+.page.plans-page .segmented button.active { box-shadow: none; }
+.page .pp-card { box-shadow: none; }
+
+/* ============================ 2) CAPA DO PLANO em todas as vistas ============================ */
+.page .pc { position: relative; overflow: hidden; }
+.pc-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.page .plan-visual.pc--photo { background: #061a35; }
+.page .plan-visual.pc--photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgba(5, 13, 28, .5)); pointer-events: none; }
+.page .plan-visual.pc-thumb { flex: 0 0 46px; width: 46px; height: 46px; margin: 0; }
+.page .plan-visual.pc-hero { flex: none; width: 100%; height: auto; aspect-ratio: 16 / 8; margin: 0; }
+
+/* ============================ 3) Setas de tendência a piscar ============================ */
+.tr { display: inline-block; flex: none; vertical-align: middle; }
+.tr-up { fill: var(--tp-up, #19d98b); filter: drop-shadow(0 0 5px rgba(25, 217, 139, .85)); animation: tr-blink 1s ease-in-out infinite; }
+.tr-down { fill: var(--tp-down, #ff4d5e); filter: drop-shadow(0 0 5px rgba(255, 77, 94, .85)); animation: tr-blink 1s ease-in-out infinite; }
+.tr-flat { fill: var(--muted); }
+@keyframes tr-blink { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
+
+/* ============================ 4) Detalhe do plano (antes de investir) ============================ */
+.page .pp-card { border: 1px solid var(--border); }
+.page .pp-card h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.page .pp-grid, .page .pp-rates { gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.page .pp-grid > div, .page .pp-rates > div { background: var(--surface); padding: 12px 14px; }
+.page .pp-rates strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.page .pp-grid--3 { grid-template-columns: repeat(3, 1fr); }
+.page .pp-chip { padding: 5px 10px; }
+.page .pp .primary-button { min-height: 52px; margin-top: 0; box-shadow: none; background: var(--yellow); font-size: 12px; }
+.page .pp .primary-button:disabled { opacity: .45; cursor: not-allowed; }
+.page .pp .field input { height: 52px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.page .pp-row { border: 1px solid var(--border); background: var(--surface); }
+.page .pp-row:hover { border-color: var(--primary); }
+.page .pp-row > span { display: flex; align-items: center; gap: 12px; }
+.page .pp-row > span > span { display: grid; gap: 2px; }
+.page .pp-mine { border-left: 3px solid var(--primary); }
+.page .pp-mine .pp-row + .pp-row { margin-top: 8px; }
+
+/* ============================ 5) PAINEL ESCURO (estilo trading) ============================ */
+.page.tp-page {
+  --tp-up: #19d98b; --tp-down: #ff4d5e; --tp-line: #16305a; --tp-card: #091a35; --tp-deep: #050d1c;
+  --bg: #050d1c; --surface: #091a35; --surface-soft: #0d2244; --navy: #eaf2ff; --muted: #8ea6c8;
+  --border: #16305a; --shadow: none; --green: #19d98b; --red: #ff4d5e;
+  background: #050d1c; color: #eaf2ff;
+}
+body:has(.tp-page) { background: #050d1c; }
+body:has(.tp-page) .bottom-nav { --surface: #091a35; --surface-soft: #0d2244; --border: #16305a; --muted: #8ea6c8; }
+.page.tp-page .form-surface { min-height: 0; padding: 0 0 18px; background: transparent; border-radius: 0; box-shadow: none; }
+.page.tp-page .info-box { margin-top: 0; border-radius: 0; background: #0d2244; border: 1px solid var(--tp-line); }
+.page.tp-page .primary-button { margin-top: 0; min-height: 54px; border-radius: 0; box-shadow: none; background: var(--yellow); font-size: 12px; letter-spacing: .02em; }
+.page.tp-page .primary-button:disabled { opacity: .4; cursor: not-allowed; }
+.page.tp-page .small-button { border-radius: 0; box-shadow: none; }
+
+.tp { display: grid; gap: 14px; align-content: start; }
+.tp-hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--tp-line); }
+.tp-hero .pc-hero { border-radius: 0; }
+.tp-hero-over { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding: 36px 18px 14px; background: linear-gradient(180deg, transparent, rgba(5, 13, 28, .94)); }
+.tp-hero h1 { margin: 0; font-size: 1.4rem; line-height: 1.15; color: #fff; }
+.tp-chip { flex: none; padding: 5px 10px; font-size: .7rem; font-weight: 700; color: #fff; background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .22); }
+.tp-chip.ok { color: var(--tp-up); border-color: var(--tp-up); background: rgba(25, 217, 139, .12); }
+.tp-chip.wait { color: #ffd447; border-color: #ffd447; background: rgba(255, 212, 71, .1); }
+.tp-chip.bad { color: var(--tp-down); border-color: var(--tp-down); background: rgba(255, 77, 94, .1); }
+.tp-body { display: grid; gap: 14px; padding: 0 18px; }
+
+.tp-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--tp-line); border: 1px solid var(--tp-line); }
+.tp-kpi { display: grid; gap: 5px; min-width: 0; padding: 13px 14px; background: var(--tp-card); }
+.tp-kpi small { color: var(--muted); font-size: .7rem; }
+.tp-kpi strong { display: flex; align-items: center; gap: 7px; color: #fff; font-size: 1.2rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tp-kpi em { color: var(--muted); font-size: .68rem; font-style: normal; }
+.tp-kpi.up strong { color: var(--tp-up); }
+.tp-kpi.dn strong { color: var(--tp-down); }
+
+.tp-total { position: relative; display: grid; gap: 12px; padding: 16px 16px 16px 19px; overflow: hidden; border: 1px solid var(--tp-line); background: linear-gradient(135deg, #0b2a5e, #071733 70%); }
+.tp-total::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tp-up); box-shadow: 0 0 14px var(--tp-up); }
+.tp-total > small { color: #a9c3e8; font-size: .75rem; }
+.tp-big { display: flex; align-items: center; gap: 10px; color: var(--tp-up); font-size: clamp(1.7rem, 8vw, 2.5rem); font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; text-shadow: 0 0 24px rgba(25, 217, 139, .35); overflow-wrap: anywhere; }
+.tp-big.dn { color: var(--tp-down); text-shadow: 0 0 24px rgba(255, 77, 94, .35); }
+.tp-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .12); }
+.tp-mini > div { display: grid; gap: 3px; min-width: 0; padding: 10px 11px; background: rgba(5, 13, 28, .55); }
+.tp-mini small { color: #8ea6c8; font-size: .66rem; }
+.tp-mini strong { color: #fff; font-size: .86rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tp-mini em { color: #8ea6c8; font-size: .64rem; font-style: normal; }
+.tp-mini .arrowed { display: flex; align-items: center; gap: 5px; }
+
+.tp-card { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--tp-line); background: var(--tp-card); }
+.tp-card > h2 { display: flex; align-items: center; gap: 8px; margin: 0; padding-bottom: 9px; border-bottom: 1px solid var(--tp-line); color: #cfe0f7; font-size: .85rem; }
+.tp-card > h2 svg { color: var(--primary); flex: none; }
+.tp-note { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
+.tp-note.ok { color: var(--tp-up); font-weight: 600; }
+.tp-charts { display: grid; gap: 14px; }
+.tp-charts > .tp-card { align-content: start; }
+
+.tp-rate { display: flex; align-items: center; gap: 10px; }
+.tp-rate strong { font-size: 2rem; color: #fff; font-variant-numeric: tabular-nums; }
+.tp-rate span { color: var(--muted); font-size: .85rem; }
+.tp-gauge { position: relative; height: 12px; background: linear-gradient(90deg, var(--tp-down), #ffd447 50%, var(--tp-up)); }
+.tp-needle { position: absolute; top: -5px; bottom: -5px; width: 3px; background: #fff; box-shadow: 0 0 10px #fff; transform: translateX(-50%); transition: left .6s ease; }
+.tp-gauge-l { display: flex; justify-content: space-between; color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; }
+
+/* ============================ 6) Gráficos (moldura partilhada) ============================ */
+.tc { display: grid; gap: 9px; align-content: start; }
+.tc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tc-sym { display: grid; gap: 5px; min-width: 0; }
+.tc-sym strong { color: #fff; font-size: .95rem; }
+.tc-live-badge { display: inline-flex; align-items: center; gap: 6px; font-size: .68rem; font-weight: 700; }
+.tc-live-badge.on { color: var(--tp-up, #19d98b); }
+.tc-live-badge.off { color: var(--muted); }
+.tc-live-badge i { width: 7px; height: 7px; background: currentColor; }
+.tc-live-badge.on i { animation: tc-blink 1s ease-in-out infinite; box-shadow: 0 0 8px currentColor; }
+.tc-quote { display: flex; align-items: center; gap: 8px; }
+.tc-quote b { color: #fff; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.tc-quote b.up, .tc-chg.up, .tc-ohlc b.up { color: var(--tp-up, #19d98b); }
+.tc-quote b.dn, .tc-chg.dn, .tc-ohlc b.dn { color: var(--tp-down, #ff4d5e); }
+.tc-chg { color: var(--muted); font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.tc-tabs { display: inline-flex; border: 1px solid var(--tp-line, var(--border)); }
+.tc-tabs button { min-width: 32px; padding: 6px 9px; color: var(--muted); background: transparent; border: 0; border-right: 1px solid var(--tp-line, var(--border)); font: inherit; font-size: .7rem; font-weight: 700; border-radius: 0; }
+.tc-tabs button:last-child { border-right: 0; }
+.tc-tabs button.on { color: #fff; background: var(--primary); }
+.tc-tabs button:disabled { opacity: .35; cursor: not-allowed; }
+.tc-zoom button { display: grid; place-items: center; }
+.tc-ohlc { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; min-height: 18px; color: var(--muted); font-size: .7rem; font-variant-numeric: tabular-nums; }
+.tc-ohlc b { color: #eaf2ff; font-weight: 600; }
+.tc-when { color: #cfe0f7; font-weight: 600; }
+.tc-svg { display: block; width: 100%; height: auto; touch-action: pan-y; cursor: crosshair; user-select: none; -webkit-user-select: none; border: 1px solid var(--tp-line, var(--border)); background: #06122a; }
+.tc-plot { fill: #07142c; }
+.tc-grid { stroke: rgba(142, 166, 200, .14); stroke-width: 1; }
+.tc-axis { fill: #8ea6c8; font-size: 9px; font-variant-numeric: tabular-nums; }
+.tc-candle line { stroke-width: 1; }
+.tc-candle.up line { stroke: var(--tp-up, #19d98b); }
+.tc-candle.up rect { fill: var(--tp-up, #19d98b); }
+.tc-candle.dn line { stroke: var(--tp-down, #ff4d5e); }
+.tc-candle.dn rect { fill: var(--tp-down, #ff4d5e); }
+.tc-live { animation: tc-blink 1s ease-in-out infinite; }
+.tc-line { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.tc-last { stroke-dasharray: 3 3; stroke-width: 1; opacity: .85; }
+.tc-tag-t { fill: #04101f; font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tc-pulse { opacity: .5; transform-box: fill-box; transform-origin: center; animation: tc-pulse 1.4s ease-out infinite; }
+.tc-cross line, .tc-cross-l { stroke: rgba(234, 242, 255, .45); stroke-width: 1; stroke-dasharray: 2 3; }
+.tc-bar-r { fill: var(--tp-up, #19d98b); opacity: .9; }
+.tc-bar-r.hov { opacity: 1; fill: #7dffc8; }
+.tc-empty { display: grid; place-items: center; min-height: 200px; border: 1px solid var(--tp-line, var(--border)); background: #06122a; color: var(--muted); font-size: .82rem; }
+.tc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .68rem; }
+.tc-golive { padding: 5px 10px; color: #04101f; background: var(--yellow); border: 0; border-radius: 0; font: inherit; font-size: .7rem; font-weight: 700; }
+@keyframes tc-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes tc-pulse { from { transform: scale(1); opacity: .7; } to { transform: scale(3.4); opacity: 0; } }
+
+/* ============================ 7) Histórico de levantamentos ============================ */
+.page.tp-page .pp-pay { border-bottom: 1px solid var(--tp-line); padding: 11px 0; }
+.page.tp-page .pp-pay b { color: var(--tp-up); }
+
+/* ============================ 8) Ecrãs largos ============================ */
+@media (min-width: 720px) {
+  .tp-kpis { grid-template-columns: repeat(4, 1fr); }
+  .tp-body { padding: 0; }
+  .tp-hero-over { padding-left: 24px; padding-right: 24px; }
+  .page .plan-visual.pc-hero { aspect-ratio: 16 / 6; }
+}
+@media (min-width: 900px) {
+  .tp-charts { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tr, .tc-live, .tc-pulse, .tc-live-badge i, .tp-needle { animation: none !important; transition: none !important; }
+}
+
+/* ============================ 9) Complementos ============================ */
+.page.pd-page .form-surface { border-radius: 0; box-shadow: none; }
+.page.tp-page .form-surface > .info-box { margin: 0 18px; }
+.tp-mini--2 { grid-template-columns: repeat(2, 1fr); }
+.tp-mini .arrowed, .tp-mini strong.arrowed { display: flex; align-items: center; gap: 5px; }
+.page.tp-page .tp-card .small-button { justify-self: start; padding: 10px 14px; }
+@media (min-width: 720px) {
+  .page.tp-page .form-surface > .info-box { margin: 0; }
+}

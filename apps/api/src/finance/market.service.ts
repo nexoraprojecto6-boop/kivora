@@ -31,7 +31,8 @@ export async function fetchYahooQuote(symbol: string): Promise<Quote> {
   return { price, prevClose: typeof prev === "number" && Number.isFinite(prev) && prev > 0 ? prev : null };
 }
 
-const SNAPSHOT_POINTS = 180;
+// Histórico entregue ao abrir o painel (≈ 1 ponto por minuto → cerca de 24 h). Antes eram 180.
+const SNAPSHOT_POINTS = 1440;
 
 /**
  * Mercado em tempo real, no servidor:
