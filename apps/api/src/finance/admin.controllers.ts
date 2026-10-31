@@ -1,7 +1,7 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, Patch, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Patch, Query, Req, Res, UseGuards } from "@nestjs/common";
 import type {
   AdminDepositDto, AdminSubscriptionDto, AdminSummaryDto, AdminTicketDetailDto, AdminTicketDto, AdminUserDetailDto, AdminUserDto,
-  AdminVerificationDto, AdminWithdrawalDto, ApiSuccessResponse, AuditEventDto, PaymentMethodDto, PlanDto,
+  AdminPlanStatsDto, AdminVerificationDto, AdminWithdrawalDto, ApiSuccessResponse, AuditEventDto, PaymentMethodDto, PlanDto,
 } from "@kivora/shared";
 import type { Response } from "express";
 import { AuthGuard, type AuthenticatedRequest } from "../auth/auth.guard.js";
@@ -11,8 +11,9 @@ import { SupportService } from "./engagement.service.js";
 import { body, ctxOf, idOf, qInt, qStatus, qStr } from "./http.js";
 import { PaymentsService } from "./payments.service.js";
 import { ReferralsService } from "./referrals.service.js";
+import { PlanEarningsService } from "./plan-earnings.service.js";
 import { PlansService } from "./plans.service.js";
-import { agreementSchema, messageSchema, methodSchema, noteSchema, planSchema, reasonSchema, userStatusSchema } from "./schemas.js";
+import { agreementSchema, messageSchema, methodSchema, noteSchema, planImageSchema, planSchema, reasonSchema, userStatusSchema } from "./schemas.js";
 import { AdminOnlyGuard, StaffGuard } from "./staff.guard.js";
 import { VerificationService } from "./verification.service.js";
 
@@ -69,6 +70,7 @@ export class AdminController {
     private readonly agreements: AgreementsService,
     private readonly verification: VerificationService,
     private readonly referrals: ReferralsService,
+    private readonly earnings: PlanEarningsService,
   ) {}
 
   @Patch("users/:id/status")
@@ -108,6 +110,19 @@ export class AdminController {
   @Put("plans/:id")
   async updatePlan(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<PlanDto> {
     return ok(await this.plans.adminSavePlan(idOf(id), body(planSchema, b), ctxOf(req)));
+  }
+  @Post("plans/:id/image")
+  @HttpCode(200)
+  async setPlanImage(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Body() b: unknown): R<PlanDto> {
+    return ok(await this.plans.adminSetImage(idOf(id), body(planImageSchema, b), ctxOf(req)));
+  }
+  @Delete("plans/:id/image")
+  async removePlanImage(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<PlanDto> {
+    return ok(await this.plans.adminRemoveImage(idOf(id), ctxOf(req)));
+  }
+  @Get("plans/:id/stats")
+  async planStats(@Param("id") id: string): R<AdminPlanStatsDto> {
+    return ok(await this.earnings.adminPlanStats(idOf(id)));
   }
 
   /* Depósitos */

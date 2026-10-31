@@ -39,7 +39,7 @@ import { ApiError, authApi } from "../services/api-client.js"
 import { LOGIN_URL, redirectTo } from "../services/navigation.js"
 import { Logo } from "../brand/index.js"
 import {
-  AgreementsPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlansPage,
+  AgreementsPage, HistoryPage, HomeLive, NotificationsPage, PlanDetailPage, PlanPanelPage, PlansPage,
   SupportPage, WalletPage, WithdrawPage,
 } from "./screens.js"
 import { VerifyRedirect } from "./verify-banner.js"
@@ -866,6 +866,7 @@ export function DashboardRoutes() {
       <Route path="/wallet" element={<WalletPage />} />
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/plans/:id" element={<PlanDetailPage />} />
+      <Route path="/subscriptions/:id" element={<PlanPanelPage />} />
       <Route path="/deposit" element={<DepositFlow />} />
       <Route path="/invite" element={<InvitePage />} />
       <Route path="/withdraw" element={<WithdrawPage />} />

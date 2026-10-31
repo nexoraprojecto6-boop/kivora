@@ -4,7 +4,8 @@
  */
 export type RequestStatus = "PENDING" | "CONFIRMED" | "REJECTED" | "CANCELLED";
 export type WithdrawalRequestStatus = "PENDING" | "APPROVED" | "PAID" | "REJECTED" | "CANCELLED";
-export type SubscriptionStatus = "PENDING" | "ACTIVE" | "REJECTED" | "CANCELLED";
+export type SubscriptionStatus = "PENDING" | "ACTIVE" | "REJECTED" | "CANCELLED" | "COMPLETED";
+export type RateMode = "FIXED" | "MARKET";
 export type PlanStatus = "DRAFT" | "COMING_SOON" | "OPEN" | "CLOSED";
 export type KycStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type VerificationDocType = "ID_CARD" | "PASSPORT" | "RESIDENCE_PERMIT";
@@ -104,7 +105,34 @@ export interface PlanDto {
   riskLabel: string;
   status: PlanStatus;
   sortOrder: number;
+  /** Imagem grande do plano (servida pela API). Null = sem imagem. */
+  imageUrl: string | null;
+  /** Como funciona o plano e riscos, em texto definido pela administração. */
+  howItWorks: string;
+  riskDetails: string;
+  /** FIXED: taxa sempre igual à normal. MARKET: a taxa segue o mercado entre o mínimo e o limite. */
+  rateMode: RateMode;
+  /** Símbolo do mercado de referência (ex.: EURUSD=X, AAPL, ^GSPC) e o nome mostrado ao cliente. */
+  marketSymbol: string | null;
+  marketLabel: string;
+  /** Taxas diárias em pontos base por dia (100 = 1 % ao dia): normal, mínima (mercado em queda) e limite (mercado em alta). */
+  baseRateBps: number;
+  minRateBps: number;
+  maxRateBps: number;
+  /** Pontos base por dia que a taxa muda por cada 1 % de variação do mercado. */
+  sensitivityBpsPerPct: number;
+  /** De quantos em quantos dias a comissão pode ser levantada para a carteira. */
+  payoutIntervalDays: number;
+  /** Multiplicador da taxa quando há um convidado com plano activo (x100: 200 = dobra). */
+  inviteBoostX100: number;
+  autoActivate: boolean;
+  /** Taxa em vigor agora (pontos base por dia, sem bónus de convite) e variação do mercado. Null se ainda não há dados. */
+  currentRateBps: number | null;
+  currentChangePct: number | null;
 }
+
+/** Campos que a administração escreve ao criar/editar um plano. */
+export type PlanConfigInput = Omit<PlanDto, "id" | "committedMinor" | "imageUrl" | "currentRateBps" | "currentChangePct">;
 
 export interface SubscriptionDto {
   id: string;
@@ -117,6 +145,9 @@ export interface SubscriptionDto {
   decisionNote: string;
   createdAt: string;
   decidedAt: string | null;
+  /** Início e fim da vida do plano (só depois de activo). */
+  startsAt: string | null;
+  endsAt: string | null;
 }
 
 export interface TransactionDto {
@@ -287,4 +318,98 @@ export interface AdminReferralDto {
   referrerEmail: string;
   referredId: string;
   referredEmail: string;
+}
+
+/* ---------- Painel do plano (tudo calculado no servidor; o frontend só mostra) ---------- */
+export interface MarketPointDto {
+  /** Instante ISO e preço do mercado. */
+  t: string;
+  price: number;
+}
+export interface PlanMarketDto {
+  symbol: string;
+  label: string;
+  price: number | null;
+  /** Variação face ao fecho anterior, em %. */
+  changePct: number | null;
+  asOf: string | null;
+  /** Sem dados recentes: o plano usa a taxa normal até o mercado voltar. */
+  stale: boolean;
+  /** Pontos novos desde o pedido anterior (ou os mais recentes, no primeiro pedido). */
+  points: MarketPointDto[];
+}
+export interface PlanRateDto {
+  mode: RateMode;
+  baseBps: number;
+  minBps: number;
+  maxBps: number;
+  sensitivityBpsPerPct: number;
+  /** Taxa em vigor (sem bónus), multiplicador de convite (x100) e taxa efectiva. Pontos base por dia. */
+  currentBps: number;
+  boostX100: number;
+  effectiveBps: number;
+  /** Se a taxa está no mínimo ou no limite definido pela administração. */
+  limit: "MIN" | "MAX" | null;
+}
+export interface PlanEarningsDto {
+  currency: string;
+  /** Comissão total gerada até agora (pode ter fracções da menor unidade). */
+  generatedMinor: number;
+  /** Já enviada para a carteira / disponível para enviar (inteiros). */
+  claimedMinor: number;
+  claimableMinor: number;
+  /** Projecção à taxa efectiva de agora. */
+  perMinuteMinor: number;
+  perHourMinor: number;
+  perDayMinor: number;
+  /** Gerado no último minuto, hora e 24 horas. */
+  lastMinuteMinor: number;
+  lastHourMinor: number;
+  lastDayMinor: number;
+}
+export interface PlanPayoutStateDto {
+  intervalDays: number;
+  /** Quando pode levantar de novo. Null = já pode (ou plano sem comissão). */
+  nextClaimAt: string | null;
+  canClaim: boolean;
+  destination: "WALLET";
+}
+export interface SubscriptionLiveDto {
+  status: SubscriptionStatus;
+  rate: PlanRateDto;
+  market: PlanMarketDto | null;
+  earnings: PlanEarningsDto;
+  payout: PlanPayoutStateDto;
+  /** Segundos até o plano terminar. Null se sem prazo ou ainda não activo. */
+  remainingSeconds: number | null;
+  serverTime: string;
+}
+export interface PlanPayoutDto {
+  id: string;
+  amountMinor: number;
+  kind: "CLAIM" | "EXPIRY";
+  createdAt: string;
+}
+export interface SubscriptionPanelDto {
+  subscription: SubscriptionDto;
+  plan: PlanDto;
+  boost: { qualifiedInvitees: number; multiplierX100: number; active: boolean };
+  payouts: PlanPayoutDto[];
+  live: SubscriptionLiveDto;
+}
+export type SeriesBucket = "minute" | "hour" | "day";
+export interface EarningsSeriesDto {
+  bucket: SeriesBucket;
+  currency: string;
+  points: { t: string; amountMinor: number }[];
+}
+export interface AdminPlanStatsDto {
+  activeSubscriptions: number;
+  principalMinor: number;
+  /** Comissão gerada e ainda não levantada pelos clientes (responsabilidade da plataforma). */
+  unclaimedMinor: number;
+  claimedMinor: number;
+  currentRateBps: number | null;
+  currentChangePct: number | null;
+  marketStale: boolean;
 }

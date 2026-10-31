@@ -69,7 +69,8 @@ export type LedgerKind =
   | "WITHDRAWAL_PAID"
   | "SUBSCRIPTION_RESERVE"
   | "SUBSCRIPTION_RELEASE"
-  | "REFERRAL_COMMISSION";
+  | "REFERRAL_COMMISSION"
+  | "PLAN_EARNINGS";
 export interface Leg {
   bucket: "AVAILABLE" | "RESERVED";
   amount: number;

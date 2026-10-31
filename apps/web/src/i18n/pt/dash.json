@@ -115,7 +115,10 @@
       "required": "Em falta: documento (frente), selfie e tipo de documento.",
       "duplicate": "Ficheiro repetido.",
       "invalidFile": "Ficheiro inválido. Use JPG, PNG ou PDF.",
-      "fileSize": "Ficheiro demasiado grande (máximo 1,5 MB)."
+      "fileSize": "Ficheiro demasiado grande (máximo 1,5 MB).",
+      "notYet": "Ainda não pode levantar: aguarde o prazo definido para este plano.",
+      "nothingToClaim": "Ainda não há comissão para levantar.",
+      "rateOrder": "A taxa mínima, normal e limite têm de estar por ordem."
     },
     "notice": {
       "financeOff": "As operações financeiras ainda não estão activas.",
@@ -143,7 +146,8 @@
       "CANCELLED": "Cancelado",
       "APPROVED": "Aprovado",
       "PAID": "Pago",
-      "ACTIVE": "Activo"
+      "ACTIVE": "Activo",
+      "COMPLETED": "Concluído"
     },
     "statusLabel": "Estado",
     "reference": "Referência",
@@ -271,6 +275,10 @@
       "REFERRAL_COMMISSION": {
         "title": "Comissão recebida",
         "body": "Recebeu uma comissão de convite de {amount}."
+      },
+      "PLAN_COMPLETED": {
+        "title": "Plano concluído",
+        "body": "O plano {reference} terminou. O capital e a comissão foram enviados para a sua carteira."
       }
     },
     "faqTitle": "Perguntas frequentes",

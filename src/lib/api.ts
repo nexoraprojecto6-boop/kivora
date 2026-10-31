@@ -1,6 +1,7 @@
 import {
   API_VERSION_PREFIX,
   type AdminDepositDto,
+  type AdminPlanStatsDto,
   type AdminSubscriptionDto,
   type AdminSummaryDto,
   type AdminTicketDetailDto,
@@ -14,6 +15,7 @@ import {
   type ApiFieldError,
   type AuditEventDto,
   type PaymentMethodDto,
+  type PlanConfigInput,
   type PlanDto,
   type PublicUser,
   type VerificationFileKind,
@@ -101,13 +103,13 @@ export const authApi = {
 
 /* ---------- Tipos de formulário ---------- */
 
-export type PlanInput = Omit<PlanDto, "id" | "committedMinor">;
+export type PlanInput = PlanConfigInput;
 export type MethodInput = Omit<PaymentMethodDto, "id">;
 export type UserStatus = "ACTIVE" | "LIMITED" | "SUSPENDED";
 export type AgreementRow = Omit<AgreementDto, "acceptedAt"> & { acceptances: number };
 
-/** Plano como o admin o vê: o servidor pode (ainda) não enviar a imagem. */
-export type AdminPlan = PlanDto & { imageUrl?: string | null };
+/** Plano como o admin o vê (já inclui imageUrl, taxas e mercado). */
+export type AdminPlan = PlanDto;
 
 /* ---------- Administração ---------- */
 
@@ -154,7 +156,7 @@ export const adminApi = {
   plans: () => request<AdminPlan[]>("/admin/plans", "GET"),
   createPlan: (input: PlanInput) => request<AdminPlan>("/admin/plans", "POST", input),
   updatePlan: (id: string, input: PlanInput) => request<AdminPlan>(`/admin/plans/${enc(id)}`, "PUT", input),
-  /** Rota PENDENTE no servidor (ver docs/BACKEND-PENDENTE.md). */
+  planStats: (id: string) => request<AdminPlanStatsDto>(`/admin/plans/${enc(id)}/stats`, "GET"),
   uploadPlanImage: (id: string, image: { mime: "image/jpeg" | "image/png" | "image/webp"; dataBase64: string }) =>
     request<AdminPlan>(`/admin/plans/${enc(id)}/image`, "POST", image),
   removePlanImage: (id: string) => request<AdminPlan>(`/admin/plans/${enc(id)}/image`, "DELETE"),

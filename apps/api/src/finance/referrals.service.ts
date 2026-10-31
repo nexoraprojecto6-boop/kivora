@@ -4,6 +4,7 @@ import { API_ERROR_CODE, type AdminReferralDto, type ReferralLevelDto, type Refe
 import type { Pool, PoolClient } from "pg";
 import { ApiException } from "../common/api-error.js";
 import { FINANCE_CONFIG, PG_POOL, type FinanceConfig } from "./finance.config.js";
+import { refreshBoost, refreshBoostForReferrerOf } from "./plan-accrual.js";
 import { audit, lockUser, notify, one, post, sql, tx, type Ctx } from "./sql.js";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -132,6 +133,8 @@ export class ReferralsService {
     try {
       const r = await one<{ referrerId: string }>(this.pool, `SELECT referrer_id AS "referrerId" FROM referrals WHERE referred_id = $1 AND status = 'ACTIVE'`, [referredUserId]);
       if (r) await this.settleReferrer(r.referrerId, "system");
+      // O convidado pode ter activado um plano: acerta o bónus de convite de quem o convidou.
+      await refreshBoostForReferrerOf(this.pool, referredUserId);
     } catch (error) {
       this.log.error(`settleFor falhou: ${error instanceof Error ? error.message : "erro"}`);
     }
@@ -226,6 +229,8 @@ export class ReferralsService {
       return r.referrerId;
     });
     if (action === "clear") await this.settleReferrer(referrerId, ctx.requestId);
+    // Um convite libertado ou anulado muda se o bónus de convite se aplica.
+    await refreshBoost(this.pool, referrerId);
   }
 
   /** Reavalia todos os convidantes (por exemplo depois de mudar a comissão). Idempotente. */

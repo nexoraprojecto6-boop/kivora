@@ -4,6 +4,7 @@ import {
   type ApiErrorCode,
   type ApiFieldError,
   type DepositDto,
+  type EarningsSeriesDto,
   type NotificationDto,
   type PaymentAccountDto,
   type PaymentMethodDto,
@@ -11,7 +12,10 @@ import {
   type PublicUser,
   type ReferralOverviewDto,
   type SessionSummary,
+  type SeriesBucket,
   type SubscriptionDto,
+  type SubscriptionLiveDto,
+  type SubscriptionPanelDto,
   type TicketDetailDto,
   type TicketDto,
   type TransactionDto,
@@ -56,6 +60,9 @@ const BASE_URL: string = resolveBaseUrl(
   import.meta.env["VITE_API_BASE_URL"] as string | undefined,
   import.meta.env.PROD,
 );
+
+/** Endereço completo de um ficheiro servido pela API (por exemplo a imagem de um plano: "/v1/plans/<id>/image"). */
+export const assetUrl = (path: string): string => `${BASE_URL}${path}`;
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
@@ -170,6 +177,14 @@ export const platformApi = {
   plan: (id: string) => request<PlanDto>(`/plans/${encodeURIComponent(id)}`, "GET"),
   subscribe: (planId: string, amountMinor: number, key: string) =>
     request<SubscriptionDto>(`/plans/${encodeURIComponent(planId)}/subscriptions`, "POST", { amountMinor }, idem(key)),
+  /** Painel do plano. Tudo calculado no servidor; nenhuma rota recebe valores nem taxas do cliente. */
+  subscriptions: (opts: RequestOpts = {}) => request<SubscriptionDto[]>("/subscriptions", "GET", undefined, {}, opts),
+  panel: (id: string, opts: RequestOpts = {}) => request<SubscriptionPanelDto>(`/subscriptions/${encodeURIComponent(id)}/panel`, "GET", undefined, {}, opts),
+  live: (id: string, since: string | null) =>
+    request<SubscriptionLiveDto>(`/subscriptions/${encodeURIComponent(id)}/live${qs({ since: since ?? undefined })}`, "GET", undefined, {}, { silent: true }),
+  earningsSeries: (id: string, bucket: SeriesBucket) =>
+    request<EarningsSeriesDto>(`/subscriptions/${encodeURIComponent(id)}/series${qs({ bucket })}`, "GET", undefined, {}, { silent: true }),
+  claimEarnings: (id: string) => request<SubscriptionLiveDto>(`/subscriptions/${encodeURIComponent(id)}/claim`, "POST", {}),
   agreements: () => request<AgreementDto[]>("/agreements", "GET"),
   acceptAgreement: (versionId: string) => request<AgreementDto[]>(`/agreements/${encodeURIComponent(versionId)}/accept`, "POST", {}),
   verification: async () => (await request<{ submission: VerificationDto | null }>("/verification", "GET")).submission,

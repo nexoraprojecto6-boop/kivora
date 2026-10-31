@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 import {
-  type AgreementDto, type ApiSuccessResponse, type DepositDto, type NotificationDto, type PaymentAccountDto, type PaymentMethodDto, type PlanDto, type SubscriptionDto,
+  type AgreementDto, type ApiSuccessResponse, type DepositDto, type EarningsSeriesDto, type SubscriptionLiveDto, type SubscriptionPanelDto, type NotificationDto, type PaymentAccountDto, type PaymentMethodDto, type PlanDto, type SubscriptionDto,
   type TicketDetailDto, type TicketDto, type TransactionDto, type VerificationDto, type WalletDto, type WithdrawalDto,
 } from "@kivora/shared";
 import { AuthGuard, type AuthenticatedRequest } from "../auth/auth.guard.js";
@@ -8,6 +9,7 @@ import { AgreementsService } from "./agreements.service.js";
 import { NotificationsService, SupportService } from "./engagement.service.js";
 import { body, idOf, idemOf, qInt, qStr, requestIdOf, userIdOf } from "./http.js";
 import { PaymentsService } from "./payments.service.js";
+import { PlanEarningsService } from "./plan-earnings.service.js";
 import { PlansService } from "./plans.service.js";
 import { createDepositSchema, createWithdrawalSchema, messageSchema, paymentAccountSchema, proofSchema, subscribeSchema, ticketSchema, verificationSchema } from "./schemas.js";
 import { VerificationService } from "./verification.service.js";
@@ -106,7 +108,7 @@ export class PaymentsController {
 @Controller()
 @UseGuards(AuthGuard)
 export class PlansController {
-  constructor(private readonly plans: PlansService) {}
+  constructor(private readonly plans: PlansService, private readonly earnings: PlanEarningsService) {}
 
   @Get("plans")
   async list(): R<PlanDto[]> {
@@ -115,6 +117,18 @@ export class PlansController {
   @Get("plans/:id")
   async get(@Param("id") id: string): R<PlanDto> {
     return ok(await this.plans.get(idOf(id)));
+  }
+  @Get("plans/:id/image")
+  async image(@Param("id") id: string, @Res() res: Response): Promise<void> {
+    const f = await this.plans.image(idOf(id));
+    res.set({
+      "Content-Type": f.mime,
+      "Cache-Control": "private, max-age=3600",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "sandbox; default-src 'none'",
+      "Content-Disposition": "inline",
+    });
+    res.end(f.content);
   }
   @Post("plans/:id/subscriptions")
   @HttpCode(201)
@@ -129,6 +143,28 @@ export class PlansController {
   @HttpCode(200)
   async cancel(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<SubscriptionDto> {
     return ok(await this.plans.cancel(userIdOf(req), idOf(id), requestIdOf(req)));
+  }
+
+  /* Painel do plano: tudo vem do servidor. */
+  @Get("subscriptions/:id/panel")
+  async panel(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<SubscriptionPanelDto> {
+    return ok(await this.earnings.panel(userIdOf(req), idOf(id)));
+  }
+  @Get("subscriptions/:id/live")
+  async live(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Query() q: Record<string, unknown>): R<SubscriptionLiveDto> {
+    const since = qStr(q["since"], /^[0-9TZ:.+-]{10,40}$/);
+    const date = since ? new Date(since) : null;
+    return ok(await this.earnings.live(userIdOf(req), idOf(id), date && !Number.isNaN(date.getTime()) ? date : null));
+  }
+  @Get("subscriptions/:id/series")
+  async series(@Req() req: AuthenticatedRequest, @Param("id") id: string, @Query() q: Record<string, unknown>): R<EarningsSeriesDto> {
+    const bucket = qStr(q["bucket"], /^(minute|hour|day)$/) ?? "hour";
+    return ok(await this.earnings.series(userIdOf(req), idOf(id), bucket as "minute" | "hour" | "day"));
+  }
+  @Post("subscriptions/:id/claim")
+  @HttpCode(200)
+  async claim(@Req() req: AuthenticatedRequest, @Param("id") id: string): R<SubscriptionLiveDto> {
+    return ok(await this.earnings.claim(userIdOf(req), idOf(id), requestIdOf(req)));
   }
 }
 

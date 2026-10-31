@@ -12,6 +12,8 @@ import { FINANCE_CONFIG, FinanceGate, PG_POOL, loadFinanceConfig, type FinanceCo
 import { PaymentsService } from "./payments.service.js";
 import { ReferralsAdminController, ReferralsController } from "./referrals.controllers.js";
 import { ReferralsService } from "./referrals.service.js";
+import { MarketService } from "./market.service.js";
+import { PlanEarningsService } from "./plan-earnings.service.js";
 import { PlansService } from "./plans.service.js";
 import { AdminOnlyGuard, StaffGuard } from "./staff.guard.js";
 import { AccountController, PaymentsController, PlansController } from "./user.controllers.js";
@@ -29,7 +31,7 @@ export class FinanceModule {
         { provide: PG_POOL, useValue: pool },
         { provide: FINANCE_CONFIG, useValue: config },
         Mailer, EmailVerificationService, FinanceGate, StaffGuard, AdminOnlyGuard,
-        PaymentsService, PlansService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService, ReferralsService,
+        PaymentsService, PlansService, MarketService, PlanEarningsService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService, ReferralsService,
       ],
     };
   }

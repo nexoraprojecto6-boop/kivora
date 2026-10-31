@@ -1,0 +1,71 @@
+/* Plano: detalhe e painel (ficheiro próprio; não altera o CSS original do dashboard) */
+.pp { display: grid; gap: 14px; align-content: start; }
+.pp-art { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 18px; background: var(--surface-soft); }
+.pp-art--fallback { display: grid; place-items: center; color: #fff; background: linear-gradient(145deg, #0b3c91, #061a35); }
+.pp-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.pp-title h1 { margin: 0; font-size: 1.35rem; line-height: 1.2; color: var(--navy); }
+.pp-chip { flex: none; padding: 4px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: color-mix(in srgb, var(--muted) 18%, transparent); color: var(--navy); }
+.pp-chip.ok { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+.pp-chip.wait { background: color-mix(in srgb, var(--yellow) 28%, transparent); }
+.pp-chip.bad { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+.pp-text { margin: 0; font-size: .9rem; line-height: 1.55; color: var(--navy); white-space: pre-wrap; }
+.pp-note { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--muted); }
+.pp-note.ok { color: var(--green); font-weight: 600; }
+.pp-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.pp-card h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .95rem; color: var(--navy); }
+.pp-card h2 svg { color: var(--primary); flex: none; }
+.pp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.pp-grid--3 { grid-template-columns: repeat(3, 1fr); }
+.pp-grid > div, .pp-rates > div { display: grid; gap: 3px; padding: 12px; border-radius: 14px; background: var(--surface-soft); min-width: 0; }
+.pp-grid small, .pp-rates small { color: var(--muted); font-size: .7rem; }
+.pp-grid strong, .pp-rates strong { color: var(--navy); font-size: .95rem; overflow-wrap: anywhere; }
+.pp-grid em, .pp-rates em { color: var(--muted); font-size: .68rem; font-style: normal; }
+.pp-rates { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
+.pp-rates strong { font-size: 1.15rem; color: var(--primary); }
+.pp-invest { display: grid; gap: 10px; }
+.pp-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 12px; border-radius: 12px; background: var(--surface-soft); color: var(--navy); text-align: left; cursor: pointer; }
+.pp-row span { display: grid; gap: 2px; }
+.pp-row small { color: var(--muted); font-size: .72rem; }
+.pp-mine { margin-bottom: 14px; }
+
+.pp-quote { display: flex; align-items: center; gap: 10px; }
+.pp-quote strong { font-size: 1.5rem; color: var(--navy); font-variant-numeric: tabular-nums; }
+.pp-quote span { display: inline-flex; align-items: center; gap: 4px; font-size: .82rem; font-weight: 700; }
+.pp-quote .up { color: var(--green); }
+.pp-quote .down { color: var(--red); }
+.pp-dot { width: 9px; height: 9px; border-radius: 50%; margin-left: auto; }
+.pp-dot.on { background: var(--green); box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 60%, transparent); animation: pp-ping 1.6s infinite; }
+.pp-dot.off { background: var(--muted); }
+@keyframes pp-ping { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+.pp-chart { margin: 0; width: 100%; }
+.pp-chart svg { width: 100%; height: auto; display: block; }
+.pp-chart--empty { display: grid; place-items: center; min-height: 120px; border-radius: 14px; background: var(--surface-soft); color: var(--muted); font-size: .82rem; }
+.pp-chart.up { --pp-c: var(--green); }
+.pp-chart.down { --pp-c: var(--red); }
+.pp-grid-l { stroke: color-mix(in srgb, var(--muted) 28%, transparent); stroke-width: 1; stroke-dasharray: 3 4; }
+.pp-axis { fill: var(--muted); font-size: 8.5px; }
+.pp-area { fill: color-mix(in srgb, var(--pp-c, var(--primary)) 14%, transparent); }
+.pp-line { fill: none; stroke: var(--pp-c, var(--primary)); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pp-last { fill: var(--pp-c, var(--primary)); }
+.pp-pulse { fill: color-mix(in srgb, var(--pp-c, var(--primary)) 40%, transparent); transform-box: fill-box; transform-origin: center; animation: pp-pulse 1.6s ease-out infinite; }
+@keyframes pp-pulse { from { transform: scale(1); opacity: .9; } to { transform: scale(3.2); opacity: 0; } }
+
+.pp-bigrate { display: flex; align-items: baseline; gap: 8px; }
+.pp-bigrate strong { font-size: 2rem; color: var(--primary); font-variant-numeric: tabular-nums; }
+.pp-bigrate span { color: var(--muted); font-size: .85rem; }
+.pp-gauge { height: 10px; border-radius: 999px; background: color-mix(in srgb, var(--muted) 20%, transparent); overflow: hidden; }
+.pp-gauge i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--red), var(--yellow), var(--green)); background-size: 100vw 100%; transition: width .6s ease; }
+.pp-gauge-l { display: flex; justify-content: space-between; color: var(--muted); font-size: .7rem; }
+.pp-boost { border-color: color-mix(in srgb, var(--primary) 30%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, var(--surface)), var(--surface)); }
+.pp-total { font-size: 1.7rem; font-weight: 800; color: var(--green); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pp-pay { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .85rem; color: var(--navy); }
+.pp-pay:last-child { border-bottom: 0; }
+.pp-pay small { display: block; color: var(--muted); font-size: .7rem; }
+.pp-pay b { color: var(--green); }
+
+.pp-bars { margin: 0; display: grid; gap: 6px; }
+.pp-bars-row { display: flex; align-items: flex-end; gap: 2px; height: 110px; }
+.pp-bars-row i { flex: 1 1 0; min-width: 2px; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--green), color-mix(in srgb, var(--green) 40%, transparent)); transition: height .4s ease; }
+.pp-bars-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .68rem; }
+.info-box.bad { border-color: color-mix(in srgb, var(--red) 40%, transparent); }

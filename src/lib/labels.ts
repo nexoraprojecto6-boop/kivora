@@ -11,6 +11,7 @@ export const STATUS_LABEL: Record<string, { text: string; tone: Tone }> = {
   PAID: { text: "Pago", tone: "success" },
   REJECTED: { text: "Rejeitado", tone: "danger" },
   CANCELLED: { text: "Cancelado", tone: "neutral" },
+  COMPLETED: { text: "Concluído", tone: "success" },
   LIMITED: { text: "Limitado", tone: "warning" },
   SUSPENDED: { text: "Banido", tone: "danger" },
   DRAFT: { text: "Rascunho", tone: "neutral" },

@@ -10,14 +10,15 @@ import { useI18n } from "../i18n/I18nProvider.js"
 import { ApiError, platformApi } from "../services/api-client.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
+import { MyPlans } from "./plan-panel.js"
 import { VerifyBanner } from "./verify-banner.js"
 import { DepositHomeStatus } from "./deposit-flow.js"
 
 /* ============================== base: carregar, erros, dinheiro ============================== */
 
-interface Loaded<T> { data: T | null; error: unknown; loading: boolean; reload: () => void }
+export interface Loaded<T> { data: T | null; error: unknown; loading: boolean; reload: () => void }
 
-function useLoad<T>(fn: () => Promise<T>, deps: readonly unknown[]): Loaded<T> {
+export function useLoad<T>(fn: () => Promise<T>, deps: readonly unknown[]): Loaded<T> {
   const [state, setState] = useState<{ data: T | null; error: unknown; loading: boolean }>({ data: null, error: null, loading: true })
   const [tick, setTick] = useState(0)
   useEffect(() => {
@@ -33,13 +34,13 @@ function useLoad<T>(fn: () => Promise<T>, deps: readonly unknown[]): Loaded<T> {
   return { ...state, reload: useCallback(() => setTick((n) => n + 1), []) }
 }
 
-function useS() {
+export function useS() {
   const { t } = useI18n()
   return (key: string, params?: Record<string, string>) => t(`dash.s.${key}`, params)
 }
 
 /** Texto para um erro da API: primeiro o erro de campo (se houver), depois o código geral. */
-function useErr() {
+export function useErr() {
   const s = useS()
   return (e: unknown): string => {
     if (!(e instanceof ApiError)) return s("err.INTERNAL_ERROR")
@@ -50,7 +51,7 @@ function useErr() {
   }
 }
 
-function Load<T>({ q, children }: { q: Loaded<T>; children: (data: T) => ReactNode }) {
+export function Load<T>({ q, children }: { q: Loaded<T>; children: (data: T) => ReactNode }) {
   const s = useS()
   const err = useErr()
   if (q.error) {
@@ -65,7 +66,7 @@ function Load<T>({ q, children }: { q: Loaded<T>; children: (data: T) => ReactNo
   return <>{children(q.data)}</>
 }
 
-function makeMoney(language: string, currency: string) {
+export function makeMoney(language: string, currency: string) {
   const nf = new Intl.NumberFormat(language === "pt" ? "pt-AO" : language, { style: "currency", currency })
   const factor = 10 ** (nf.resolvedOptions().maximumFractionDigits ?? 2)
   return {
@@ -90,9 +91,9 @@ function useDate() {
 }
 
 const statusClass = (st: string) => (st === "CONFIRMED" || st === "PAID" || st === "ACTIVE" || st === "APPROVED" ? "confirmado" : st === "REJECTED" ? "rejeitado" : "")
-const newKey = () => globalThis.crypto.randomUUID()
+export const newKey = () => globalThis.crypto.randomUUID()
 
-function Sub({ title, children }: { title: string; children: ReactNode }) {
+export function Sub({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Page className="form-page">
       <Header title={title} back />
@@ -102,7 +103,7 @@ function Sub({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Avisos que impedem operar: serviço desligado ou verificação em falta. */
-function Gate({ w }: { w: WalletDto }) {
+export function Gate({ w }: { w: WalletDto }) {
   const s = useS()
   const navigate = useNavigate()
   if (!w.financeEnabled) return <div className="info-box" role="note"><CircleHelp size={18} /><p>{s("notice.financeOff")}</p></div>
@@ -115,7 +116,7 @@ function Gate({ w }: { w: WalletDto }) {
   }
   return null
 }
-const canOperate = (w: WalletDto) => w.financeEnabled && (!w.requireVerification || w.verificationStatus === "APPROVED")
+export const canOperate = (w: WalletDto) => w.financeEnabled && (!w.requireVerification || w.verificationStatus === "APPROVED")
 
 /* ============================== peças partilhadas ============================== */
 
@@ -285,6 +286,7 @@ export function PlansPage() {
           <button key={k} role="tab" aria-selected={filter === k} className={filter === k ? "active" : ""} onClick={() => setFilter(k)}>{s(`filter.${k}`)}</button>
         ))}
       </div>
+      <MyPlans />
       <Load q={wallet}>{(w) => (
         <Load q={plans}>{(list) => {
           const shown = list.filter((p) => filter === "ALL" || p.status === filter)
@@ -297,82 +299,7 @@ export function PlansPage() {
   )
 }
 
-export function PlanDetailPage() {
-  const { id = "" } = useParams()
-  const navigate = useNavigate()
-  const s = useS()
-  const err = useErr()
-  const wallet = useLoad(() => platformApi.wallet(), [])
-  const plan = useLoad(() => platformApi.plan(id), [id])
-  const [amount, setAmount] = useState("")
-  const [error, setError] = useState("")
-  const [busy, setBusy] = useState(false)
-  const [done, setDone] = useState(false)
-  const key = useRef(newKey())
-  const { language } = useI18n()
-  return (
-    <Sub title={plan.data?.name ?? s("planTitle")}>
-      <Load q={wallet}>{(w) => (
-        <Load q={plan}>{(p) => planBody(w, p)}</Load>
-      )}</Load>
-    </Sub>
-  )
-
-  function planBody(w: WalletDto, p: PlanDto) {
-    const m = makeMoney(language, w.currency)
-    const open = p.status === "OPEN"
-    const submit = async () => {
-      setError("")
-      const minor = m.toMinor(amount)
-      if (minor === null) return setError(s("field.invalid"))
-      setBusy(true)
-      try {
-        await platformApi.subscribe(p.id, minor, key.current)
-        key.current = newKey()
-        setDone(true)
-      } catch (e) {
-        setError(err(e))
-      } finally {
-        setBusy(false)
-      }
-    }
-    const fill = p.capacityMinor && p.committedMinor !== null ? Math.min(100, Math.round((p.committedMinor / p.capacityMinor) * 100)) : null
-    return (
-      <>
-        <PlanVisual index={0} large />
-        <div className="detail-heading"><div><h1>{p.name}</h1><p>{s(`planStatus.${p.status}`)}</p></div></div>
-        {p.description && <p className="body-copy">{p.description}</p>}
-        <div className="detail-grid">
-          {p.minMinor !== null && <div><span>{s("planMin")}</span><strong>{m.fmt(p.minMinor)}</strong></div>}
-          {p.maxMinor !== null && <div><span>{s("planMax")}</span><strong>{m.fmt(p.maxMinor)}</strong></div>}
-          {p.termDays !== null && <div><span>{s("planTerm")}</span><strong>{s("days", { n: String(p.termDays) })}</strong></div>}
-          {p.riskLabel && <div><span>{s("planRisk")}</span><strong>{p.riskLabel}</strong></div>}
-        </div>
-        {fill !== null && (
-          <div className="investment-card">
-            <span>{s("participation")}</span>
-            <div className="progress-label"><span>{fill}%</span></div>
-            <div className="progress" role="progressbar" aria-valuenow={fill} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${fill}%` }} /></div>
-          </div>
-        )}
-        <Gate w={w} />
-        {done ? (
-          <>
-            <div className="info-box" role="status"><Check size={18} /><p>{s("subscribed")}</p></div>
-            <button className="primary-button" onClick={() => navigate("/history")}>{s("seeHistory")}</button>
-          </>
-        ) : open && canOperate(w) ? (
-          <>
-            {error && <div className="info-box" role="alert"><CircleHelp size={18} /><p>{error}</p></div>}
-            <label className="field"><span>{s("amount")}</span><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></label>
-            <p className="body-copy">{s("availableLabel", { amount: m.fmt(w.available) })}</p>
-            <button className="primary-button" disabled={busy} onClick={() => void submit()}>{s("subscribe")} <ArrowRight size={16} /></button>
-          </>
-        ) : null}
-      </>
-    )
-  }
-}
+export { PlanDetailPage, PlanPanelPage } from "./plan-panel.js"
 
 /* ============================== depósitos e levantamentos ============================== */
 

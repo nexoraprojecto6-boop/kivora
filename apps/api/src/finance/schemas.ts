@@ -49,16 +49,44 @@ export const methodSchema = z.strictObject({
   }
 });
 
-export const planSchema = z.strictObject({
-  name: text(2, 80),
-  description: text(0, 4000),
-  minMinor: optMoney,
-  maxMinor: optMoney,
-  capacityMinor: optMoney,
-  termDays: z.number().int().positive().max(36500).nullable(),
-  riskLabel: text(0, 80),
-  status: z.enum(["DRAFT", "COMING_SOON", "OPEN", "CLOSED"]),
-  sortOrder: z.number().int().min(-1000).max(1000),
+const bps = (max = 10_000) => z.number().int().min(0).max(max);
+
+export const planSchema = z
+  .strictObject({
+    name: text(2, 80),
+    description: text(0, 4000),
+    minMinor: optMoney,
+    maxMinor: optMoney,
+    capacityMinor: optMoney,
+    termDays: z.number().int().positive().max(36500).nullable(),
+    riskLabel: text(0, 80),
+    status: z.enum(["DRAFT", "COMING_SOON", "OPEN", "CLOSED"]),
+    sortOrder: z.number().int().min(-1000).max(1000),
+    howItWorks: text(0, 6000),
+    riskDetails: text(0, 4000),
+    rateMode: z.enum(["FIXED", "MARKET"]),
+    marketSymbol: z
+      .string()
+      .trim()
+      .regex(/^[A-Za-z0-9.=^_-]{1,24}$/)
+      .nullable(),
+    marketLabel: text(0, 60),
+    baseRateBps: bps(),
+    minRateBps: bps(),
+    maxRateBps: bps(),
+    sensitivityBpsPerPct: bps(),
+    payoutIntervalDays: z.number().int().min(1).max(90),
+    inviteBoostX100: z.number().int().min(100).max(1000),
+    autoActivate: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.minRateBps > v.baseRateBps || v.baseRateBps > v.maxRateBps) ctx.addIssue({ code: "custom", path: ["maxRateBps"], message: "rateOrder" });
+    if (v.rateMode === "MARKET" && !v.marketSymbol) ctx.addIssue({ code: "custom", path: ["marketSymbol"], message: "required" });
+  });
+
+export const planImageSchema = z.strictObject({
+  mime: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  dataBase64: z.string().min(100).max(2_800_000),
 });
 
 export const agreementSchema = z.strictObject({
