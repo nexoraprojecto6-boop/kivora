@@ -1,0 +1,84 @@
+/*
+ * KIVORA — Páginas de acesso (login, registo, recuperar palavra-passe, verificação).
+ * Carregado depois de global.css e access.css. Usa só variáveis de tokens.css.
+ * Cartão centrado na horizontal e na vertical, sobre um fundo suave.
+ */
+
+.auth-layout { background: linear-gradient(180deg, #eef3ff 0%, var(--color-bg-subtle) 55%, #ffffff 100%); }
+
+.auth-layout__main {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: clamp(20px, 5vw, 48px) var(--space-4);
+}
+
+/* margin:auto centra no meio e, se o cartão for mais alto que o ecrã, deixa a página rolar sem cortar o topo */
+.au-wrap { width: 100%; max-width: 27rem; margin: auto; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+
+.au-card {
+  max-width: 27rem;
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid #e3eaf7;
+  border-radius: 20px;
+  box-shadow: 0 18px 50px rgba(20, 35, 59, 0.10), 0 2px 6px rgba(20, 35, 59, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.au-head { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); text-align: center; }
+.au-icon {
+  display: inline-grid; place-items: center; width: 56px; height: 56px; margin-bottom: var(--space-1);
+  color: var(--color-primary); background: #e9f0ff; border-radius: 16px;
+}
+.au-title { margin: 0; font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); }
+.au-subtitle { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); line-height: var(--line-height-normal); max-width: 22rem; }
+
+.au-card .form { gap: var(--space-4); }
+.au-card .field__label { font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); }
+.au-card .field__input { min-height: 48px; border-radius: 10px; border-color: #c9d3e3; background: #fbfcff; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
+.au-card .field__input:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(23, 91, 255, 0.18); background: #fff; }
+.au-card .field__input--error { border-width: 1px; border-color: var(--color-error); }
+
+.au-submit { width: 100%; min-height: 48px; border-radius: 10px; font-size: var(--font-size-md); }
+.au-card .button--primary { box-shadow: 0 8px 18px rgba(23, 91, 255, 0.24); }
+.au-card .button--primary:disabled { box-shadow: none; }
+
+/* No cartão branco o botão secundário do global.css (branco sobre transparente) ficaria invisível */
+.au-card .button--secondary { color: var(--color-primary); border-color: #c9d3e3; border-radius: 10px; background: #fff; }
+.au-card .button--secondary:hover:not(:disabled) { background: #f0f5ff; border-color: var(--color-primary); }
+
+/* "Esqueceu a palavra-passe?" alinhado à direita, por baixo do campo */
+.au-passrow { display: flex; flex-direction: column; gap: var(--space-2); }
+.au-forgot { align-self: flex-end; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); text-decoration: none; }
+.au-forgot:hover, .au-back:hover { text-decoration: underline; }
+
+.au-divider { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.au-divider::before, .au-divider::after { content: ""; flex: 1; height: 1px; background: #e3eaf7; }
+
+.au-alt { margin: 0; text-align: center; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.au-alt a { font-weight: var(--font-weight-semibold); text-decoration: none; }
+.au-alt a:hover { text-decoration: underline; }
+.au-back { display: inline-flex; align-items: center; gap: 6px; }
+
+.au-link { align-self: center; padding: var(--space-1) var(--space-2); font: inherit; font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); color: var(--color-primary); background: transparent; border: 0; cursor: pointer; }
+.au-link:hover { text-decoration: underline; }
+
+.au-secure { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--color-text-muted); font-size: var(--font-size-xs); }
+
+/* Campo do código: dígitos grandes e espaçados */
+#reset-code, #verify-code { letter-spacing: 0.35em; text-align: center; font-size: 1.25rem; }
+
+/* Passos (verificação e recuperação) um pouco mais arrumados dentro do cartão */
+.au-card .vf-steps { margin: 0; }
+.au-card .vf-lead { font-size: var(--font-size-sm); line-height: var(--line-height-normal); }
+
+@media (max-width: 599px) {
+  .auth-layout__main { padding-top: var(--space-4); }
+  .au-card { border-radius: 16px; box-shadow: 0 10px 30px rgba(20, 35, 59, 0.10); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .au-card .field__input { transition: none; }
+}

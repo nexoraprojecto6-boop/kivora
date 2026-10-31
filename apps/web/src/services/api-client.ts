@@ -128,6 +128,11 @@ export const authApi = {
   /** Envia um código de 6 dígitos para o email da conta. Devolve true se o email já estava verificado. */
   sendEmailCode: async (): Promise<boolean> => (await request<{ alreadyVerified: boolean }>("/auth/email/send", "POST", {})).alreadyVerified,
   verifyEmailCode: (code: string) => request<{ verified: true }>("/auth/email/verify", "POST", { code }),
+  /** Recuperar palavra-passe: pede um código de 6 dígitos por email (resposta igual exista ou não a conta). */
+  forgotPassword: (email: string) => request<{ sent: true }>("/auth/password/forgot", "POST", { email }),
+  /** Define a nova palavra-passe com o código recebido por email. Termina todas as sessões. */
+  resetPassword: (input: { email: string; code: string; newPassword: string }) =>
+    request<{ reset: true }>("/auth/password/reset", "POST", input),
   login: async (input: LoginInput): Promise<PublicUser> =>
     (await request<{ user: PublicUser }>("/auth/login", "POST", input)).user,
   register: async (input: RegisterInput): Promise<PublicUser> =>

@@ -9,6 +9,7 @@ import { CountrySelect } from "../../components/ui/CountrySelect.js";
 import { TextField } from "../../components/ui/TextField.js";
 import { ApiError, authApi, platformApi } from "../../services/api-client.js";
 import { DASHBOARD_URL, redirectTo } from "../../services/navigation.js";
+import { markVerificationSubmitted } from "../../services/verification-notice.js";
 import { useAuth } from "../auth/AuthContext.js";
 import { useCopy } from "./copy.js";
 import { prepareImage } from "./image.js";
@@ -282,7 +283,13 @@ export function VerifyPage() {
   return (
     <AuthLayout title={c(sub?.status === "REJECTED" ? "v.rejectedTitle" : "v.docsTitle")}>
       <Steps current={2} />
-      <DocsStep defaultCountry={user.countryOfResidence} previous={sub ?? null} onSubmitted={setSub} />
+      <DocsStep defaultCountry={user.countryOfResidence} previous={sub ?? null}
+        onSubmitted={() => {
+          // Documentos enviados: segue para o painel, onde aparece o aviso «Conta em verificação».
+          markVerificationSubmitted();
+          redirectTo(DASHBOARD_URL);
+        }}
+      />
     </AuthLayout>
   );
 }

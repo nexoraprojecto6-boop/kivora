@@ -6,6 +6,8 @@ import { AdminController, StaffController } from "./admin.controllers.js";
 import { EmailController } from "./email.controller.js";
 import { EmailVerificationService } from "./email-verification.service.js";
 import { Mailer } from "./mailer.service.js";
+import { PasswordResetController } from "./password-reset.controller.js";
+import { PasswordResetService } from "./password-reset.service.js";
 import { AgreementsService } from "./agreements.service.js";
 import { NotificationsService, SupportService } from "./engagement.service.js";
 import { FINANCE_CONFIG, FinanceGate, PG_POOL, loadFinanceConfig, type FinanceConfig } from "./finance.config.js";
@@ -26,11 +28,11 @@ export class FinanceModule {
     return {
       module: FinanceModule,
       imports: [AuthModule],
-      controllers: [EmailController, PaymentsController, PlansController, AccountController, ReferralsController, StaffController, AdminController, ReferralsAdminController],
+      controllers: [EmailController, PasswordResetController, PaymentsController, PlansController, AccountController, ReferralsController, StaffController, AdminController, ReferralsAdminController],
       providers: [
         { provide: PG_POOL, useValue: pool },
         { provide: FINANCE_CONFIG, useValue: config },
-        Mailer, EmailVerificationService, FinanceGate, StaffGuard, AdminOnlyGuard,
+        Mailer, EmailVerificationService, PasswordResetService, FinanceGate, StaffGuard, AdminOnlyGuard,
         PaymentsService, PlansService, MarketService, PlanEarningsService, AgreementsService, VerificationService, NotificationsService, SupportService, AdminService, ReferralsService,
       ],
     };

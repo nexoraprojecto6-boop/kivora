@@ -8,6 +8,7 @@ import { I18nProvider } from "./i18n/I18nProvider.js";
 import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/access.css";
+import "./styles/auth.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Elemento #root não encontrado.");

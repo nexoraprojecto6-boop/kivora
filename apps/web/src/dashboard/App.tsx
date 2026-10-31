@@ -45,6 +45,7 @@ import {
 import { VerifyRedirect } from "./verify-banner.js"
 import { DepositFlow } from "./deposit-flow.js"
 import { InvitePage } from "./invite.js"
+import { VerifyPendingModal } from "./verify-pending-modal.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -855,6 +856,7 @@ export function AppShell() {
           <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </div>
       </ProfileDrawerContext.Provider>
+      <VerifyPendingModal />
     </div>
   )
 }

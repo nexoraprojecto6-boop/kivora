@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { WelcomePage } from "../features/welcome/WelcomePage.js";
 import { LoginPage } from "../features/auth/LoginPage.js";
+import { ForgotPasswordPage } from "../features/auth/ForgotPasswordPage.js";
 import { RegisterPage } from "../features/auth/RegisterPage.js";
 import { VerifyPage } from "../features/verify/VerifyPage.js";
 
@@ -13,6 +14,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify" element={<VerifyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
