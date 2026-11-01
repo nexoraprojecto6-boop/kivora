@@ -9,6 +9,7 @@ import "./styles/tokens.css";
 import "./styles/global.css";
 import "./styles/access.css";
 import "./styles/auth.css";
+import "./styles/landing.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Elemento #root não encontrado.");

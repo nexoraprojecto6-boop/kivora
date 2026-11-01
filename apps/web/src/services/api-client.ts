@@ -61,17 +61,6 @@ const BASE_URL: string = resolveBaseUrl(
   import.meta.env.PROD,
 );
 
-/**
- * Endereço do WebSocket. Com VITE_WS_URL (ex.: wss://api.exemplo.com/v1/ws) liga directo à API; sem ela deriva do endereço base.
- * Nota: a Vercel não reencaminha WebSockets, por isso em produção com a API noutro domínio defina VITE_WS_URL.
- */
-export function realtimeSocketUrl(): string {
-  const configured = (import.meta.env["VITE_WS_URL"] as string | undefined)?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
-  const base = BASE_URL || window.location.origin;
-  return `${base.replace(/^http/i, "ws")}${API_VERSION_PREFIX}/ws`;
-}
-
 /** Endereço completo de um ficheiro servido pela API (por exemplo a imagem de um plano: "/v1/plans/<id>/image"). */
 export const assetUrl = (path: string): string => `${BASE_URL}${path}`;
 
@@ -171,9 +160,7 @@ const idem = (key: string): Record<string, string> => ({ "Idempotency-Key": key 
 /** Módulos operacionais. Tudo vem do servidor; nada é calculado nem inventado aqui. */
 export const platformApi = {
   /** Painel "Convidar e ganhar": tudo calculado no servidor. */
-  referrals: (opts: RequestOpts = {}) => request<ReferralOverviewDto>("/referrals/me", "GET", undefined, {}, opts),
-  /** Bilhete de uso único (30 s) para ligar o WebSocket. */
-  realtimeTicket: () => request<{ ticket: string; expiresInSeconds: number }>("/realtime/ticket", "POST", undefined, {}, { silent: true }),
+  referrals: () => request<ReferralOverviewDto>("/referrals/me", "GET"),
   wallet: (opts: RequestOpts = {}) => request<WalletDto>("/wallet", "GET", undefined, {}, opts),
   transactions: (p: { kind?: string; q?: string; cursor?: string }, opts: RequestOpts = {}) =>
     request<{ items: TransactionDto[]; nextCursor: string | null }>(`/transactions${qs({ ...p, limit: "10" })}`, "GET", undefined, {}, opts),

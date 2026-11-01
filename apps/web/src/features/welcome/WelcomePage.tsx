@@ -1,54 +1,13 @@
-import { Fingerprint, Languages, ScanEye, ShieldCheck, type LucideIcon } from "lucide-react";
+import { BadgeCheck, Check, Fingerprint, Globe2, Headphones, Languages, ScanEye, ShieldCheck, Users, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LanguageSelect } from "../../components/layout/LanguageSelect.js";
 import { Logo } from "../../brand/index.js";
 import { useI18n } from "../../i18n/I18nProvider.js";
 import { DASHBOARD_URL } from "../../services/navigation.js";
 import { useAuth } from "../auth/AuthContext.js";
-
-/** Ilustração leve: SVG com animações só de transformação; pára com "reduzir movimento". */
-function HeroArt() {
-  return (
-    <svg className="wl-art" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="hvBg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#14233b" />
-          <stop offset=".55" stopColor="#0d3a99" />
-          <stop offset="1" stopColor="#175bff" />
-        </linearGradient>
-        <radialGradient id="hvGlow" cx=".82" cy=".18" r=".6">
-          <stop offset="0" stopColor="#ffd447" stopOpacity=".5" />
-          <stop offset="1" stopColor="#ffd447" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id="hvGold" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffd447" />
-          <stop offset="1" stopColor="#ff9f1c" />
-        </linearGradient>
-        <linearGradient id="hvSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#7cc4ff" />
-          <stop offset="1" stopColor="#2f7bff" />
-        </linearGradient>
-      </defs>
-      <rect width="1200" height="560" fill="url(#hvBg)" />
-      <rect width="1200" height="560" fill="url(#hvGlow)" />
-      <g stroke="#fff" strokeOpacity=".07">
-        {[110, 220, 330, 440].map((y) => <line key={y} x1="0" x2="1200" y1={y} y2={y} />)}
-      </g>
-      <g className="hv-drift"><circle cx="960" cy="110" r="92" fill="#48b8ff" fillOpacity=".18" /></g>
-      <g className="hv-float"><circle cx="1090" cy="430" r="64" fill="#ffd447" fillOpacity=".2" /></g>
-      <g className="hv-float hv-slow"><circle cx="640" cy="470" r="38" fill="#fff" fillOpacity=".08" /></g>
-      {[150, 230, 190, 310, 260, 370].map((h, i) => (
-        <rect key={h} className="hv-bar" x={720 + i * 56} y={500 - h} width="36" height={h} rx="10" fill={i % 2 ? "url(#hvGold)" : "url(#hvSky)"} />
-      ))}
-      <polyline className="hv-line" points="700,400 790,345 870,368 960,285 1040,300 1130,205" fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle className="hv-dot" cx="1130" cy="205" r="9" fill="#ffd447" />
-      <g className="hv-float hv-fast">
-        <circle cx="640" cy="170" r="36" fill="url(#hvGold)" />
-        <text x="640" y="179" textAnchor="middle" fontSize="24" fontWeight="700" fill="#14233b">Kz</text>
-      </g>
-    </svg>
-  );
-}
+import { useCopy } from "../verify/copy.js";
+import { CountUp } from "./CountUp.js";
+import { HeroCard } from "./HeroCard.js";
 
 const FEATURES: ReadonlyArray<readonly [string, LucideIcon, string]> = [
   ["security", ShieldCheck, "blue"],
@@ -57,48 +16,105 @@ const FEATURES: ReadonlyArray<readonly [string, LucideIcon, string]> = [
   ["languages", Languages, "violet"],
 ];
 
-/** Página inicial pública: sem promessas de rendimento e sem dados inventados. */
+/** Moedas mostradas na faixa de depósitos (logótipos em /crypto-icons). */
+const COINS = ["usdt", "trx", "sol", "bnb", "btc", "eth"] as const;
+
+/**
+ * Página inicial pública (lead page): mensagem de confiança, cartão animado, botões de entrar e criar conta
+ * no cabeçalho, no topo da página e no fim. Pensada primeiro para telemóvel; sem promessas de rendimento.
+ */
 export function WelcomePage() {
   const { t } = useI18n();
+  const c = useCopy();
   const { status } = useAuth();
   const w = (key: string) => t(`auth.welcome.${key}`);
+  const authed = status === "authenticated";
+
   return (
-    <div className="wl">
-      <header className="wl-header">
-        <Link to="/" aria-label={t("common.app.name")}><Logo height={34} /></Link>
-        <nav className="wl-actions" aria-label={t("common.app.name")}>
-          <LanguageSelect />
-          {status === "authenticated" ? (
-            <a className="wl-btn wl-btn--solid" href={DASHBOARD_URL}>{w("openAccount")}</a>
-          ) : (
-            <>
-              <Link className="wl-btn wl-btn--ghost" to="/register">{w("navCreate")}</Link>
-              <Link className="wl-btn wl-btn--solid" to="/login">{w("navLogin")}</Link>
-            </>
-          )}
-        </nav>
+    <div className="lp">
+      <header className="lp-header">
+        <div className="lp-wrap lp-header__in">
+          <Link to="/" className="lp-logo" aria-label={t("common.app.name")}><Logo height={30} /></Link>
+          <nav className="lp-nav" aria-label={t("common.app.name")}>
+            <LanguageSelect />
+            {authed ? (
+              <a className="lp-btn lp-btn--primary" href={DASHBOARD_URL}>{w("openAccount")}</a>
+            ) : (
+              <>
+                <Link className="lp-btn lp-btn--outline" to="/login">{c("lp.signIn")}</Link>
+                <Link className="lp-btn lp-btn--primary" to="/register">{c("lp.create")}</Link>
+              </>
+            )}
+          </nav>
+        </div>
       </header>
 
       <main>
-        <section className="wl-hero">
-          <HeroArt />
-          <div className="wl-hero__content">
-            <span className="wl-eyebrow">{w("eyebrow")}</span>
-            <h1>{w("title")}</h1>
-            <p>{w("text")}</p>
-            <div className="wl-hero__cta">
-              <Link className="wl-btn wl-btn--yellow" to="/register">{w("ctaPrimary")}</Link>
-              <Link className="wl-btn wl-btn--glass" to="/login">{w("ctaSecondary")}</Link>
+        <section className="lp-hero">
+          <div className="lp-wrap lp-hero__grid">
+            <div className="lp-hero__copy">
+              <span className="lp-pill"><i aria-hidden="true" />{w("eyebrow")}</span>
+              <h1>{w("title")}</h1>
+              <p className="lp-lead">{w("text")}</p>
+              <div className="lp-cta">
+                {authed ? (
+                  <a className="lp-btn lp-btn--primary lp-btn--lg" href={DASHBOARD_URL}>{w("openAccount")}</a>
+                ) : (
+                  <>
+                    <Link className="lp-btn lp-btn--primary lp-btn--lg" to="/register">{c("lp.create")}</Link>
+                    <Link className="lp-btn lp-btn--outline lp-btn--lg" to="/login">{c("lp.signIn")}</Link>
+                  </>
+                )}
+              </div>
+              <ul className="lp-checks">
+                {(["lp.check1", "lp.check2", "lp.check3"] as const).map((k) => (
+                  <li key={k}><span aria-hidden="true"><Check size={13} /></span>{c(k)}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="lp-hero__visual"><HeroCard /></div>
+          </div>
+        </section>
+
+        <section className="lp-wrap" aria-label={c("lp.statsLabel")}>
+          <div className="lp-stats">
+            <div className="lp-stat">
+              <Users size={22} aria-hidden="true" />
+              <strong><CountUp to={35} />M+</strong>
+              <span>{c("lp.stat1")}</span>
+            </div>
+            <div className="lp-stat">
+              <BadgeCheck size={22} aria-hidden="true" />
+              <strong><CountUp to={23} /></strong>
+              <span>{c("lp.stat2")}</span>
+            </div>
+            <div className="lp-stat">
+              <Globe2 size={22} aria-hidden="true" />
+              <strong><CountUp to={4} /></strong>
+              <span>{c("lp.stat3")}</span>
             </div>
           </div>
         </section>
 
-        <section className="wl-section" aria-labelledby="wl-features">
-          <h2 id="wl-features">{w("featuresTitle")}</h2>
-          <div className="wl-grid">
+        <section className="lp-wrap lp-pay" aria-labelledby="lp-pay-title">
+          <h2 id="lp-pay-title">{c("lp.payTitle")}</h2>
+          <p>{c("lp.payText")}</p>
+          <ul className="lp-pay__chips">
+            <li className="lp-method">Multicaixa</li>
+            <li className="lp-method">PayPay</li>
+            <li className="lp-method">Kwik</li>
+            {COINS.map((s) => (
+              <li key={s} className="lp-method lp-method--coin"><img src={`/crypto-icons/${s}.svg`} alt="" width="22" height="22" loading="lazy" />{s.toUpperCase()}</li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="lp-wrap lp-section" aria-labelledby="lp-features">
+          <h2 id="lp-features">{w("featuresTitle")}</h2>
+          <div className="lp-grid">
             {FEATURES.map(([key, Icon, tone]) => (
-              <article key={key} className={`wl-feature wl-feature--${tone}`}>
-                <span className="wl-feature__icon"><Icon size={24} aria-hidden="true" /></span>
+              <article key={key} className={`lp-feature lp-feature--${tone}`}>
+                <span className="lp-feature__icon"><Icon size={24} aria-hidden="true" /></span>
                 <h3>{w(`features.${key}.title`)}</h3>
                 <p>{w(`features.${key}.text`)}</p>
               </article>
@@ -106,32 +122,48 @@ export function WelcomePage() {
           </div>
         </section>
 
-        <section className="wl-section wl-section--soft" aria-labelledby="wl-steps">
-          <h2 id="wl-steps">{w("stepsTitle")}</h2>
-          <ol className="wl-steps">
-            {(["one", "two", "three"] as const).map((k, i) => (
-              <li key={k}>
-                <span className="wl-steps__n" aria-hidden="true">{i + 1}</span>
-                <h3>{w(`steps.${k}.title`)}</h3>
-                <p>{w(`steps.${k}.text`)}</p>
-              </li>
-            ))}
-          </ol>
+        <section className="lp-soft" aria-labelledby="lp-steps">
+          <div className="lp-wrap lp-section">
+            <h2 id="lp-steps">{w("stepsTitle")}</h2>
+            <ol className="lp-steps">
+              {(["one", "two", "three"] as const).map((k, i) => (
+                <li key={k}>
+                  <span className="lp-steps__n" aria-hidden="true">{i + 1}</span>
+                  <h3>{w(`steps.${k}.title`)}</h3>
+                  <p>{w(`steps.${k}.text`)}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </section>
 
-        <section className="wl-final">
-          <h2>{w("finalTitle")}</h2>
-          <p>{w("finalText")}</p>
-          <Link className="wl-btn wl-btn--yellow" to="/register">{w("ctaPrimary")}</Link>
+        <section className="lp-wrap lp-final-wrap">
+          <div className="lp-final">
+            <span className="lp-final__ico" aria-hidden="true"><Headphones size={22} /></span>
+            <h2>{w("finalTitle")}</h2>
+            <p>{w("finalText")}</p>
+            <div className="lp-cta lp-cta--center">
+              {authed ? (
+                <a className="lp-btn lp-btn--yellow lp-btn--lg" href={DASHBOARD_URL}>{w("openAccount")}</a>
+              ) : (
+                <>
+                  <Link className="lp-btn lp-btn--yellow lp-btn--lg" to="/register">{c("lp.create")}</Link>
+                  <Link className="lp-btn lp-btn--glass lp-btn--lg" to="/login">{c("lp.signIn")}</Link>
+                </>
+              )}
+            </div>
+          </div>
         </section>
       </main>
 
-      <footer className="wl-footer">
-        <Logo height={28} />
-        <p>{w("risk")}</p>
-        <div className="wl-footer__row">
-          <LanguageSelect />
-          <small>© {new Date().getFullYear()} KIVORA</small>
+      <footer className="lp-footer">
+        <div className="lp-wrap lp-footer__in">
+          <Logo height={28} />
+          <p>{w("risk")}</p>
+          <div className="lp-footer__row">
+            <LanguageSelect />
+            <small>© {new Date().getFullYear()} KIVORA</small>
+          </div>
         </div>
       </footer>
     </div>

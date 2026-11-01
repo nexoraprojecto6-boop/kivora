@@ -1,0 +1,12 @@
+Fotografias reais das modelos (opcional).
+
+A página inicial desenha duas modelos em ilustração vetorial. Para usar fotografias, coloque aqui:
+  model-a.webp  (mulher branca a sorrir com o telemóvel)
+  model-b.webp  (mulher negra a sorrir, com mochila, com o telemóvel)
+
+Requisitos para ficar bem no cartão:
+  - recorte com FUNDO TRANSPARENTE (WebP ou PNG), proporção 4:5 (ex.: 900x1125), peito para cima,
+    a pessoa centrada e cortada na base;
+  - peso até ~150 KB cada (use WebP a 80-85% de qualidade);
+  - fotos com direitos de utilização (banco de imagens pago ou sessão própria, com autorização das modelos).
+Se o ficheiro não existir, aparece a ilustração; não é preciso mudar código.
