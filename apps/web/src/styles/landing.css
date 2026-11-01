@@ -62,7 +62,8 @@
 .lp-checks li { display: flex; align-items: center; gap: 10px; font-size: 14.5px; font-weight: 600; color: #25365a; }
 .lp-checks span { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%; color: #fff; background: #1fbf7a; }
 
-.lp-hero__visual { width: 100%; }
+/* No telemóvel o cartão vem primeiro (acima do texto); em ecrãs largos fica à direita. */
+.lp-hero__visual { width: 100%; order: -1; }
 
 /* ---------- cartão animado ---------- */
 .lp-card {
@@ -174,6 +175,7 @@
 /* ---------- ecrãs grandes ---------- */
 @media (min-width: 960px) {
   .lp-hero__grid { grid-template-columns: 1.02fr 0.98fr; }
+  .lp-hero__visual { order: 0; }
   .lp-card { max-width: 32rem; margin-inline: 0 auto; }
 }
 @media (min-width: 1200px) { .lp-card { margin-inline: auto 0; } }

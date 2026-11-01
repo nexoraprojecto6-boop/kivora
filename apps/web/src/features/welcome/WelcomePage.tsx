@@ -53,7 +53,6 @@ export function WelcomePage() {
         <section className="lp-hero">
           <div className="lp-wrap lp-hero__grid">
             <div className="lp-hero__copy">
-              <span className="lp-pill"><i aria-hidden="true" />{w("eyebrow")}</span>
               <h1>{w("title")}</h1>
               <p className="lp-lead">{w("text")}</p>
               <div className="lp-cta">
