@@ -10,14 +10,15 @@ export const idemKeySchema = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
 export const createDepositSchema = z.strictObject({ methodId: z.uuid(), amountMinor: money, note: text(0, 300).optional() });
 export const createWithdrawalSchema = z
   .strictObject({
-    methodId: z.uuid(),
+    /** Obrigatório só sem conta guardada; com conta guardada o servidor escolhe o método do mesmo serviço. */
+    methodId: z.uuid().optional(),
     amountMinor: money,
     /** Conta guardada no depósito (PayPay, Kwik, Express). É o destino normal do levantamento. */
     accountId: z.uuid().optional(),
     /** Só para métodos sem conta guardada (ex.: cripto). */
     destination: text(4, 200).optional(),
   })
-  .refine((v) => v.accountId !== undefined || v.destination !== undefined, { error: "invalid", path: ["accountId"] });
+  .refine((v) => v.accountId !== undefined || (v.methodId !== undefined && v.destination !== undefined), { error: "invalid", path: ["accountId"] });
 export const subscribeSchema = z.strictObject({ amountMinor: money });
 export const noteSchema = z.strictObject({ note: text(0, 500).optional() });
 export const reasonSchema = z.strictObject({ note: text(3, 500) });

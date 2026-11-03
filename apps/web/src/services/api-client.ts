@@ -187,7 +187,7 @@ export const platformApi = {
   addPaymentAccount: (input: { rail: PaymentAccountDto["rail"]; holder: string; detail: string }) =>
     request<PaymentAccountDto>("/payment-accounts", "POST", input),
   removePaymentAccount: (id: string) => request<{ deleted: true }>(`/payment-accounts/${encodeURIComponent(id)}`, "DELETE"),
-  createWithdrawal: (input: { methodId: string; amountMinor: number; accountId?: string; destination?: string }, key: string) =>
+  createWithdrawal: (input: { methodId?: string; amountMinor: number; accountId?: string; destination?: string }, key: string) =>
     request<WithdrawalDto>("/withdrawals", "POST", input, idem(key)),
   cancel: (kind: "DEPOSIT" | "WITHDRAWAL" | "SUBSCRIPTION", id: string) =>
     request<unknown>(`/${kind === "DEPOSIT" ? "deposits" : kind === "WITHDRAWAL" ? "withdrawals" : "subscriptions"}/${encodeURIComponent(id)}/cancel`, "POST", {}),

@@ -355,13 +355,15 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
     const minor = m.toMinor(amount)
     const withdraw = mode === "WITHDRAWAL"
     // Contas guardadas que têm método de levantamento activo; os restantes métodos (ex.: cripto) escrevem o destino.
-    const usable = withdraw ? saved.filter((a) => list.some((x) => x.rail === a.rail)) : []
+    // Todas as contas guardadas servem para levantar; o servidor escolhe o método do mesmo serviço.
+    const usable = withdraw ? saved : []
     const account = usable.find((a) => a.id === accountId)
-    const others = withdraw ? list.filter((x) => !usable.some((a) => a.rail === x.rail) && !(x.rail && ["PAYPAY", "KWIK", "EXPRESS"].includes(x.rail))) : list
-    const method = account ? list.find((x) => x.rail === account.rail) : (withdraw ? others : list).find((x) => x.id === methodId)
+    const railName = (r: string) => (r === "PAYPAY" ? "PayPay" : r === "KWIK" ? "Kwik" : r === "EXPRESS" ? "Express" : r)
+    const others = withdraw ? list.filter((x) => !(x.rail && ["PAYPAY", "KWIK", "EXPRESS"].includes(x.rail))) : list
+    const method = account ? (list.find((x) => x.rail === account.rail) ?? null) : (withdraw ? others : list).find((x) => x.id === methodId)
     const mask = (d: string) => (d.length > 4 ? `•••• ${d.slice(-4)}` : d)
     if (!canOperate(w)) return <Gate w={w} />
-    if (list.length === 0) return <div className="info-box"><CircleHelp size={18} /><p>{s("emptyMethods")}</p></div>
+    if (!withdraw && list.length === 0) return <div className="info-box"><CircleHelp size={18} /><p>{s("emptyMethods")}</p></div>
     if (withdraw && usable.length === 0 && others.length === 0) {
       return (
         <>
@@ -391,21 +393,21 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
         if (mode === "WITHDRAWAL" && minor > w.available) return setError(s("field.insufficientFunds"))
       }
       if (step === 2) {
-        if (!method) return setError(s("chooseOne"))
-        if (minor !== null && method.minMinor !== null && minor < method.minMinor) return setError(s("field.belowMinimum"))
-        if (minor !== null && method.maxMinor !== null && minor > method.maxMinor) return setError(s("field.aboveMaximum"))
+        if (!method && !account) return setError(s("chooseOne"))
+        if (method && minor !== null && method.minMinor !== null && minor < method.minMinor) return setError(s("field.belowMinimum"))
+        if (method && minor !== null && method.maxMinor !== null && minor > method.maxMinor) return setError(s("field.aboveMaximum"))
         if (withdraw && !account && destination.trim().length < 4) return setError(s("field.invalid"))
       }
       setStep(step + 1)
     }
     const confirm = async () => {
-      if (minor === null || !method) return
+      if (minor === null || (!method && !account)) return
       setBusy(true)
       setError("")
       try {
         const r = mode === "DEPOSIT"
           ? await platformApi.createDeposit({ methodId: method.id, amountMinor: minor }, key.current)
-          : await platformApi.createWithdrawal(account ? { methodId: method.id, amountMinor: minor, accountId: account.id } : { methodId: method.id, amountMinor: minor, destination: destination.trim() }, key.current)
+          : await platformApi.createWithdrawal(account ? { amountMinor: minor, accountId: account.id } : { methodId: method?.id ?? "", amountMinor: minor, destination: destination.trim() }, key.current)
         key.current = newKey()
         setResult({ reference: r.reference, instructions: "instructions" in r ? r.instructions : "" })
       } catch (e) {
@@ -436,11 +438,10 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
                 <p className="body-copy">{s("savedAccounts")}</p>
                 <div className="method-list">
                   {usable.map((a) => {
-                    const mt = list.find((x) => x.rail === a.rail)
                     return (
                       <button key={a.id} className={accountId === a.id ? "selected" : ""} aria-pressed={accountId === a.id} onClick={() => { setAccountId(a.id); setMethodId("") }}>
                         <span className="method-icon"><Landmark size={19} /></span>
-                        <span><strong>{mt?.name ?? a.rail}</strong><small>{a.holder} · {mask(a.detail)}</small></span>
+                        <span><strong>{railName(a.rail)}</strong><small>{a.holder} · {mask(a.detail)}</small></span>
                         {accountId === a.id ? <Check size={18} /> : <ChevronRight size={18} />}
                       </button>
                     )
@@ -469,11 +470,11 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
             )}
           </>
         )}
-        {step === 3 && minor !== null && method && (
+        {step === 3 && minor !== null && (method || account) && (
           <div className="detail-grid">
             <div><span>{s("amount")}</span><strong>{m.fmt(minor)}</strong></div>
-            <div><span>{s("methodLabel")}</span><strong>{method.name}</strong></div>
-            {method.feeMinor !== null && <div><span>{s("fee")}</span><strong>{m.fmt(method.feeMinor)}</strong></div>}
+            <div><span>{s("methodLabel")}</span><strong>{account ? railName(account.rail) : method?.name}</strong></div>
+            {method && method.feeMinor !== null && <div><span>{s("fee")}</span><strong>{m.fmt(method.feeMinor)}</strong></div>}
             {withdraw && <div><span>{s("account")}</span><strong>{account ? `${account.holder} · ${mask(account.detail)}` : destination}</strong></div>}
           </div>
         )}

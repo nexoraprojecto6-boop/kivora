@@ -248,29 +248,43 @@ export class PaymentsService {
     return one<WithdrawalDto>(this.pool, `SELECT ${WD_COLS} FROM withdrawals w JOIN payment_methods m ON m.id = w.method_id WHERE w.id = $1 AND ($2::uuid IS NULL OR w.user_id = $2)`, [id, userId]);
   }
 
-  async createWithdrawal(userId: string, input: { methodId: string; amountMinor: number; accountId?: string | undefined; destination?: string | undefined }, idem: string | null, requestId: string): Promise<WithdrawalDto> {
+  async createWithdrawal(userId: string, input: { methodId?: string | undefined; amountMinor: number; accountId?: string | undefined; destination?: string | undefined }, idem: string | null, requestId: string): Promise<WithdrawalDto> {
     await this.gate.check(userId);
-    const m = await one<{ minMinor: number | null; maxMinor: number | null; rail: string | null }>(
-      this.pool,
-      `SELECT min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor", rail FROM payment_methods WHERE id = $1 AND kind = 'WITHDRAWAL' AND enabled`,
-      [input.methodId],
-    );
-    if (!m) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "methodId", code: "invalid" }] });
-    checkRange(input.amountMinor, m.minMinor, m.maxMinor);
-    // O destino vem da conta que o cliente guardou no depósito (do próprio utilizador e do mesmo serviço do método).
+    // O destino vem da conta que o cliente guardou no depósito (do próprio utilizador).
     // Só os métodos sem conta guardada (ex.: cripto) aceitam um destino escrito.
     let destination = input.destination?.trim() ?? "";
+    let methodId = input.methodId ?? "";
     if (input.accountId) {
       const acc = await one<{ rail: string; holder: string; detail: string }>(
         this.pool,
         "SELECT rail, holder, detail FROM user_payment_accounts WHERE id = $1 AND user_id = $2",
         [input.accountId, userId],
       );
-      if (!acc || (m.rail !== null && acc.rail !== m.rail)) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "accountId", code: "invalid" }] });
+      if (!acc) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "accountId", code: "invalid" }] });
       destination = `${acc.holder} · ${acc.detail}`;
-    } else if (m.rail === "PAYPAY" || m.rail === "KWIK" || m.rail === "EXPRESS" || destination.length < 4) {
+      // Método do mesmo serviço: o de levantamento, se existir; senão o de depósito (serve de identificação).
+      const pick = await one<{ id: string }>(
+        this.pool,
+        "SELECT id FROM payment_methods WHERE rail = $1 AND enabled ORDER BY (kind = 'WITHDRAWAL') DESC, created_at LIMIT 1",
+        [acc.rail],
+      );
+      if (!pick) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "methodId", code: "invalid" }] });
+      methodId = pick.id;
+    } else if (destination.length < 4) {
+      throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "destination", code: "invalid" }] });
+    }
+    const m = await one<{ minMinor: number | null; maxMinor: number | null; rail: string | null; kind: string }>(
+      this.pool,
+      `SELECT min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor", rail, kind FROM payment_methods WHERE id = $1 AND enabled AND ($2::boolean OR kind = 'WITHDRAWAL')`,
+      [methodId, !!input.accountId],
+    );
+    if (!m) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "methodId", code: "invalid" }] });
+    // Sem conta guardada, serviços com conta (PayPay/Kwik/Express) não aceitam destino escrito.
+    if (!input.accountId && (m.rail === "PAYPAY" || m.rail === "KWIK" || m.rail === "EXPRESS")) {
       throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "accountId", code: "invalid" }] });
     }
+    // Limites só valem para métodos de levantamento (os de depósito têm limites de depósito).
+    if (m.kind === "WITHDRAWAL") checkRange(input.amountMinor, m.minMinor, m.maxMinor);
     const id = await tx(this.pool, async (c) => {
       await lockUser(c, userId);
       if (idem) {
@@ -280,7 +294,7 @@ export class PaymentsService {
           [userId, idem],
         );
         if (ex) {
-          if (ex.methodId !== input.methodId || ex.amountMinor !== input.amountMinor) throw new ApiException(API_ERROR_CODE.IDEMPOTENCY_CONFLICT);
+          if (ex.methodId !== methodId || ex.amountMinor !== input.amountMinor) throw new ApiException(API_ERROR_CODE.IDEMPOTENCY_CONFLICT);
           return ex.id;
         }
       }
@@ -294,7 +308,7 @@ export class PaymentsService {
         c,
         `INSERT INTO withdrawals (user_id, method_id, amount_minor, currency, destination, reference, idempotency_key)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [userId, input.methodId, input.amountMinor, this.cfg.currency, destination, newReference("W"), idem],
+        [userId, methodId, input.amountMinor, this.cfg.currency, destination, newReference("W"), idem],
       );
       if (!row) throw new ApiException(API_ERROR_CODE.INTERNAL_ERROR);
       await post(c, { userId, currency: this.cfg.currency, kind: "WITHDRAWAL_RESERVE", refType: "WITHDRAWAL", refId: row.id, actorId: userId, legs: reserveLegs(input.amountMinor) });
