@@ -43,7 +43,7 @@ function mockApi(opts: Opts = {}) {
       if (url.includes("/auth/sessions/") && method === "DELETE")
         return opts.onRevoke?.(decodeURIComponent(url.split("/").pop()!)) ?? json(200, { data: { revoked: true } })
       if (url.endsWith("/auth/change-password")) return opts.onChangePassword?.(body) ?? json(200, { data: { revokedSessions: 0 } })
-      if (url.endsWith("/wallet")) return json(200, { data: { currency: "AOA", available: 0, reserved: 0, total: 0, financeEnabled: false, requireVerification: true, verificationStatus: "NONE" } })
+      if (url.endsWith("/wallet")) return json(200, { data: { currency: "AOA", available: 0, invested: 0, reserved: 0, total: 0, financeEnabled: false, requireVerification: true, verificationStatus: "NONE" } })
       if (url.endsWith("/plans") || url.includes("/payment-methods") || url.endsWith("/agreements") || url.endsWith("/support/tickets")) return json(200, { data: [] })
       if (url.includes("/transactions")) return json(200, { data: { items: [], nextCursor: null } })
       if (url.endsWith("/verification")) return json(200, { data: { submission: null } })

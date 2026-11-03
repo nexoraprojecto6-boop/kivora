@@ -125,9 +125,10 @@
       "verifyFirst": "Verifique a identidade antes de operar."
     },
     "wallet": {
-      "total": "Saldo total",
+      "total": "Saldo disponível",
       "available": "Disponível",
-      "reserved": "Reservado"
+      "invested": "Em investimentos",
+      "reserved": "Em levantamento"
     },
     "kind": {
       "DEPOSIT": "Depósito",
@@ -188,7 +189,12 @@
       "confirm": "Confirmar"
     },
     "amount": "Montante",
-    "availableLabel": "Disponível: {amount}",
+    "availableLabel": "Saldo disponível para levantar: {amount}",
+    "savedAccounts": "Os seus métodos guardados",
+    "otherMethods": "Outros métodos",
+    "noSavedAccount": "Ainda não tem nenhum método guardado. Faça um depósito e escolha o seu método: fica guardado e é usado aqui para levantar.",
+    "goDeposit": "Ir para depósitos",
+    "investedNote": "O capital em planos não pode ser levantado até o plano terminar.",
     "chooseOne": "Escolha uma opção.",
     "account": "IBAN / número de conta",
     "methodLabel": "Método",

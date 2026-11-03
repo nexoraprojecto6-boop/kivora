@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ChangeEvent, type ReactNode } from "react"
 import {
   ArrowDownToLine, ArrowRight, ArrowUpFromLine, Bell, Check, ChevronDown, ChevronRight, CircleHelp, Clock3, FileText, Fingerprint,
-  Gem, Landmark, Layers, PieChart, Receipt, Search, ShieldCheck, Sparkles, Upload, WalletCards,
+  Gem, Landmark, Layers, PieChart, Receipt, Search, ShieldCheck, Sparkles, TrendingUp, Upload, WalletCards,
 } from "lucide-react"
-import type { PaymentMethodDto, PlanDto, TransactionDto, VerificationDocType, VerificationFileKind, WalletDto } from "@kivora/shared"
+import type { PaymentAccountDto, PaymentMethodDto, PlanDto, TransactionDto, VerificationDocType, VerificationFileKind, WalletDto } from "@kivora/shared"
 import { useNavigate, useParams } from "react-router-dom"
 import { useAuth } from "../features/auth/AuthContext.js"
 import { useI18n } from "../i18n/I18nProvider.js"
@@ -150,10 +150,10 @@ function BalanceCard({ w }: { w: WalletDto }) {
   return (
     <section className="balance-card" aria-label={s("wallet.total")}>
       <span>{s("wallet.total")}</span>
-      <h1>{m.fmt(w.total)}</h1>
+      <h1>{m.fmt(w.available)}</h1>
       <div>
-        <span><ArrowDownToLine size={14} /> {s("wallet.available")}<b>{m.fmt(w.available)}</b></span>
-        <span><Clock3 size={14} /> {s("wallet.reserved")}<b>{m.fmt(w.reserved)}</b></span>
+        <span><TrendingUp size={14} /> {s("wallet.invested")}<b>{m.fmt(w.invested)}</b></span>
+        {w.reserved > 0 && <span><Clock3 size={14} /> {s("wallet.reserved")}<b>{m.fmt(w.reserved)}</b></span>}
       </div>
     </section>
   )
@@ -327,6 +327,9 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
   const navigate = useNavigate()
   const wallet = useWallet()
   const methods = useLoad(() => platformApi.methods(mode), [mode])
+  // Levantamento: o destino é a conta que o cliente guardou no depósito.
+  const accounts = useLoad(() => (mode === "WITHDRAWAL" ? platformApi.paymentAccounts() : Promise.resolve([] as PaymentAccountDto[])), [mode])
+  const [accountId, setAccountId] = useState("")
   const [step, setStep] = useState(1)
   const [amount, setAmount] = useState("")
   const [methodId, setMethodId] = useState("")
@@ -342,17 +345,31 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
   return (
     <Sub title={title}>
       <Load q={wallet}>{(w) => (
-        <Load q={methods}>{(list) => body(w, list)}</Load>
+        <Load q={methods}>{(list) => <Load q={accounts}>{(saved) => body(w, list, saved)}</Load>}</Load>
       )}</Load>
     </Sub>
   )
 
-  function body(w: WalletDto, list: PaymentMethodDto[]) {
+  function body(w: WalletDto, list: PaymentMethodDto[], saved: PaymentAccountDto[]) {
     const m = makeMoney(language, w.currency)
     const minor = m.toMinor(amount)
-    const method = list.find((x) => x.id === methodId)
+    const withdraw = mode === "WITHDRAWAL"
+    // Contas guardadas que têm método de levantamento activo; os restantes métodos (ex.: cripto) escrevem o destino.
+    const usable = withdraw ? saved.filter((a) => list.some((x) => x.rail === a.rail)) : []
+    const account = usable.find((a) => a.id === accountId)
+    const others = withdraw ? list.filter((x) => !usable.some((a) => a.rail === x.rail) && !(x.rail && ["PAYPAY", "KWIK", "EXPRESS"].includes(x.rail))) : list
+    const method = account ? list.find((x) => x.rail === account.rail) : (withdraw ? others : list).find((x) => x.id === methodId)
+    const mask = (d: string) => (d.length > 4 ? `•••• ${d.slice(-4)}` : d)
     if (!canOperate(w)) return <Gate w={w} />
     if (list.length === 0) return <div className="info-box"><CircleHelp size={18} /><p>{s("emptyMethods")}</p></div>
+    if (withdraw && usable.length === 0 && others.length === 0) {
+      return (
+        <>
+          <div className="info-box"><CircleHelp size={18} /><p>{s("noSavedAccount")}</p></div>
+          <button className="primary-button" onClick={() => navigate("/deposit")}>{s("goDeposit")}</button>
+        </>
+      )
+    }
     if (result) {
       return (
         <>
@@ -377,7 +394,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
         if (!method) return setError(s("chooseOne"))
         if (minor !== null && method.minMinor !== null && minor < method.minMinor) return setError(s("field.belowMinimum"))
         if (minor !== null && method.maxMinor !== null && minor > method.maxMinor) return setError(s("field.aboveMaximum"))
-        if (mode === "WITHDRAWAL" && destination.trim().length < 4) return setError(s("field.invalid"))
+        if (withdraw && !account && destination.trim().length < 4) return setError(s("field.invalid"))
       }
       setStep(step + 1)
     }
@@ -388,7 +405,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
       try {
         const r = mode === "DEPOSIT"
           ? await platformApi.createDeposit({ methodId: method.id, amountMinor: minor }, key.current)
-          : await platformApi.createWithdrawal({ methodId: method.id, amountMinor: minor, destination: destination.trim() }, key.current)
+          : await platformApi.createWithdrawal(account ? { methodId: method.id, amountMinor: minor, accountId: account.id } : { methodId: method.id, amountMinor: minor, destination: destination.trim() }, key.current)
         key.current = newKey()
         setResult({ reference: r.reference, instructions: "instructions" in r ? r.instructions : "" })
       } catch (e) {
@@ -408,14 +425,33 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
         {step === 1 && (
           <>
             <label className="field"><span>{s("amount")}</span><input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></label>
-            {mode === "WITHDRAWAL" && <p className="body-copy">{s("availableLabel", { amount: m.fmt(w.available) })}</p>}
+            {withdraw && <p className="body-copy">{s("availableLabel", { amount: m.fmt(w.available) })}</p>}
+            {withdraw && w.invested > 0 && <p className="body-copy">{s("investedNote")}</p>}
           </>
         )}
         {step === 2 && (
           <>
+            {withdraw && usable.length > 0 && (
+              <>
+                <p className="body-copy">{s("savedAccounts")}</p>
+                <div className="method-list">
+                  {usable.map((a) => {
+                    const mt = list.find((x) => x.rail === a.rail)
+                    return (
+                      <button key={a.id} className={accountId === a.id ? "selected" : ""} aria-pressed={accountId === a.id} onClick={() => { setAccountId(a.id); setMethodId("") }}>
+                        <span className="method-icon"><Landmark size={19} /></span>
+                        <span><strong>{mt?.name ?? a.rail}</strong><small>{a.holder} · {mask(a.detail)}</small></span>
+                        {accountId === a.id ? <Check size={18} /> : <ChevronRight size={18} />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+            {withdraw && others.length > 0 && usable.length > 0 && <p className="body-copy" style={{ marginTop: 13 }}>{s("otherMethods")}</p>}
             <div className="method-list">
-              {list.map((x) => (
-                <button key={x.id} className={methodId === x.id ? "selected" : ""} aria-pressed={methodId === x.id} onClick={() => setMethodId(x.id)}>
+              {(withdraw ? others : list).map((x) => (
+                <button key={x.id} className={methodId === x.id ? "selected" : ""} aria-pressed={methodId === x.id} onClick={() => { setMethodId(x.id); setAccountId("") }}>
                   <span className="method-icon"><Landmark size={19} /></span>
                   <span>
                     <strong>{x.name}</strong>
@@ -428,7 +464,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
                 </button>
               ))}
             </div>
-            {mode === "WITHDRAWAL" && (
+            {withdraw && !account && method && (
               <label className="field" style={{ marginTop: 13 }}><span>{s("account")}</span><input value={destination} onChange={(e) => setDestination(e.target.value)} /></label>
             )}
           </>
@@ -438,7 +474,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
             <div><span>{s("amount")}</span><strong>{m.fmt(minor)}</strong></div>
             <div><span>{s("methodLabel")}</span><strong>{method.name}</strong></div>
             {method.feeMinor !== null && <div><span>{s("fee")}</span><strong>{m.fmt(method.feeMinor)}</strong></div>}
-            {mode === "WITHDRAWAL" && <div><span>{s("account")}</span><strong>{destination}</strong></div>}
+            {withdraw && <div><span>{s("account")}</span><strong>{account ? `${account.holder} · ${mask(account.detail)}` : destination}</strong></div>}
           </div>
         )}
         <button className="primary-button" disabled={busy} onClick={step === 3 ? () => void confirm() : next}>{step === 3 ? s("confirmRequest") : s("continue")}</button>

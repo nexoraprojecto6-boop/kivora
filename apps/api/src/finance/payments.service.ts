@@ -67,8 +67,10 @@ export class PaymentsService {
     return {
       currency: this.cfg.currency,
       available: b.available,
-      reserved: b.reserved,
-      total: b.available + b.reserved,
+      invested: b.invested,
+      // O que está bloqueado no livro menos o que está em planos = levantamentos pendentes.
+      reserved: Math.max(0, b.reserved - b.invested),
+      total: b.available,
       financeEnabled: this.cfg.enabled,
       requireVerification: this.cfg.requireKyc,
       verificationStatus: v?.status ?? "NONE",
@@ -246,15 +248,29 @@ export class PaymentsService {
     return one<WithdrawalDto>(this.pool, `SELECT ${WD_COLS} FROM withdrawals w JOIN payment_methods m ON m.id = w.method_id WHERE w.id = $1 AND ($2::uuid IS NULL OR w.user_id = $2)`, [id, userId]);
   }
 
-  async createWithdrawal(userId: string, input: { methodId: string; amountMinor: number; destination: string }, idem: string | null, requestId: string): Promise<WithdrawalDto> {
+  async createWithdrawal(userId: string, input: { methodId: string; amountMinor: number; accountId?: string | undefined; destination?: string | undefined }, idem: string | null, requestId: string): Promise<WithdrawalDto> {
     await this.gate.check(userId);
-    const m = await one<{ minMinor: number | null; maxMinor: number | null }>(
+    const m = await one<{ minMinor: number | null; maxMinor: number | null; rail: string | null }>(
       this.pool,
-      `SELECT min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor" FROM payment_methods WHERE id = $1 AND kind = 'WITHDRAWAL' AND enabled`,
+      `SELECT min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor", rail FROM payment_methods WHERE id = $1 AND kind = 'WITHDRAWAL' AND enabled`,
       [input.methodId],
     );
     if (!m) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "methodId", code: "invalid" }] });
     checkRange(input.amountMinor, m.minMinor, m.maxMinor);
+    // O destino vem da conta que o cliente guardou no depósito (do próprio utilizador e do mesmo serviço do método).
+    // Só os métodos sem conta guardada (ex.: cripto) aceitam um destino escrito.
+    let destination = input.destination?.trim() ?? "";
+    if (input.accountId) {
+      const acc = await one<{ rail: string; holder: string; detail: string }>(
+        this.pool,
+        "SELECT rail, holder, detail FROM user_payment_accounts WHERE id = $1 AND user_id = $2",
+        [input.accountId, userId],
+      );
+      if (!acc || (m.rail !== null && acc.rail !== m.rail)) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "accountId", code: "invalid" }] });
+      destination = `${acc.holder} · ${acc.detail}`;
+    } else if (m.rail === "PAYPAY" || m.rail === "KWIK" || m.rail === "EXPRESS" || destination.length < 4) {
+      throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "accountId", code: "invalid" }] });
+    }
     const id = await tx(this.pool, async (c) => {
       await lockUser(c, userId);
       if (idem) {
@@ -278,7 +294,7 @@ export class PaymentsService {
         c,
         `INSERT INTO withdrawals (user_id, method_id, amount_minor, currency, destination, reference, idempotency_key)
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [userId, input.methodId, input.amountMinor, this.cfg.currency, input.destination, newReference("W"), idem],
+        [userId, input.methodId, input.amountMinor, this.cfg.currency, destination, newReference("W"), idem],
       );
       if (!row) throw new ApiException(API_ERROR_CODE.INTERNAL_ERROR);
       await post(c, { userId, currency: this.cfg.currency, kind: "WITHDRAWAL_RESERVE", refType: "WITHDRAWAL", refId: row.id, actorId: userId, legs: reserveLegs(input.amountMinor) });

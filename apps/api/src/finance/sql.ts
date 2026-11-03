@@ -81,15 +81,21 @@ export async function lockUser(client: PoolClient, userId: string): Promise<void
   await sql(client, "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [userId]);
 }
 
-export async function getBalance(db: Db, userId: string): Promise<{ available: number; reserved: number }> {
-  const row = await one<{ available: number; reserved: number }>(
+/**
+ * `available`: o único saldo que se pode levantar ou investir (carteira + comissões + rendimentos + sobras).
+ * `reserved`: tudo o que está bloqueado no livro (investimentos + levantamentos pendentes).
+ * `invested`: parte do bloqueado que está em planos (pendentes ou activos); o capital só volta a `available` quando o plano termina.
+ */
+export async function getBalance(db: Db, userId: string): Promise<{ available: number; reserved: number; invested: number }> {
+  const row = await one<{ available: number; reserved: number; invested: number }>(
     db,
     `SELECT COALESCE(SUM(amount_minor) FILTER (WHERE bucket = 'AVAILABLE'), 0)::float8 AS available,
-            COALESCE(SUM(amount_minor) FILTER (WHERE bucket = 'RESERVED'), 0)::float8 AS reserved
+            COALESCE(SUM(amount_minor) FILTER (WHERE bucket = 'RESERVED'), 0)::float8 AS reserved,
+            (SELECT COALESCE(SUM(s.amount_minor), 0)::float8 FROM plan_subscriptions s WHERE s.user_id = $1 AND s.status IN ('PENDING', 'ACTIVE')) AS invested
        FROM ledger_entries WHERE user_id = $1`,
     [userId],
   );
-  return { available: row?.available ?? 0, reserved: row?.reserved ?? 0 };
+  return { available: row?.available ?? 0, reserved: row?.reserved ?? 0, invested: row?.invested ?? 0 };
 }
 
 export async function post(

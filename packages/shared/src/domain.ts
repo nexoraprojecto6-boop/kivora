@@ -17,8 +17,13 @@ export type TransactionKind = "DEPOSIT" | "WITHDRAWAL" | "SUBSCRIPTION";
 
 export interface WalletDto {
   currency: string;
+  /** Saldo disponível: o único que se pode levantar ou investir. Não inclui o que está em planos. */
   available: number;
+  /** Saldo em investimentos: capital já pago/subscrito em planos (pendentes ou activos). Nunca é levantável. */
+  invested: number;
+  /** Saldo em levantamento: pedidos de levantamento ainda por decidir. */
   reserved: number;
+  /** Igual a `available` (o saldo mostrado no início). */
   total: number;
   /** Falso enquanto o interruptor FINANCE_ENABLED estiver desligado no servidor (decisão 1). */
   financeEnabled: boolean;
