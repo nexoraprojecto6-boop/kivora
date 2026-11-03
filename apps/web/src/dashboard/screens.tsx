@@ -406,7 +406,7 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
       setError("")
       try {
         const r = mode === "DEPOSIT"
-          ? await platformApi.createDeposit({ methodId: method.id, amountMinor: minor }, key.current)
+          ? await platformApi.createDeposit({ methodId: method?.id ?? "", amountMinor: minor }, key.current)
           : await platformApi.createWithdrawal(account ? { amountMinor: minor, accountId: account.id } : { methodId: method?.id ?? "", amountMinor: minor, destination: destination.trim() }, key.current)
         key.current = newKey()
         setResult({ reference: r.reference, instructions: "instructions" in r ? r.instructions : "" })
