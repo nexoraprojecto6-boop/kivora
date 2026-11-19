@@ -134,6 +134,10 @@ export interface PlanDto {
   /** Multiplicador da taxa quando há um convidado com plano activo (x100: 200 = dobra). */
   inviteBoostX100: number;
   autoActivate: boolean;
+  /** Rendimento fixo por dia, na menor unidade (ex.: 250 Kz). Com preço fixo (mínimo = máximo) define o plano simples. Null = plano antigo por taxa. */
+  dailyYieldMinor: number | null;
+  /** Condições do plano, em texto escrito pela administração. */
+  conditions: string;
   /** Taxa em vigor agora (pontos base por dia, sem bónus de convite) e variação do mercado. Null se ainda não há dados. */
   currentRateBps: number | null;
   currentChangePct: number | null;

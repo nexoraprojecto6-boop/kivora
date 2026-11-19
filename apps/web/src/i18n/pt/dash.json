@@ -118,7 +118,10 @@
       "fileSize": "Ficheiro demasiado grande (máximo 1,5 MB).",
       "notYet": "Ainda não pode levantar: aguarde o prazo definido para este plano.",
       "nothingToClaim": "Ainda não há comissão para levantar.",
-      "rateOrder": "A taxa mínima, normal e limite têm de estar por ordem."
+      "rateOrder": "A taxa mínima, normal e limite têm de estar por ordem.",
+      "planAlreadyBought": "Já adquiriu este plano. Escolha outro.",
+      "planAlreadyActive": "Já tem um plano ativo. Só pode ter um de cada vez.",
+      "planNotReady": "Este plano ainda não está pronto para compra."
     },
     "notice": {
       "financeOff": "As operações financeiras ainda não estão activas.",

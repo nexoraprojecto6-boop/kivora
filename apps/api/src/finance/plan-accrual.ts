@@ -1,3 +1,4 @@
+import { yieldDays } from "@kivora/shared";
 import type { PoolClient } from "pg";
 import { one, sql, type Db } from "./sql.js";
 
@@ -13,6 +14,10 @@ import { one, sql, type Db } from "./sql.js";
  *
  * Comissão de uma subscrição = soma, sobre os segmentos, de  capital x multiplicador x taxa/10000 x segundos/86400.
  * O multiplicador (bónus de convite) também é um histórico (subscription_boosts), por isso o cálculo é exacto.
+ *
+ * Planos simples (rendimento fixo): o plano tem um rendimento fixo por dia (daily_yield_minor). A comissão é
+ * rendimento diário x (dias de rendimento entre os dois instantes), com os dias medidos pela curva partilhada
+ * (@kivora/shared, yieldDays). Não usa taxas, mercado nem bónus: ao fim de cada dia gerou exactamente o rendimento definido.
  */
 
 const SECONDS_PER_DAY = 86_400;
@@ -176,11 +181,18 @@ export interface AccrualSub {
   id: string;
   planId: string;
   amountMinor: number;
+  /** Rendimento fixo por dia (menor unidade). Quando existe, a comissão segue a curva do dia e ignora taxas e bónus. */
+  dailyYieldMinor?: number | null;
+  startsAt?: Date | null;
 }
 
 /** Comissão gerada pela subscrição entre from e to (pode ter fracções da menor unidade). */
 export async function accrueBetween(db: Db, sub: AccrualSub, from: Date, to: Date, steps?: readonly BoostStep[]): Promise<number> {
   if (to.getTime() <= from.getTime()) return 0;
+  if (sub.dailyYieldMinor != null && sub.dailyYieldMinor > 0 && sub.startsAt) {
+    const t0 = sub.startsAt.getTime();
+    return sub.dailyYieldMinor * (yieldDays(sub.id, to.getTime() - t0) - yieldDays(sub.id, from.getTime() - t0));
+  }
   const st = steps ?? (await boostSteps(db, sub.id));
   const cuts = [from.getTime(), ...st.map((s) => s.at.getTime()).filter((t) => t > from.getTime() && t < to.getTime()), to.getTime()];
   let total = 0;
@@ -194,6 +206,7 @@ export async function accrueBetween(db: Db, sub: AccrualSub, from: Date, to: Dat
 }
 
 interface AccrualRow extends AccrualSub {
+  dailyYieldMinor: number | null;
   status: string;
   accrued: number;
   accruedUpto: Date | null;
@@ -206,7 +219,8 @@ export async function persistAccrual(c: PoolClient, subscriptionId: string, to: 
   const s = await one<AccrualRow>(
     c,
     `SELECT id, plan_id AS "planId", amount_minor::float8 AS "amountMinor", status, accrued::float8 AS accrued,
-            accrued_upto AS "accruedUpto", starts_at AS "startsAt", ends_at AS "endsAt"
+            accrued_upto AS "accruedUpto", starts_at AS "startsAt", ends_at AS "endsAt",
+            (SELECT p.daily_yield_minor::float8 FROM plans p WHERE p.id = plan_subscriptions.plan_id) AS "dailyYieldMinor"
        FROM plan_subscriptions WHERE id = $1 FOR UPDATE`,
     [subscriptionId],
   );

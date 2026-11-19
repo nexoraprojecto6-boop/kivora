@@ -3,7 +3,6 @@ import { API_ERROR_CODE, type AdminSubscriptionDto, type PlanConfigInput, type P
 import type { Pool } from "pg";
 import { ApiException } from "../common/api-error.js";
 import { FINANCE_CONFIG, FinanceGate, PG_POOL, type FinanceConfig } from "./finance.config.js";
-import { checkRange } from "./payments.service.js";
 import { activateSubscription, evaluatePlanRate } from "./plan-accrual.js";
 import { audit, getBalance, lockUser, newReference, notify, one, post, releaseLegs, reserveLegs, sql, tx, type Ctx } from "./sql.js";
 
@@ -19,6 +18,7 @@ const PLAN_COLS = `p.id, p.name, p.description, p.min_minor::float8 AS "minMinor
   p.base_rate_bps AS "baseRateBps", p.min_rate_bps AS "minRateBps", p.max_rate_bps AS "maxRateBps",
   p.sensitivity_bps_per_pct AS "sensitivityBpsPerPct", p.payout_interval_days AS "payoutIntervalDays",
   p.invite_boost_x100 AS "inviteBoostX100", p.auto_activate AS "autoActivate",
+  p.daily_yield_minor::float8 AS "dailyYieldMinor", p.conditions,
   ${LAST_SEGMENT("rate_bps::float8")} AS "currentRateBps", ${LAST_SEGMENT("change_pct::float8")} AS "currentChangePct"`;
 const SUB_COLS = `s.id, s.reference, s.plan_id AS "planId", p.name AS "planName", s.amount_minor::float8 AS "amountMinor", s.currency, s.status,
   s.decision_note AS "decisionNote", s.created_at AS "createdAt", s.decided_at AS "decidedAt",
@@ -62,14 +62,15 @@ export class PlansService {
     await this.gate.check(userId);
     const id = await tx(this.pool, async (c) => {
       await lockUser(c, userId);
-      const plan = await one<{ status: string; minMinor: number | null; maxMinor: number | null; capacityMinor: number | null; autoActivate: boolean }>(
+      const plan = await one<{ status: string; minMinor: number | null; maxMinor: number | null; capacityMinor: number | null; autoActivate: boolean; dailyYieldMinor: number | null }>(
         c,
-        `SELECT status, min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor", capacity_minor::float8 AS "capacityMinor", auto_activate AS "autoActivate" FROM plans WHERE id = $1 FOR UPDATE`,
+        `SELECT status, min_minor::float8 AS "minMinor", max_minor::float8 AS "maxMinor", capacity_minor::float8 AS "capacityMinor", auto_activate AS "autoActivate",
+                daily_yield_minor::float8 AS "dailyYieldMinor" FROM plans WHERE id = $1 FOR UPDATE`,
         [planId],
       );
       if (!plan || plan.status === "DRAFT") throw notFound();
       if (plan.status !== "OPEN") throw new ApiException(API_ERROR_CODE.INVALID_STATE_TRANSITION);
-      checkRange(amountMinor, plan.minMinor, plan.maxMinor);
+      // Repetição do mesmo pedido (mesma chave): devolve a subscrição já criada, antes de aplicar as regras abaixo.
       if (idem) {
         const ex = await one<{ id: string; planId: string; amountMinor: number }>(c, `SELECT id, plan_id AS "planId", amount_minor::float8 AS "amountMinor" FROM plan_subscriptions WHERE user_id = $1 AND idempotency_key = $2`, [userId, idem]);
         if (ex) {
@@ -77,6 +78,17 @@ export class PlansService {
           return ex.id;
         }
       }
+      // Plano simples: preço fixo (mínimo = máximo), rendimento fixo por dia e prazo definidos pela administração.
+      if (plan.dailyYieldMinor === null || plan.minMinor === null || plan.minMinor !== plan.maxMinor) {
+        throw new ApiException(API_ERROR_CODE.INVALID_STATE_TRANSITION, { fieldErrors: [{ field: "plan", code: "planNotReady" }] });
+      }
+      if (amountMinor !== plan.minMinor) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "amountMinor", code: "invalid" }] });
+      // Um plano nunca se compra duas vezes (activo, a aguardar ou já concluído): tem de escolher outro.
+      const bought = await one<{ x: number }>(c, `SELECT 1 AS x FROM plan_subscriptions WHERE user_id = $1 AND plan_id = $2 AND status IN ('PENDING', 'ACTIVE', 'COMPLETED') LIMIT 1`, [userId, planId]);
+      if (bought) throw new ApiException(API_ERROR_CODE.CONFLICT, { fieldErrors: [{ field: "planId", code: "planAlreadyBought" }] });
+      // Só um plano de cada vez: enquanto houver um activo (ou a aguardar aprovação), não se pode comprar outro.
+      const running = await one<{ x: number }>(c, `SELECT 1 AS x FROM plan_subscriptions WHERE user_id = $1 AND status IN ('PENDING', 'ACTIVE') LIMIT 1`, [userId]);
+      if (running) throw new ApiException(API_ERROR_CODE.CONFLICT, { fieldErrors: [{ field: "planId", code: "planAlreadyActive" }] });
       if (plan.capacityMinor !== null) {
         const used = await one<{ n: number }>(c, `SELECT COALESCE(SUM(amount_minor), 0)::float8 AS n FROM plan_subscriptions WHERE plan_id = $1 AND status IN ('PENDING', 'ACTIVE')`, [planId]);
         if ((used?.n ?? 0) + amountMinor > plan.capacityMinor) throw new ApiException(API_ERROR_CODE.CONFLICT, { fieldErrors: [{ field: "amountMinor", code: "capacityExceeded" }] });
@@ -141,10 +153,16 @@ export class PlansService {
     if (v.rateMode === "MARKET" && !v.marketSymbol) {
       throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: "marketSymbol", code: "required" }] });
     }
+    // Para abrir um plano à venda tem de estar completo: preço fixo, rendimento por dia e prazo.
+    if (v.status === "OPEN") {
+      const missing = v.minMinor === null || v.minMinor !== v.maxMinor ? "priceMinor" : v.dailyYieldMinor === null ? "dailyYieldMinor" : v.termDays === null ? "termDays" : null;
+      if (missing) throw new ApiException(API_ERROR_CODE.VALIDATION_ERROR, { fieldErrors: [{ field: missing, code: "required" }] });
+    }
     const p = [
       v.name, v.description, v.minMinor, v.maxMinor, v.capacityMinor, v.termDays, v.riskLabel, v.status, v.sortOrder,
       v.howItWorks, v.riskDetails, v.rateMode, v.marketSymbol, v.marketLabel,
       v.baseRateBps, v.minRateBps, v.maxRateBps, v.sensitivityBpsPerPct, v.payoutIntervalDays, v.inviteBoostX100, v.autoActivate,
+      v.dailyYieldMinor, v.conditions,
     ];
     const row = id
       ? await one<{ id: string }>(
@@ -152,15 +170,16 @@ export class PlansService {
           `UPDATE plans SET name=$2, description=$3, min_minor=$4, max_minor=$5, capacity_minor=$6, term_days=$7, risk_label=$8, status=$9, sort_order=$10,
                   how_it_works=$11, risk_details=$12, rate_mode=$13, market_symbol=$14, market_label=$15,
                   base_rate_bps=$16, min_rate_bps=$17, max_rate_bps=$18, sensitivity_bps_per_pct=$19, payout_interval_days=$20, invite_boost_x100=$21, auto_activate=$22,
-                  updated_at=now() WHERE id=$1 RETURNING id`,
+                  daily_yield_minor=$23, conditions=$24, updated_at=now() WHERE id=$1 RETURNING id`,
           [id, ...p],
         )
       : await one<{ id: string }>(
           this.pool,
           `INSERT INTO plans (name, description, min_minor, max_minor, capacity_minor, term_days, risk_label, status, sort_order,
                   how_it_works, risk_details, rate_mode, market_symbol, market_label,
-                  base_rate_bps, min_rate_bps, max_rate_bps, sensitivity_bps_per_pct, payout_interval_days, invite_boost_x100, auto_activate)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id`,
+                  base_rate_bps, min_rate_bps, max_rate_bps, sensitivity_bps_per_pct, payout_interval_days, invite_boost_x100, auto_activate,
+                  daily_yield_minor, conditions)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING id`,
           p,
         );
     if (!row) throw notFound();

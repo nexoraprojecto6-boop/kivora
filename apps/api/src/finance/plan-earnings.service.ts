@@ -50,6 +50,8 @@ interface PlanRow {
   maxRateBps: number;
   sensitivityBpsPerPct: number;
   payoutIntervalDays: number;
+  /** Plano simples: rendimento fixo por dia (menor unidade). Null = plano antigo por taxa. */
+  dailyYieldMinor: number | null;
 }
 
 const SUB_ROW = `s.id, s.user_id AS "userId", s.plan_id AS "planId", s.amount_minor::float8 AS "amountMinor", s.currency, s.status,
@@ -57,7 +59,8 @@ const SUB_ROW = `s.id, s.user_id AS "userId", s.plan_id AS "planId", s.amount_mi
   s.starts_at AS "startsAt", s.ends_at AS "endsAt"`;
 const PLAN_ROW = `p.market_provider AS "marketProvider", p.market_symbol AS "marketSymbol", p.market_label AS "marketLabel", p.rate_mode AS "rateMode",
   p.base_rate_bps AS "baseRateBps", p.min_rate_bps AS "minRateBps", p.max_rate_bps AS "maxRateBps",
-  p.sensitivity_bps_per_pct AS "sensitivityBpsPerPct", p.payout_interval_days AS "payoutIntervalDays"`;
+  p.sensitivity_bps_per_pct AS "sensitivityBpsPerPct", p.payout_interval_days AS "payoutIntervalDays",
+  p.daily_yield_minor::float8 AS "dailyYieldMinor"`;
 
 const BUCKETS: Record<SeriesBucket, { unit: string; step: string; count: number }> = {
   minute: { unit: "minute", step: "1 minute", count: 60 },
@@ -232,21 +235,27 @@ export class PlanEarningsService implements OnModuleInit, OnModuleDestroy {
       const raw = plan.baseRateBps + plan.sensitivityBpsPerPct * seg.changePct;
       limit = raw < plan.minRateBps ? "MIN" : raw > plan.maxRateBps ? "MAX" : null;
     }
-    const rate: PlanRateDto = {
-      mode: plan.rateMode,
-      baseBps: plan.baseRateBps,
-      minBps: plan.minRateBps,
-      maxBps: plan.maxRateBps,
-      sensitivityBpsPerPct: plan.sensitivityBpsPerPct,
-      currentBps,
-      boostX100,
-      effectiveBps: Math.round(currentBps * boostX100) / 100,
-      limit,
-    };
-    const market = plan.marketSymbol
-      ? await this.market.snapshot({ marketProvider: plan.marketProvider, marketSymbol: plan.marketSymbol, marketLabel: plan.marketLabel }, since)
-      : null;
-    const earnings = await this.earnings(s, rate, steps, now);
+    // Plano simples (rendimento fixo): a percentagem diária é rendimento / preço, sem mercado nem bónus.
+    const fixed = plan.dailyYieldMinor !== null && s.amountMinor > 0;
+    const fixedBps = fixed ? Math.round(((plan.dailyYieldMinor as number) / s.amountMinor) * 10_000 * 100) / 100 : 0;
+    const rate: PlanRateDto = fixed
+      ? { mode: "FIXED", baseBps: fixedBps, minBps: fixedBps, maxBps: fixedBps, sensitivityBpsPerPct: 0, currentBps: fixedBps, boostX100: 100, effectiveBps: fixedBps, limit: null }
+      : {
+          mode: plan.rateMode,
+          baseBps: plan.baseRateBps,
+          minBps: plan.minRateBps,
+          maxBps: plan.maxRateBps,
+          sensitivityBpsPerPct: plan.sensitivityBpsPerPct,
+          currentBps,
+          boostX100,
+          effectiveBps: Math.round(currentBps * boostX100) / 100,
+          limit,
+        };
+    const market =
+      plan.marketSymbol && !fixed
+        ? await this.market.snapshot({ marketProvider: plan.marketProvider, marketSymbol: plan.marketSymbol, marketLabel: plan.marketLabel }, since)
+        : null;
+    const earnings = await this.earnings(s, plan, rate, steps, now);
     return {
       status: s.status,
       rate,
@@ -258,20 +267,21 @@ export class PlanEarningsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  private async earnings(s: SubRow, rate: PlanRateDto, steps: readonly BoostStep[], now: Date): Promise<PlanEarningsDto> {
+  private async earnings(s: SubRow, plan: PlanRow, rate: PlanRateDto, steps: readonly BoostStep[], now: Date): Promise<PlanEarningsDto> {
     const zero = { lastMinuteMinor: 0, lastHourMinor: 0, lastDayMinor: 0, perMinuteMinor: 0, perHourMinor: 0, perDayMinor: 0 };
     let generated = s.accrued;
     let windows = zero;
     if (s.status === "ACTIVE" && s.startsAt) {
+      const sub = { ...s, dailyYieldMinor: plan.dailyYieldMinor };
       const end = s.endsAt && s.endsAt.getTime() < now.getTime() ? s.endsAt : now;
-      if (s.accruedUpto) generated += await accrueBetween(this.pool, s, s.accruedUpto, end, steps);
+      if (s.accruedUpto) generated += await accrueBetween(this.pool, sub, s.accruedUpto, end, steps);
       const back = (ms: number): Date => new Date(Math.max(s.startsAt!.getTime(), end.getTime() - ms));
       const [m1, h1, d1] = await Promise.all([
-        accrueBetween(this.pool, s, back(60_000), end, steps),
-        accrueBetween(this.pool, s, back(3_600_000), end, steps),
-        accrueBetween(this.pool, s, back(DAY_MS), end, steps),
+        accrueBetween(this.pool, sub, back(60_000), end, steps),
+        accrueBetween(this.pool, sub, back(3_600_000), end, steps),
+        accrueBetween(this.pool, sub, back(DAY_MS), end, steps),
       ]);
-      const perDay = (s.amountMinor * rate.effectiveBps) / 10_000;
+      const perDay = plan.dailyYieldMinor ?? (s.amountMinor * rate.effectiveBps) / 10_000;
       windows = { lastMinuteMinor: m1, lastHourMinor: h1, lastDayMinor: d1, perDayMinor: perDay, perHourMinor: perDay / 24, perMinuteMinor: perDay / 1440 };
     }
     return {

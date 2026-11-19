@@ -12,8 +12,7 @@ import { runQuiet } from "../services/loader-store.js"
 import { getWalletSnapshot, onScope, subscribeWallet, type Scope } from "../services/realtime.js"
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
-import { MyPlans } from "./plan-panel.js"
-import { PlanCover } from "./plan-cover.js"
+import { PlanCard } from "./plans-simple.js"
 import { VerifyBanner } from "./verify-banner.js"
 import { DepositHomeStatus } from "./deposit-flow.js"
 
@@ -199,25 +198,6 @@ function TxRow({ tx, currency, open, onClick }: { tx: TransactionDto; currency: 
   return onClick ? <button className="transaction" aria-expanded={open} onClick={onClick}>{body}</button> : <div className="transaction">{body}</div>
 }
 
-function PlanCard({ plan, index, currency, compact = false }: { plan: PlanDto; index: number; currency: string; compact?: boolean }) {
-  const s = useS()
-  const m = useMoney(currency)
-  const navigate = useNavigate()
-  const go = () => navigate(`/plans/${plan.id}`)
-  return (
-    <div className={`plan-card ${compact ? "compact" : ""}`} role="link" tabIndex={0} onClick={go} onKeyDown={(e) => e.key === "Enter" && go()}>
-      <PlanCover imageUrl={plan.imageUrl} index={index} />
-      <div className="plan-info">
-        <strong>{plan.name}</strong>
-        {plan.termDays !== null && <small>{s("planTerm")}: {s("days", { n: String(plan.termDays) })}</small>}
-        {plan.minMinor !== null && <b>{m.fmt(plan.minMinor)}</b>}
-        <span>{s(`planStatus.${plan.status}`)}</span>
-      </div>
-      {!compact && <button className="small-button">{s("details")}</button>}
-    </div>
-  )
-}
-
 /* ============================== início (partes reais) ============================== */
 
 export function HomeLive() {
@@ -285,38 +265,8 @@ export function WalletPage() {
 
 /* ============================== planos ============================== */
 
-export function PlansPage() {
-  const { t } = useI18n()
-  const s = useS()
-  const [filter, setFilter] = useState<"ALL" | "OPEN" | "COMING_SOON">("ALL")
-  const wallet = useWallet()
-  const plans = useLoad(() => platformApi.plans(), [])
-  return (
-    <Page className="plans-page">
-      <Header title={t("dash.nav.plans")} back />
-      <div className="segmented" role="tablist">
-        {(["ALL", "OPEN", "COMING_SOON"] as const).map((k) => (
-          <button key={k} role="tab" aria-selected={filter === k} className={filter === k ? "active" : ""} onClick={() => setFilter(k)}>{s(`filter.${k}`)}</button>
-        ))}
-      </div>
-      <Load q={wallet}>{(w) => (
-        <Load q={plans}>{(list) => {
-          const shown = list.filter((p) => filter === "ALL" || p.status === filter)
-          return (
-            <>
-              <MyPlans plans={list} />
-              {shown.length === 0
-                ? <div className="info-box"><CircleHelp size={18} /><p>{s("emptyPlans")}</p></div>
-                : <div className="plans-list">{shown.map((p) => <PlanCard key={p.id} plan={p} index={list.indexOf(p)} currency={w.currency} />)}</div>}
-            </>
-          )
-        }}</Load>
-      )}</Load>
-    </Page>
-  )
-}
-
-export { PlanDetailPage, PlanPanelPage } from "./plan-panel.js"
+// Lista, detalhe com compra e painel do plano (versão simples) vivem em plans-simple.tsx.
+export { PlansPage, PlanDetailPage, PlanPanelPage } from "./plans-simple.js"
 
 /* ============================== depósitos e levantamentos ============================== */
 

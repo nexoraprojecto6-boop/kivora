@@ -97,6 +97,9 @@ export const planSchema = z
     payoutIntervalDays: z.number().int().min(1).max(90),
     inviteBoostX100: z.number().int().min(100).max(1000),
     autoActivate: z.boolean(),
+    /** Rendimento fixo por dia (menor unidade) e condições em texto. Opcionais para não partir clientes antigos. */
+    dailyYieldMinor: optMoney.default(null),
+    conditions: text(0, 4000).default(""),
   })
   .superRefine((v, ctx) => {
     if (v.minRateBps > v.baseRateBps || v.baseRateBps > v.maxRateBps) ctx.addIssue({ code: "custom", path: ["maxRateBps"], message: "rateOrder" });
