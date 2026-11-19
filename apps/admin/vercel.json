@@ -5,7 +5,7 @@
   "buildCommand": "npx --yes pnpm@12.14.0 --filter \"@kivora/admin...\" build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/v1/:path*", "destination": "https://kivora-api-ngf1.onrender.com/v1/:path*" },
+    { "source": "/v1/:path*", "destination": "https://kivora-api-0e2e.onrender.com/v1/:path*" },
     { "source": "/((?!v1/).*)", "destination": "/index.html" }
   ],
   "headers": [
