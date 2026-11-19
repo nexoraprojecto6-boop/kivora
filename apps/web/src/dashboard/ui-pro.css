@@ -1,0 +1,126 @@
+/*
+ * Camada final de aparência do painel (importada por último em main.tsx).
+ *  - Bordas mais fortes e consistentes em todo o painel.
+ *  - Tipografia legível em qualquer ecrã: Inter, base 16 px, peso normal 500 (nada de letra fina).
+ *  - Cartões, botões, campos e navegação com o mesmo acabamento.
+ *  - Vidro (backdrop-filter) só onde faz sentido: barra de navegação, faixa de verificação, boas-vindas e cartão de saldo.
+ */
+
+:root {
+  --border: #cbd6e6;
+  --border-strong: #aebfd8;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --shadow-card: 0 1px 2px rgba(16, 35, 66, .06), 0 10px 28px rgba(16, 35, 66, .08);
+  --focus: 0 0 0 3px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+:root[data-theme='dark'] {
+  --border: #2b5282;
+  --border-strong: #3d6ba3;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 28px rgba(0, 0, 0, .28);
+}
+
+/* ---------- tipografia ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { font-family: 'Inter', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 16px; font-weight: 500; line-height: 1.5; letter-spacing: -.003em; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button, input, select, textarea { font-family: inherit; }
+h1, h2, h3 { font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.page :where(p, small, span, label) { font-weight: 500; }
+.page :where(strong, b) { font-weight: 700; }
+.section-title h2, .form-surface h2 { font-size: 18px; font-weight: 700; }
+.text-button { font-size: 14px; font-weight: 700; }
+.body-copy { font-size: 15px; }
+
+/* ---------- foco visível (teclado) ---------- */
+:where(button, a, input, select, textarea, [role='link'], [role='button']):focus-visible { outline: none; box-shadow: var(--focus); }
+
+/* ---------- cartões ---------- */
+.page .balance-card, .page .stat-card, .page .list-card, .page .transaction-list, .page .chart-card, .page .investment-card, .page .settings-list, .page .method-list, .page .detail-grid, .page .method-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.page .form-surface { border: 1.5px solid var(--border); border-bottom: 0; box-shadow: var(--shadow-card); }
+.page .stat-card { padding: 18px; }
+.page .stat-card span { font-size: 13px; font-weight: 600; }
+.page .stat-card strong { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.page .detail-grid { background: var(--border); }
+.page .detail-grid span { font-size: 13px; }
+.page .detail-grid strong { font-size: 15px; }
+
+/* cartão de saldo: azul profundo com «vidro» nos números secundários */
+.page .balance-card { padding: 22px; border: 1.5px solid rgba(255, 255, 255, .16); box-shadow: 0 18px 44px rgba(9, 41, 82, .3); }
+.page .balance-card > span { font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+.page .balance-card h1 { margin: 6px 0 22px; font-size: clamp(30px, 8vw, 38px); font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.page .balance-card > div > span { padding: 11px 12px; border: 1px solid rgba(255, 255, 255, .22); border-radius: 12px; background: rgba(255, 255, 255, .1); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font-size: 13px; }
+.page .balance-card b { font-size: 16px; font-weight: 700; }
+
+/* ---------- lista de movimentos ---------- */
+.page .transaction { min-height: 74px; padding: 12px 14px; border-bottom: 1.5px solid var(--border); transition: background .15s; }
+.page .transaction:hover { background: var(--surface-soft); }
+.page .transaction-icon, .page .notice-icon, .page .method-icon { width: 42px; height: 42px; border: 1.5px solid var(--border); }
+.page .transaction-main strong, .page .notice strong { font-size: 15px; font-weight: 700; }
+.page .transaction-main small, .page .notice small { font-size: 13px; }
+.page .transaction-meta b { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.page .status { padding: 4px 10px; font-size: 12px; font-weight: 700; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
+
+/* ---------- botões ---------- */
+.page .primary-button, .page .secondary-button, .page .danger-button { min-height: 52px; border-radius: 14px; font-size: 16px; font-weight: 700; letter-spacing: -.005em; transition: transform .12s, box-shadow .2s, filter .2s; }
+.page .primary-button { border: 1.5px solid rgba(20, 35, 59, .14); }
+.page .primary-button:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 12px 28px rgba(255, 193, 32, .3); }
+.page .primary-button:active:not(:disabled), .page .secondary-button:active:not(:disabled), .page .small-button:active { transform: scale(.98); }
+.page .primary-button:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.page .secondary-button { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; padding: 12px; border: 1.5px solid var(--border-strong); color: var(--navy); background: var(--surface); }
+.page .secondary-button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.page .danger-button { border-width: 1.5px; }
+.page .small-button { padding: 10px 14px; border: 1.5px solid rgba(20, 35, 59, .14); border-radius: 10px; font-size: 14px; font-weight: 700; }
+.page .icon-button, .topbar .icon-button { width: 44px; height: 44px; border: 1.5px solid var(--border); background: var(--surface); }
+.page .avatar { width: 44px; height: 44px; font-size: 16px; border: 2px solid rgba(255, 255, 255, .5); }
+
+/* ---------- campos ---------- */
+.page .field > span { font-size: 14px; font-weight: 600; color: var(--navy); }
+.page .field select, .page .field input, .page .search-field { height: 52px; padding: 0 14px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-control); font-size: 16px; font-weight: 500; transition: border-color .15s, box-shadow .15s; }
+.page .field select:focus, .page .field input:focus, .page .search-field:focus-within { border-color: var(--primary); box-shadow: var(--focus); }
+.page .search-field input { font-size: 16px; }
+.page .field-row button { border: 1.5px solid var(--border-strong); border-radius: var(--radius-control); font-size: 15px; font-weight: 600; }
+.page textarea { border: 1.5px solid var(--border-strong); border-radius: var(--radius-control); font-size: 16px; }
+
+/* ---------- avisos ---------- */
+.page .info-box { padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-control); align-items: flex-start; }
+.page .info-box p { font-size: 14px; line-height: 1.5; font-weight: 500; color: var(--navy); }
+.page .segmented { border: 1.5px solid var(--border); border-radius: 14px; }
+.page .segmented button { padding: 11px 12px; font-size: 14px; font-weight: 700; }
+
+/* ---------- acções rápidas ---------- */
+.page .quick-actions { gap: 12px; }
+.page .action-tile { gap: 8px; }
+.page .action-tile > span { height: 58px; border: 1.5px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-card); }
+.page .action-tile:hover > span { border-color: var(--primary); }
+.page .action-tile small { font-size: 13px; font-weight: 700; }
+
+/* ---------- listas de definições, métodos, FAQ ---------- */
+.page .settings-list button, .page .setting-row { min-height: 56px; font-size: 15px; font-weight: 600; border-bottom: 1.5px solid var(--border); }
+.page .method-list > button { padding: 16px; border-bottom: 1.5px solid var(--border); }
+.page .method-list strong { font-size: 15px; font-weight: 700; }
+.page .method-list small { font-size: 13px; }
+.page .method-list > button.selected { background: var(--surface-soft); box-shadow: inset 4px 0 0 var(--primary); }
+.page .faq-list, .page .faq-list button { border-color: var(--border); border-bottom-width: 1.5px; }
+.page .faq-list button { font-size: 15px; }
+.page .faq-list small { font-size: 14px; }
+
+/* ---------- barra de navegação inferior (vidro) ---------- */
+.bottom-nav { height: 78px; border-top: 1.5px solid var(--border); background: color-mix(in srgb, var(--surface) 78%, transparent); -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%); }
+.bottom-nav a, .bottom-nav button { gap: 5px; font-size: 12px; font-weight: 600; border: 1.5px solid transparent; transition: background .2s, color .2s, border-color .2s; }
+.bottom-nav a.active, .bottom-nav button.active { border-color: var(--border); font-weight: 700; }
+
+/* ---------- ecrãs largos ---------- */
+@media (min-width: 720px) {
+  body { font-size: 17px; }
+  .page .primary-button, .page .secondary-button { font-size: 17px; }
+  .page .transaction-main strong { font-size: 16px; }
+}
+
+/* ---------- reduzir movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

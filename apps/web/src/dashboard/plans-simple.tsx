@@ -8,6 +8,7 @@ import { withLoader } from "../services/loader-store.js"
 import { Header, Page } from "./App.js"
 import { Gate, Load, Sub, canOperate, makeMoney, newKey, useErr, useLoad, useS, useWallet } from "./screens.js"
 import { PlanCover } from "./plan-cover.js"
+import { StaggerItem, StaggerList } from "./motion-kit.js"
 import "./plans-simple.css"
 
 /*
@@ -178,9 +179,9 @@ export function PlansPage() {
               {mine.length > 0 && (
                 <section>
                   <h2 className="ps-section">{tx("myPlans")}</h2>
-                  <div className="ps-mine">
-                    {mine.map((x) => <MineRow key={x.id} s={x} plan={list.find((p) => p.id === x.planId) ?? null} currency={w.currency} />)}
-                  </div>
+                  <StaggerList className="ps-mine">
+                    {mine.map((x) => <StaggerItem key={x.id}><MineRow s={x} plan={list.find((p) => p.id === x.planId) ?? null} currency={w.currency} /></StaggerItem>)}
+                  </StaggerList>
                 </section>
               )}
               {shown.length === 0
@@ -188,9 +189,9 @@ export function PlansPage() {
                 : (
                   <section>
                     {mine.length > 0 && <h2 className="ps-section">{tx("available")}</h2>}
-                    <div className="ps-grid">
-                      {shown.map((p) => <PlanCard key={p.id} plan={p} index={list.indexOf(p)} currency={w.currency} {...(owned.has(p.id) ? { tag: tx("tagOwned") } : {})} />)}
-                    </div>
+                    <StaggerList className="ps-grid">
+                      {shown.map((p) => <StaggerItem key={p.id}><PlanCard plan={p} index={list.indexOf(p)} currency={w.currency} {...(owned.has(p.id) ? { tag: tx("tagOwned") } : {})} /></StaggerItem>)}
+                    </StaggerList>
                   </section>
                 )}
             </div>

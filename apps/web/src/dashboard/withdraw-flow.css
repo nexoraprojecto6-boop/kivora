@@ -1,0 +1,61 @@
+/* Levantamento passo a passo. */
+.page .wd { display: grid; gap: 18px; }
+.page .wd-progress { display: grid; gap: 10px; }
+.page .wd-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.page .wd-progress-top b { font-size: 18px; font-weight: 800; color: var(--navy); }
+.page .wd-progress-top span { color: var(--muted); font-size: 14px; font-weight: 600; }
+.page .wd-track { height: 8px; overflow: hidden; border: 1px solid var(--border); border-radius: 99px; background: var(--surface-soft); }
+.page .wd-track span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), #48b8ff); }
+.page .wd-body { display: grid; gap: 14px; }
+.page .wd-title { margin: 0; font-size: 22px; font-weight: 800; color: var(--navy); }
+.page .wd-sub { margin: 2px 0 -4px; color: var(--muted); font-size: 14px; font-weight: 700; }
+.page .wd-amount { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border: 2px solid var(--border-strong); border-radius: var(--radius-card); background: var(--surface); transition: border-color .15s, box-shadow .15s; }
+.page .wd-amount:focus-within { border-color: var(--primary); box-shadow: var(--focus); }
+.page .wd-symbol { color: var(--muted); font-size: 22px; font-weight: 700; }
+.page .wd-amount input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--navy); font-size: 38px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; outline: none; }
+.page .wd-amount input::placeholder { color: var(--border-strong); }
+.page .wd-available { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-control); background: var(--surface-soft); font-size: 15px; }
+.page .wd-available span { color: var(--muted); font-weight: 600; }
+.page .wd-available strong { color: var(--navy); font-weight: 800; font-variant-numeric: tabular-nums; }
+.page .wd-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.page .wd-chips button { min-height: 46px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-control); color: var(--navy); background: var(--surface); font-size: 15px; font-weight: 700; transition: border-color .15s, background .15s, transform .1s; }
+.page .wd-chips button:hover { border-color: var(--primary); background: var(--surface-soft); }
+.page .wd-chips button:active { transform: scale(.97); }
+.page .wd-error { margin: 0; color: var(--red); font-size: 14px; font-weight: 600; }
+.page .wd-note { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+
+.page .wd-options { display: grid; gap: 10px; }
+.page .wd-options > button { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-card); color: var(--navy); background: var(--surface); text-align: left; transition: border-color .15s, background .15s, box-shadow .15s; }
+.page .wd-options > button:hover { border-color: var(--primary); }
+.page .wd-options > button.on { border-color: var(--primary); background: var(--surface-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.page .wd-ico { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border: 1.5px solid var(--border); border-radius: 12px; color: var(--primary); background: var(--surface-soft); }
+.page .wd-opt-text { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.page .wd-opt-text strong { font-size: 16px; font-weight: 700; }
+.page .wd-opt-text small { overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; }
+.page .wd-tick { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border: 2px solid var(--border-strong); border-radius: 50%; color: #fff; }
+.page .wd-options > button.on .wd-tick { border-color: var(--primary); background: var(--primary); }
+.page .wd-field { display: grid; gap: 6px; }
+.page .wd-field span { font-size: 14px; font-weight: 600; color: var(--navy); }
+.page .wd-field input { height: 52px; padding: 0 14px; border: 1.5px solid var(--border-strong); border-radius: var(--radius-control); color: var(--navy); background: var(--surface); font-size: 16px; }
+.page .wd-field input:focus { border-color: var(--primary); box-shadow: var(--focus); }
+
+.page .wd-review { display: grid; gap: 4px; padding: 22px; border: 1.5px solid var(--border); border-radius: var(--radius-card); text-align: center; color: #fff; background: radial-gradient(circle at 92% 10%, #2879ff, #0c3979 46%, #092952); }
+.page .wd-review small { color: #bcd0ea; font-size: 14px; font-weight: 600; }
+.page .wd-review strong { font-size: 34px; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.page .wd-summary { display: grid; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.page .wd-summary > div { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1.5px solid var(--border); font-size: 15px; }
+.page .wd-summary > div:last-child { border-bottom: 0; }
+.page .wd-summary span { color: var(--muted); font-weight: 600; flex: none; }
+.page .wd-summary strong { text-align: right; font-weight: 700; overflow-wrap: anywhere; }
+
+.page .wd-actions { display: flex; gap: 10px; align-items: stretch; margin-top: 4px; }
+.page .wd-actions .primary-button { flex: 1; margin-top: 0; }
+.page .wd-back { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 52px; padding: 0 16px; border: 1.5px solid var(--border-strong); border-radius: 14px; color: var(--navy); background: var(--surface); font-size: 15px; font-weight: 700; }
+.page .wd-back:hover:not(:disabled) { border-color: var(--primary); }
+
+.page .wd-done { justify-items: center; text-align: center; padding-top: 12px; }
+.page .wd-done h2 { margin: 0; font-size: 24px; font-weight: 800; color: var(--navy); }
+.page .wd-done p { margin: 0; color: var(--muted); font-size: 15px; }
+.page .wd-done .wd-summary { width: 100%; text-align: left; }
+.page .wd-done .primary-button, .page .wd-done .secondary-button { width: 100%; }
+.page .wd-done-icon { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; color: #fff; background: var(--green); box-shadow: 0 0 0 10px color-mix(in srgb, var(--green) 20%, transparent); }

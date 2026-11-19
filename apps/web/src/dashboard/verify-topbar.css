@@ -1,0 +1,24 @@
+/* Faixa de verificação obrigatória, fixa no topo (vidro com cor de aviso). */
+.vtb { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 10px 18px; border: 0; border-bottom: 2px solid; text-align: left; font-size: 14px; font-weight: 600; line-height: 1.35; cursor: pointer;
+  -webkit-backdrop-filter: blur(14px) saturate(150%); backdrop-filter: blur(14px) saturate(150%); }
+.vtb-icon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; color: #fff; }
+.vtb-text { flex: 1; min-width: 0; }
+.vtb-cta { display: inline-flex; align-items: center; flex: none; gap: 2px; font-size: 13px; font-weight: 700; }
+.vtb--todo { color: #7a4b00; border-color: #f2b21a; background: rgba(255, 241, 189, .92); }
+.vtb--todo .vtb-icon { background: #e69b00; }
+.vtb--pending { color: #0b3b8f; border-color: #6c9dff; background: rgba(224, 236, 255, .92); }
+.vtb--pending .vtb-icon { background: var(--primary); }
+.vtb--rejected { color: #8f1d1d; border-color: #ef6b6b; background: rgba(254, 226, 226, .92); }
+.vtb--rejected .vtb-icon { background: var(--red); }
+:root[data-theme='dark'] .vtb--todo { color: #ffe29a; background: rgba(92, 62, 0, .85); }
+:root[data-theme='dark'] .vtb--pending { color: #cfe0ff; background: rgba(13, 52, 128, .85); }
+:root[data-theme='dark'] .vtb--rejected { color: #ffd0d0; background: rgba(110, 24, 24, .85); }
+.vtb:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+@media (max-width: 380px) { .vtb-cta { display: none; } }
+
+/* Bloqueio de páginas operacionais até verificar */
+.page .rv { display: grid; justify-items: center; gap: 12px; padding: 28px 12px; text-align: center; }
+.page .rv-icon { display: grid; place-items: center; width: 76px; height: 76px; border: 1.5px solid var(--border-strong); border-radius: 50%; color: var(--primary); background: var(--surface-soft); }
+.page .rv h2 { margin: 0; font-size: 22px; font-weight: 800; color: var(--navy); }
+.page .rv p { max-width: 420px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+.page .rv .primary-button { max-width: 360px; }

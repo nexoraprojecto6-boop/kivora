@@ -6,6 +6,7 @@ import { GlobalLoader } from "../components/loader/GlobalLoader.js"
 import { I18nProvider } from "../i18n/I18nProvider.js"
 import "./index.css"
 import "./screens.css"
+import "./ui-pro.css"
 
 const root = document.getElementById("root")
 if (!root) throw new Error("Elemento #root não encontrado.")

@@ -46,6 +46,10 @@ import {
 import { VerifyRedirect } from "./verify-banner.js"
 import { DepositFlow } from "./deposit-flow.js"
 import { InvitePage } from "./invite.js"
+import { MotionRoot, PageTransition } from "./motion-kit.js"
+import { RequireVerified } from "./require-verified.js"
+import { VerifyTopBar } from "./verify-topbar.js"
+import { WelcomeSplash } from "./welcome-splash.js"
 
 /*
  * Dashboard KIVORA (desenho original mantido: componentes, estrutura e classes CSS).
@@ -844,6 +848,8 @@ export function AppShell() {
   }, [location.pathname, language, t])
 
   return (
+    <MotionRoot>
+    <WelcomeSplash />
     <div className="app-shell">
       <div className="desktop-rail">
         <Logo height={52} />
@@ -851,26 +857,30 @@ export function AppShell() {
       </div>
       <ProfileDrawerContext.Provider value={drawer}>
         <div className="mobile-app" style={COLUMN_WIDTH}>
+          <VerifyTopBar />
           <DashboardRoutes />
           <BottomNav />
           <ProfileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </div>
       </ProfileDrawerContext.Provider>
     </div>
+    </MotionRoot>
   )
 }
 
 export function DashboardRoutes() {
+  const location = useLocation()
   return (
+    <PageTransition routeKey={location.pathname}>
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/wallet" element={<WalletPage />} />
       <Route path="/plans" element={<PlansPage />} />
       <Route path="/plans/:id" element={<PlanDetailPage />} />
       <Route path="/subscriptions/:id" element={<PlanPanelPage />} />
-      <Route path="/deposit" element={<DepositFlow />} />
+      <Route path="/deposit" element={<RequireVerified titleKey="dash.nav.deposits"><DepositFlow /></RequireVerified>} />
       <Route path="/invite" element={<InvitePage />} />
-      <Route path="/withdraw" element={<WithdrawPage />} />
+      <Route path="/withdraw" element={<RequireVerified titleKey="dash.nav.withdrawals"><WithdrawPage /></RequireVerified>} />
       <Route path="/history" element={<HistoryPage />} />
       <Route path="/agreements" element={<AgreementsPage />} />
       <Route path="/verification" element={<VerifyRedirect />} />
@@ -885,6 +895,7 @@ export function DashboardRoutes() {
       <Route path="/security/sessions" element={<SessionsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </PageTransition>
   )
 }
 

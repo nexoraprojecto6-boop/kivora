@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { PublicUser } from "@kivora/shared";
 import type { LoginInput, RegisterInput } from "@kivora/validation";
 import { authApi } from "../../services/api-client.js";
+import { markWelcome } from "../../services/welcome.js";
 
 type AuthStatus = "loading" | "authenticated" | "anonymous";
 
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (input: LoginInput) => {
     const u = await authApi.login(input);
+    markWelcome();
     setUser(u);
     setStatus("authenticated");
   }, []);
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (input: RegisterInput) => {
     // O registo já abre sessão: o utilizador segue logo para a verificação (email e documentos).
     const u = await authApi.register(input);
+    markWelcome();
     setUser(u);
     setStatus("authenticated");
   }, []);

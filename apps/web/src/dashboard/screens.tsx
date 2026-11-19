@@ -13,7 +13,7 @@ import { getWalletSnapshot, onScope, subscribeWallet, type Scope } from "../serv
 import { ActionTile, Header, Page, SectionTitle } from "./App.js"
 import { InviteCard } from "./invite.js"
 import { PlanCard } from "./plans-simple.js"
-import { VerifyBanner } from "./verify-banner.js"
+import { AnimatedMoney } from "./motion-kit.js"
 import { DepositHomeStatus } from "./deposit-flow.js"
 
 /* ============================== base: carregar, erros, dinheiro ============================== */
@@ -130,7 +130,8 @@ export function Gate({ w }: { w: WalletDto }) {
   const s = useS()
   const navigate = useNavigate()
   if (!w.financeEnabled) return <div className="info-box" role="note"><CircleHelp size={18} /><p>{s("notice.financeOff")}</p></div>
-  if (w.requireVerification && w.verificationStatus !== "APPROVED") {
+  // A verificação é obrigatória para operar, independentemente da definição do servidor.
+  if (w.verificationStatus !== "APPROVED") {
     return (
       <button className="info-box" onClick={() => navigate("/verification")}>
         <Fingerprint size={18} /><p>{s("notice.verifyFirst")}</p><ChevronRight size={16} />
@@ -139,7 +140,7 @@ export function Gate({ w }: { w: WalletDto }) {
   }
   return null
 }
-export const canOperate = (w: WalletDto) => w.financeEnabled && (!w.requireVerification || w.verificationStatus === "APPROVED")
+export const canOperate = (w: WalletDto) => w.financeEnabled && w.verificationStatus === "APPROVED"
 
 /* ============================== peças partilhadas ============================== */
 
@@ -149,7 +150,7 @@ function BalanceCard({ w }: { w: WalletDto }) {
   return (
     <section className="balance-card" aria-label={s("wallet.total")}>
       <span>{s("wallet.total")}</span>
-      <h1>{m.fmt(w.available)}</h1>
+      <h1><AnimatedMoney minor={w.available} format={m.fmt} /></h1>
       <div>
         <span><TrendingUp size={14} /> {s("wallet.invested")}<b>{m.fmt(w.invested)}</b></span>
         {w.reserved > 0 && <span><Clock3 size={14} /> {s("wallet.reserved")}<b>{m.fmt(w.reserved)}</b></span>}
@@ -210,7 +211,7 @@ export function HomeLive() {
     <>
       <Load q={wallet}>{(w) => (
         <>
-          <VerifyBanner w={w} />
+          
           <BalanceCard w={w} />
           <DepositHomeStatus />
           <Gate w={w} />
@@ -435,7 +436,8 @@ function MoneyFlow({ mode }: { mode: "DEPOSIT" | "WITHDRAWAL" }) {
   }
 }
 
-export function WithdrawPage() { return <MoneyFlow mode="WITHDRAWAL" /> }
+// Levantamento passo a passo: ver withdraw-flow.tsx
+export { WithdrawPage } from "./withdraw-flow.js"
 
 /* ============================== histórico ============================== */
 
